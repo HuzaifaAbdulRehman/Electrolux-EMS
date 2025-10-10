@@ -36,9 +36,9 @@ export default function HomePage() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <button className="px-6 py-2 text-white hover:text-gray-300 transition-colors">
+              <Link href="/login" className="px-6 py-2 text-white hover:text-gray-300 transition-colors">
                 Login
-              </button>
+              </Link>
               <Link href="/register" className="px-6 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300">
                 Register
               </Link>

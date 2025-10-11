@@ -21,33 +21,25 @@ import {
   Zap,
   Calendar
 } from 'lucide-react';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
   BarElement,
-  ArcElement,
   Title,
   Tooltip,
-  Legend,
-  Filler
+  Legend
 } from 'chart.js';
 
 // Register Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
   BarElement,
-  ArcElement,
   Title,
   Tooltip,
-  Legend,
-  Filler
+  Legend
 );
 
 export default function BillHistory() {
@@ -159,28 +151,26 @@ export default function BillHistory() {
     return matchesSearch && matchesFilter;
   });
 
-  // Billing Trend Chart Data
+  // Billing Trend Bar Chart Data - Like Local Electricity Company
   const billingTrendData = {
     labels: billHistory.map(b => b.month.split(' ')[0]).reverse(),
     datasets: [
       {
-        label: 'Amount ($)',
-        data: billHistory.map(b => b.amount).reverse(),
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.2)',
-        tension: 0.4,
-        fill: true,
-        borderWidth: 3,
+        label: 'Usage (kWh)',
+        data: billHistory.map(b => b.units).reverse(),
+        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+        borderColor: 'rgb(59, 130, 246)',
+        borderWidth: 2,
+        borderRadius: 8,
         yAxisID: 'y',
       },
       {
-        label: 'Usage (kWh)',
-        data: billHistory.map(b => b.units).reverse(),
-        borderColor: 'rgb(251, 146, 60)',
-        backgroundColor: 'rgba(251, 146, 60, 0.2)',
-        tension: 0.4,
-        fill: true,
-        borderWidth: 3,
+        label: 'Amount ($)',
+        data: billHistory.map(b => b.amount).reverse(),
+        backgroundColor: 'rgba(251, 191, 36, 0.8)',
+        borderColor: 'rgb(251, 191, 36)',
+        borderWidth: 2,
+        borderRadius: 8,
         yAxisID: 'y1',
       }
     ]
@@ -280,145 +270,106 @@ export default function BillHistory() {
           </div>
         </div>
 
-        {/* Billing Analytics Charts - Moved Above for Better Visibility */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Billing & Usage Trend */}
-          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2 text-green-400" />
-              Billing & Usage Trend
-            </h3>
-            <div className="h-64">
-              <Line
-                data={billingTrendData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  interaction: {
-                    mode: 'index',
-                    intersect: false,
-                  },
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: 'bottom',
-                      labels: { color: 'rgba(156, 163, 175, 0.8)', padding: 15 }
-                    }
-                  },
-                  scales: {
-                    y: {
-                      type: 'linear',
-                      display: true,
-                      position: 'left',
-                      grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                      ticks: {
-                        color: 'rgba(156, 163, 175, 0.6)',
-                        callback: function(value: any) {
-                          return '$' + value;
-                        }
-                      }
-                    },
-                    y1: {
-                      type: 'linear',
-                      display: true,
-                      position: 'right',
-                      grid: { drawOnChartArea: false },
-                      ticks: {
-                        color: 'rgba(156, 163, 175, 0.6)',
-                        callback: function(value: any) {
-                          return value + ' kWh';
-                        }
-                      }
-                    },
-                    x: {
-                      grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                      ticks: { color: 'rgba(156, 163, 175, 0.6)' }
-                    }
-                  }
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Payment Method Distribution */}
-          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <CreditCard className="w-5 h-5 mr-2 text-blue-400" />
-              Payment Method Distribution
-            </h3>
-            <div className="h-64 flex items-center justify-center">
-              <Doughnut
-                data={paymentMethodData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'right',
-                      labels: { color: 'rgba(156, 163, 175, 0.8)', padding: 15 }
-                    },
-                    tooltip: {
-                      callbacks: {
-                        label: function(context: any) {
-                          return `${context.label}: ${context.parsed}%`;
-                        }
-                      }
-                    }
-                  },
-                  cutout: '60%'
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Monthly Comparison Bar Chart */}
+        {/* Professional Billing Analytics - Single Clean Chart */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-            <Activity className="w-5 h-5 mr-2 text-purple-400" />
-            Monthly Bill Comparison
-          </h3>
-          <div className="h-64">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                <TrendingUp className="w-5 h-5 mr-2 text-green-400" />
+                Billing & Usage Trend Analysis
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">6-month historical comparison</p>
+            </div>
+          </div>
+          <div className="h-80">
             <Bar
-              data={monthlyComparisonData}
+              data={billingTrendData}
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                  mode: 'index',
+                  intersect: false,
+                },
                 plugins: {
-                  legend: { display: false }
+                  legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                      color: 'rgba(156, 163, 175, 0.8)',
+                      padding: 20,
+                      usePointStyle: true,
+                      font: { size: 13 }
+                    }
+                  },
+                  tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: { size: 14, weight: 'bold' as const },
+                    bodyFont: { size: 13 },
+                    bodySpacing: 6
+                  }
                 },
                 scales: {
                   y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                      display: true,
+                      text: 'Usage (kWh)',
+                      color: 'rgb(59, 130, 246)',
+                      font: { size: 12, weight: 'bold' as const }
+                    },
                     grid: { color: 'rgba(156, 163, 175, 0.1)' },
                     ticks: {
-                      color: 'rgba(156, 163, 175, 0.6)',
+                      color: 'rgb(59, 130, 246)',
+                      font: { size: 11 }
+                    },
+                    beginAtZero: true
+                  },
+                  y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                      display: true,
+                      text: 'Bill Amount ($)',
+                      color: 'rgb(251, 191, 36)',
+                      font: { size: 12, weight: 'bold' as const }
+                    },
+                    grid: { drawOnChartArea: false },
+                    ticks: {
+                      color: 'rgb(251, 191, 36)',
+                      font: { size: 11 },
                       callback: function(value: any) {
                         return '$' + value;
                       }
-                    }
+                    },
+                    beginAtZero: true
                   },
                   x: {
                     grid: { display: false },
-                    ticks: { color: 'rgba(156, 163, 175, 0.6)' }
+                    ticks: { color: 'rgba(156, 163, 175, 0.8)', font: { size: 12 } }
                   }
                 }
               }}
             />
           </div>
           <div className="mt-6 grid grid-cols-3 gap-4">
-            <div className="p-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg border border-green-500/20 text-center">
+            <div className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/20 text-center">
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Lowest Bill</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">$195.50</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">$195.50</p>
               <p className="text-xs text-green-400">June 2024</p>
             </div>
-            <div className="p-3 bg-gradient-to-r from-red-500/10 to-rose-500/10 rounded-lg border border-red-500/20 text-center">
+            <div className="p-4 bg-gradient-to-r from-red-500/10 to-rose-500/10 rounded-xl border border-red-500/20 text-center">
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Highest Bill</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">$275.00</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">$275.00</p>
               <p className="text-xs text-red-400">July 2024</p>
             </div>
-            <div className="p-3 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-lg border border-blue-500/20 text-center">
+            <div className="p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl border border-blue-500/20 text-center">
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Average Bill</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">${(totalAmount / billHistory.length).toFixed(2)}</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">${(totalAmount / billHistory.length).toFixed(2)}</p>
               <p className="text-xs text-blue-400">Last 6 months</p>
             </div>
           </div>

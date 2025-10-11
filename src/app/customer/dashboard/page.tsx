@@ -9,19 +9,17 @@ import {
   CreditCard,
   TrendingUp,
   TrendingDown,
-  Download,
   ArrowUp,
   ArrowDown,
   Clock
 } from 'lucide-react';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -34,7 +32,6 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
   Title,
   Tooltip,
   Legend,
@@ -101,28 +98,6 @@ export default function CustomerDashboard() {
     ]
   };
 
-  // Time of Use Distribution (Horizontal Bar Chart)
-  const timeOfUseData = {
-    labels: ['Peak Hours (6PM-10PM)', 'Normal Hours (6AM-6PM)', 'Off-Peak (10PM-6AM)'],
-    datasets: [
-      {
-        label: 'Usage %',
-        data: [45, 35, 20],
-        backgroundColor: [
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(251, 146, 60, 0.8)',
-          'rgba(34, 197, 94, 0.8)',
-        ],
-        borderColor: [
-          'rgb(239, 68, 68)',
-          'rgb(251, 146, 60)',
-          'rgb(34, 197, 94)',
-        ],
-        borderWidth: 2,
-        borderRadius: 8,
-      }
-    ]
-  };
 
   return (
     <DashboardLayout userType="customer" userName={customerName}>
@@ -138,10 +113,7 @@ export default function CustomerDashboard() {
                 Account: ELX-2024-001234 • Meter: MTR-485729
               </p>
             </div>
-            <div className="mt-3 sm:mt-0 flex items-center space-x-2">
-              <button className="px-3 py-2 bg-gray-100 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-white/20 rounded-lg text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-white/20 transition-all">
-                <Download className="w-4 h-4" />
-              </button>
+            <div className="mt-3 sm:mt-0">
               <button className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all text-sm">
                 Pay Now
               </button>
@@ -179,15 +151,15 @@ export default function CustomerDashboard() {
   ))}
 </div>
 
-        {/* Main Charts - Optimized */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Usage Trend Chart - Full Width on Mobile */}
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Usage Trend Chart - Takes 2/3 width */}
           <div className="lg:col-span-2 bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
               <TrendingUp className="w-5 h-5 mr-2 text-orange-500" />
-              Consumption Trend (6 Months)
+              Monthly Consumption Trend
             </h3>
-            <div className="h-72">
+            <div className="h-80">
               <Line
                 data={usageTrendData}
                 options={{
@@ -240,71 +212,8 @@ export default function CustomerDashboard() {
               />
             </div>
           </div>
-        </div>
 
-        {/* Usage Insights */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Time of Use Distribution */}
-          <div className="lg:col-span-2 bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-              <Clock className="w-5 h-5 mr-2 text-blue-500" />
-              Hourly Usage Distribution
-            </h3>
-            <div className="h-48">
-              <Bar
-                data={timeOfUseData}
-                options={{
-                  indexAxis: 'y',
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: false
-                    },
-                    tooltip: {
-                      backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                      titleColor: '#fff',
-                      bodyColor: '#fff',
-                      padding: 12,
-                      borderColor: 'rgba(168, 85, 247, 0.5)',
-                      borderWidth: 1,
-                      callbacks: {
-                        label: function(context: any) {
-                          return `Usage: ${context.parsed.x}%`;
-                        }
-                      }
-                    }
-                  },
-                  scales: {
-                    x: {
-                      grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                      ticks: {
-                        color: 'rgba(156, 163, 175, 0.6)',
-                        callback: function(value: any) {
-                          return value + '%';
-                        }
-                      },
-                      max: 50
-                    },
-                    y: {
-                      grid: { display: false },
-                      ticks: {
-                        color: 'rgba(156, 163, 175, 0.8)',
-                        font: { size: 12 }
-                      }
-                    }
-                  }
-                }}
-              />
-            </div>
-            <div className="mt-6 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg border border-green-500/20">
-              <p className="text-sm text-green-700 dark:text-green-400">
-                💡 Tip: Shift 10% of your usage to off-peak hours to save $15-20 monthly!
-              </p>
-            </div>
-          </div>
-
-          {/* Recent Payments */}
+          {/* Recent Payments - Takes 1/3 width */}
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
               <CreditCard className="w-5 h-5 mr-2 text-blue-500" />

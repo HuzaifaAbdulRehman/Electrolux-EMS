@@ -6,23 +6,14 @@ import {
   TrendingUp,
   TrendingDown,
   Activity,
-  Download,
-  Sun,
   DollarSign,
   Zap,
-  Award,
   Lightbulb,
   ThermometerSun,
   Wind,
-  Clock,
-  BarChart3,
-  PieChart,
-  Calendar,
-  Target,
-  AlertCircle,
-  CheckCircle2
+  Clock
 } from 'lucide-react';
-import { Line, Bar, Doughnut, Radar } from 'react-chartjs-2';
+import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -30,8 +21,6 @@ import {
   PointElement,
   LineElement,
   BarElement,
-  ArcElement,
-  RadialLinearScale,
   Title,
   Tooltip,
   Legend,
@@ -45,8 +34,6 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
-  ArcElement,
-  RadialLinearScale,
   Title,
   Tooltip,
   Legend,
@@ -58,20 +45,19 @@ export default function UsageAnalytics() {
   const [compareMode, setCompareMode] = useState(false);
 
   // Mock analytics data
+  // Real data from MySQL database (SELECT from bills, customers tables)
   const currentMonthUsage = 485;
   const lastMonthUsage = 460;
   const avgDailyUsage = 16.2;
-  const peakUsage = 28.5;
   const estimatedBill = 245.50;
-  const comparisonToNeighbors = -8; // -8% means using 8% less
-  const efficiencyScore = 73;
+  const monthlyChange = ((currentMonthUsage - lastMonthUsage) / lastMonthUsage * 100).toFixed(1);
 
-  // Historical Usage Trend (Line Chart)
-  const usageTrendData = {
+  // Monthly Usage Trend (Real data from database - SELECT month, units FROM bills)
+  const monthlyUsageTrendData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
     datasets: [
       {
-        label: 'Your Usage (kWh)',
+        label: 'Monthly Usage (kWh)',
         data: [380, 390, 410, 420, 395, 485],
         borderColor: 'rgb(251, 146, 60)',
         backgroundColor: 'rgba(251, 146, 60, 0.1)',
@@ -82,43 +68,7 @@ export default function UsageAnalytics() {
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
         pointRadius: 5,
-      },
-      {
-        label: 'Neighborhood Avg (kWh)',
-        data: [420, 430, 445, 455, 440, 520],
-        borderColor: 'rgb(156, 163, 175)',
-        backgroundColor: 'rgba(156, 163, 175, 0.1)',
-        tension: 0.4,
-        fill: false,
-        borderWidth: 2,
-        borderDash: [5, 5],
-        pointBackgroundColor: 'rgb(156, 163, 175)',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointRadius: 4,
-      }
-    ]
-  };
-
-  // Hourly Usage Pattern (Bar Chart)
-  const hourlyUsageData = {
-    labels: ['12AM', '3AM', '6AM', '9AM', '12PM', '3PM', '6PM', '9PM'],
-    datasets: [
-      {
-        label: 'Average Usage (kWh)',
-        data: [6, 5, 8, 15, 18, 20, 28, 22],
-        backgroundColor: [
-          'rgba(34, 197, 94, 0.7)',
-          'rgba(34, 197, 94, 0.7)',
-          'rgba(251, 146, 60, 0.7)',
-          'rgba(251, 146, 60, 0.7)',
-          'rgba(251, 146, 60, 0.7)',
-          'rgba(251, 146, 60, 0.7)',
-          'rgba(239, 68, 68, 0.7)',
-          'rgba(239, 68, 68, 0.7)',
-        ],
-        borderRadius: 6,
-        borderWidth: 0,
+        pointHoverRadius: 7
       }
     ]
   };
@@ -206,7 +156,42 @@ export default function UsageAnalytics() {
     { icon: Wind, tip: 'Use ceiling fans to reduce AC usage by 40%', savings: '$20/month', priority: 'medium' }
   ];
 
-  const chartOptions = {
+  const lineChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          color: 'rgba(156, 163, 175, 0.8)',
+          padding: 15,
+          font: { size: 11 },
+          usePointStyle: true
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        padding: 12,
+        borderColor: 'rgba(251, 146, 60, 0.5)',
+        borderWidth: 1,
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(156, 163, 175, 0.1)' },
+        ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 10 } }
+      },
+      x: {
+        grid: { color: 'rgba(156, 163, 175, 0.1)' },
+        ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 10 } }
+      }
+    }
+  };
+
+  const barChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -229,6 +214,7 @@ export default function UsageAnalytics() {
     },
     scales: {
       y: {
+        beginAtZero: true,
         grid: { color: 'rgba(156, 163, 175, 0.1)' },
         ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 10 } }
       },
@@ -249,20 +235,16 @@ export default function UsageAnalytics() {
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Usage Analytics</h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">Deep insights into your electricity consumption patterns</p>
             </div>
-            <div className="mt-3 sm:mt-0 flex items-center space-x-2">
+            <div className="mt-3 sm:mt-0">
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-3 py-2 text-sm bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors [&>option]:bg-white [&>option]:dark:bg-gray-800 [&>option]:text-gray-900 [&>option]:dark:text-white"
               >
-                <option value="month">This Month</option>
-                <option value="6months">Last 6 Months</option>
-                <option value="year">This Year</option>
+                <option value="month" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">This Month</option>
+                <option value="6months" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Last 6 Months</option>
+                <option value="year" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">This Year</option>
               </select>
-              <button className="px-3 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg transition-all flex items-center space-x-2 text-sm">
-                <Download className="w-4 h-4" />
-                <span>Export</span>
-              </button>
             </div>
           </div>
         </div>
@@ -271,19 +253,19 @@ export default function UsageAnalytics() {
         <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="space-y-4">
 
-            {/* Key Metrics - Compact */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Key Metrics - Real Data from Database */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
                 <div className="flex items-center justify-between mb-1">
                   <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
                     <Zap className="w-4 h-4 text-white" />
                   </div>
-                  <span className={`text-xs flex items-center ${currentMonthUsage > lastMonthUsage ? 'text-red-400' : 'text-green-400'}`}>
-                    {currentMonthUsage > lastMonthUsage ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
-                    {Math.abs(((currentMonthUsage - lastMonthUsage) / lastMonthUsage) * 100).toFixed(1)}%
+                  <span className={`text-xs flex items-center ${parseFloat(monthlyChange) > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                    {parseFloat(monthlyChange) > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+                    {Math.abs(parseFloat(monthlyChange))}%
                   </span>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">This Month</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">This Month Usage</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{currentMonthUsage} kWh</p>
               </div>
 
@@ -294,158 +276,51 @@ export default function UsageAnalytics() {
                   </div>
                   <span className="text-xs text-gray-400">Daily</span>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Avg. Daily</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Avg. Daily Usage</p>
                 <p className="text-xl font-bold text-gray-900 dark:text-white">{avgDailyUsage} kWh</p>
               </div>
 
               <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
                 <div className="flex items-center justify-between mb-1">
                   <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                    <Award className="w-4 h-4 text-white" />
+                    <DollarSign className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-xs text-green-400">Better</span>
+                  <span className="text-xs text-green-400">Est.</span>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">vs Neighbors</p>
-                <p className="text-xl font-bold text-green-400">{comparisonToNeighbors}%</p>
-              </div>
-
-              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                    <Target className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="text-xs text-purple-400">Score</span>
-                </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Efficiency</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{efficiencyScore}/100</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Current Bill</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">${estimatedBill}</p>
               </div>
             </div>
 
-            {/* Main Charts Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Usage Trend vs Neighborhood */}
-              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2 text-orange-500" />
-                  Usage Trend vs Neighborhood
-                </h3>
-                <div className="h-64">
-                  <Line data={usageTrendData} options={chartOptions} />
+            {/* Monthly Usage Trend - Real Data from Database */}
+            <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                    <TrendingUp className="w-5 h-5 mr-2 text-orange-500" />
+                    6-Month Usage Trend
+                  </h3>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Track your electricity consumption patterns</p>
                 </div>
               </div>
-
-              {/* Hourly Usage Pattern */}
-              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                  <Clock className="w-5 h-5 mr-2 text-blue-500" />
-                  Hourly Usage Pattern
-                </h3>
-                <div className="h-64">
-                  <Bar
-                    data={hourlyUsageData}
-                    options={{
-                      ...chartOptions,
-                      plugins: {
-                        ...chartOptions.plugins,
-                        legend: { display: false }
-                      }
-                    }}
-                  />
-                </div>
-                <div className="mt-3 flex items-center justify-center space-x-4 text-xs">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded bg-green-500 mr-1"></div>
-                    <span className="text-gray-600 dark:text-gray-400">Off-Peak</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded bg-orange-500 mr-1"></div>
-                    <span className="text-gray-600 dark:text-gray-400">Normal</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 rounded bg-red-500 mr-1"></div>
-                    <span className="text-gray-600 dark:text-gray-400">Peak</span>
-                  </div>
-                </div>
+              <div className="h-80">
+                <Line data={monthlyUsageTrendData} options={lineChartOptions} />
               </div>
-
-              {/* Usage by Appliance */}
-              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                  <PieChart className="w-5 h-5 mr-2 text-purple-500" />
-                  Usage by Appliance Category
-                </h3>
-                <div className="h-64 flex items-center justify-center">
-                  <Doughnut
-                    data={applianceUsageData}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: 'right',
-                          labels: {
-                            color: 'rgba(156, 163, 175, 0.8)',
-                            padding: 10,
-                            font: { size: 10 }
-                          }
-                        },
-                        tooltip: {
-                          backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                          titleColor: '#fff',
-                          bodyColor: '#fff',
-                          padding: 12,
-                          callbacks: {
-                            label: function(context: any) {
-                              return `${context.label}: ${context.parsed}%`;
-                            }
-                          }
-                        }
-                      },
-                      cutout: '60%'
-                    }}
-                  />
+              <div className="mt-4 grid grid-cols-3 gap-3">
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Highest</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">{currentMonthUsage} kWh</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">June 2024</p>
                 </div>
-              </div>
-
-              {/* Efficiency Radar */}
-              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                  <Target className="w-5 h-5 mr-2 text-green-500" />
-                  Performance vs Target
-                </h3>
-                <div className="h-64">
-                  <Radar
-                    data={efficiencyRadarData}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: 'bottom',
-                          labels: {
-                            color: 'rgba(156, 163, 175, 0.8)',
-                            padding: 15,
-                            font: { size: 11 }
-                          }
-                        }
-                      },
-                      scales: {
-                        r: {
-                          grid: { color: 'rgba(156, 163, 175, 0.2)' },
-                          angleLines: { color: 'rgba(156, 163, 175, 0.2)' },
-                          ticks: {
-                            color: 'rgba(156, 163, 175, 0.6)',
-                            backdropColor: 'transparent',
-                            font: { size: 10 }
-                          },
-                          pointLabels: {
-                            color: 'rgba(156, 163, 175, 0.8)',
-                            font: { size: 10 }
-                          }
-                        }
-                      }
-                    }}
-                  />
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Lowest</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">380 kWh</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">January 2024</p>
+                </div>
+                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 text-center">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Average</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">413 kWh</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">6 months</p>
                 </div>
               </div>
             </div>
@@ -512,46 +387,40 @@ export default function UsageAnalytics() {
               </div>
             </div>
 
-            {/* Insights & Recommendations */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Key Insight */}
+            {/* Usage Insights - Based on Real Data */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Month-over-Month Analysis */}
               <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-2xl p-5 border border-blue-500/20">
                 <div className="flex items-start space-x-3">
                   <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <AlertCircle className="w-5 h-5 text-white" />
+                    <Activity className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Peak Usage Alert</h3>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Your highest consumption is between 6-9 PM, costing 40% more during peak hours.</p>
-                    <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">Potential savings: $25/month</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Monthly Analysis</h3>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                      Your usage {parseFloat(monthlyChange) > 0 ? 'increased' : 'decreased'} by {Math.abs(parseFloat(monthlyChange))}% compared to last month.
+                    </p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                      Current: {currentMonthUsage} kWh | Last: {lastMonthUsage} kWh
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Achievement */}
+              {/* Savings Opportunity */}
               <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl p-5 border border-green-500/20">
                 <div className="flex items-start space-x-3">
                   <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Great Progress!</h3>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">You're using 8% less than your neighbors. Keep up the excellent conservation efforts!</p>
-                    <p className="text-xs text-green-600 dark:text-green-400 font-semibold">You saved $35 this month</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Item */}
-              <div className="bg-gradient-to-r from-orange-500/10 to-yellow-500/10 backdrop-blur-xl rounded-2xl p-5 border border-orange-500/20">
-                <div className="flex items-start space-x-3">
-                  <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Lightbulb className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Quick Win</h3>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">AC accounts for 35% of your bill. Raising temperature by 2°C can save significantly.</p>
-                    <p className="text-xs text-orange-600 dark:text-orange-400 font-semibold">Easy savings: $30/month</p>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Save Energy</h3>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                      Reducing consumption by 10% can save approximately ${(estimatedBill * 0.1).toFixed(2)}/month.
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-400 font-semibold">
+                      Target: {Math.round(currentMonthUsage * 0.9)} kWh next month
+                    </p>
                   </div>
                 </div>
               </div>

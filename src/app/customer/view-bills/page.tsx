@@ -21,28 +21,24 @@ import {
   Search,
   Filter
 } from 'lucide-react';
-import { Line } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
-  Legend,
-  Filler
+  Legend
 } from 'chart.js';
 
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
-  Legend,
-  Filler
+  Legend
 );
 
 interface Bill {
@@ -185,29 +181,19 @@ export default function ViewBills() {
       {
         label: 'Units Consumed (kWh)',
         data: bills.map(b => b.units).reverse(),
+        backgroundColor: 'rgba(59, 130, 246, 0.8)',
         borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        fill: true,
-        tension: 0.4,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        pointBackgroundColor: 'rgb(59, 130, 246)',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
+        borderWidth: 2,
+        borderRadius: 8,
         yAxisID: 'y'
       },
       {
         label: 'Bill Amount (₹)',
         data: bills.map(b => b.amount).reverse(),
+        backgroundColor: 'rgba(251, 191, 36, 0.8)',
         borderColor: 'rgb(251, 191, 36)',
-        backgroundColor: 'rgba(251, 191, 36, 0.1)',
-        fill: true,
-        tension: 0.4,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        pointBackgroundColor: 'rgb(251, 191, 36)',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
+        borderWidth: 2,
+        borderRadius: 8,
         yAxisID: 'y1'
       }
     ]
@@ -225,7 +211,7 @@ export default function ViewBills() {
         position: 'top' as const,
         labels: {
           color: '#9CA3AF',
-          font: { size: 13, weight: '500' },
+          font: { size: 13 },
           usePointStyle: true,
           padding: 20
         }
@@ -233,7 +219,7 @@ export default function ViewBills() {
       tooltip: {
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
         padding: 12,
-        titleFont: { size: 14, weight: 'bold' },
+        titleFont: { size: 14, weight: 'bold' as const },
         bodyFont: { size: 13 },
         bodySpacing: 6,
         usePointStyle: true
@@ -254,11 +240,12 @@ export default function ViewBills() {
         type: 'linear' as const,
         display: true,
         position: 'left' as const,
+        beginAtZero: true,
         title: {
           display: true,
           text: 'Units (kWh)',
           color: 'rgb(59, 130, 246)',
-          font: { size: 12, weight: 'bold' }
+          font: { size: 12, weight: 'bold' as const }
         },
         ticks: {
           color: 'rgb(59, 130, 246)',
@@ -272,11 +259,12 @@ export default function ViewBills() {
         type: 'linear' as const,
         display: true,
         position: 'right' as const,
+        beginAtZero: true,
         title: {
           display: true,
           text: 'Amount (₹)',
           color: 'rgb(251, 191, 36)',
-          font: { size: 12, weight: 'bold' }
+          font: { size: 12, weight: 'bold' as const }
         },
         ticks: {
           color: 'rgb(251, 191, 36)',
@@ -456,7 +444,7 @@ export default function ViewBills() {
             </div>
           </div>
           <div className="h-[350px]">
-            <Line data={combinedTrendData} options={chartOptions} />
+            <Bar data={combinedTrendData} options={chartOptions} />
           </div>
           <div className="mt-4 grid grid-cols-3 gap-4">
             <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-xl p-4 border border-blue-500/20">

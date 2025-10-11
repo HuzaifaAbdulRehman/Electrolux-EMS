@@ -64,8 +64,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
               error
                 ? 'border-error focus:ring-error'
                 : 'border-secondary-300 hover:border-secondary-400',
-              leftIcon && 'pl-10',
-              rightIcon && 'pr-10',
+              leftIcon ? 'pl-10' : '',
+              rightIcon ? 'pr-10' : '',
               className
             )}
             {...props}

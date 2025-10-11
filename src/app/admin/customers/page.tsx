@@ -27,32 +27,9 @@ import {
   Zap,
   PieChart
 } from 'lucide-react';
-import { Line, Doughnut } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js';
-
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+// Chart imports removed for consistency with Employees page
+// Admin Customers is a data management page, not analytics
+// For charts, users should go to Admin Analytics or Admin Dashboard
 
 export default function AdminCustomers() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -190,67 +167,6 @@ export default function AdminCustomers() {
   const totalRevenue = customers.reduce((sum, c) => sum + c.lastBillAmount, 0);
   const totalOutstanding = customers.reduce((sum, c) => sum + c.outstandingBalance, 0);
 
-  // Customer Growth Trend Chart Data
-  const customerGrowthData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
-    datasets: [
-      {
-        label: 'Total Customers',
-        data: [4850, 4920, 5050, 5180, 5280, 5380, 5450, 5520, 5600, 5678],
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.3)',
-        tension: 0.4,
-        fill: true,
-        borderWidth: 3,
-        pointRadius: 4,
-        pointHoverRadius: 6
-      },
-      {
-        label: 'Active Customers',
-        data: [4650, 4710, 4840, 4960, 5050, 5140, 5200, 5260, 5330, 5400],
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.3)',
-        tension: 0.4,
-        fill: true,
-        borderWidth: 3,
-        pointRadius: 4,
-        pointHoverRadius: 6
-      },
-      {
-        label: 'New Signups',
-        data: [85, 95, 145, 160, 125, 135, 95, 100, 110, 105],
-        borderColor: 'rgb(250, 204, 21)',
-        backgroundColor: 'rgba(250, 204, 21, 0.3)',
-        tension: 0.4,
-        fill: true,
-        borderWidth: 3,
-        pointRadius: 4,
-        pointHoverRadius: 6
-      }
-    ]
-  };
-
-  // Connection Type Distribution Chart Data
-  const connectionTypeData = {
-    labels: ['Residential', 'Commercial', 'Industrial'],
-    datasets: [
-      {
-        data: [65, 25, 10],
-        backgroundColor: [
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(250, 204, 21, 0.8)',
-          'rgba(168, 85, 247, 0.8)'
-        ],
-        borderColor: [
-          'rgb(59, 130, 246)',
-          'rgb(250, 204, 21)',
-          'rgb(168, 85, 247)'
-        ],
-        borderWidth: 2
-      }
-    ]
-  };
-
   return (
     <DashboardLayout userType="admin" userName="Admin User">
       <div className="space-y-6">
@@ -319,103 +235,6 @@ export default function AdminCustomers() {
             </div>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">${totalOutstanding.toFixed(2)}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400">Total Outstanding</p>
-          </div>
-        </div>
-
-        {/* Analytics Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Customer Growth Trend Chart */}
-          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Customer Growth Trend</h2>
-              <Activity className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </div>
-            <div className="h-64">
-              <Line
-                data={customerGrowthData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: 'bottom',
-                      labels: { color: 'rgba(156, 163, 175, 0.8)' }
-                    }
-                  },
-                  scales: {
-                    x: {
-                      grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                      ticks: { color: 'rgba(156, 163, 175, 0.6)' }
-                    },
-                    y: {
-                      grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                      ticks: {
-                        color: 'rgba(156, 163, 175, 0.6)',
-                        callback: function(value: any) {
-                          return value.toLocaleString();
-                        }
-                      }
-                    }
-                  }
-                }}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
-              <div className="text-center">
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Growth Rate</p>
-                <p className="text-lg font-bold text-green-600 dark:text-green-400">+17.1%</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Avg Monthly</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white">+112</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Churn Rate</p>
-                <p className="text-lg font-bold text-red-600 dark:text-red-400">1.2%</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Connection Type Distribution Chart */}
-          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Connection Type Distribution</h2>
-              <PieChart className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </div>
-            <div className="h-64 flex items-center justify-center">
-              <Doughnut
-                data={connectionTypeData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'right',
-                      labels: { color: 'rgba(156, 163, 175, 0.8)', padding: 20 }
-                    }
-                  },
-                  cutout: '65%'
-                }}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t border-gray-200 dark:border-white/10">
-              <div className="text-center">
-                <div className="w-3 h-3 bg-blue-500 rounded-full mx-auto mb-1"></div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Residential</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white">3,691</p>
-              </div>
-              <div className="text-center">
-                <div className="w-3 h-3 bg-yellow-400 rounded-full mx-auto mb-1"></div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Commercial</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white">1,420</p>
-              </div>
-              <div className="text-center">
-                <div className="w-3 h-3 bg-purple-500 rounded-full mx-auto mb-1"></div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Industrial</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white">567</p>
-              </div>
-            </div>
           </div>
         </div>
 

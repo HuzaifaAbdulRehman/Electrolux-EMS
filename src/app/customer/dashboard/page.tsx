@@ -14,7 +14,7 @@ import {
   ArrowDown,
   Clock
 } from 'lucide-react';
-import { Line, Doughnut, Bar } from 'react-chartjs-2';
+import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -22,7 +22,6 @@ import {
   PointElement,
   LineElement,
   BarElement,
-  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -36,7 +35,6 @@ ChartJS.register(
   PointElement,
   LineElement,
   BarElement,
-  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -44,7 +42,7 @@ ChartJS.register(
 );
 
 export default function CustomerDashboard() {
-  const customerName = 'John Doe';
+  const customerName = 'Huzaifa';
 
   // Summary Cards Data
   const summaryCards = [
@@ -103,26 +101,6 @@ export default function CustomerDashboard() {
     ]
   };
 
-  // Bill Status Distribution (Doughnut Chart)
-  const billStatusData = {
-    labels: ['Energy Charge', 'Fixed Charges'],
-    datasets: [
-      {
-        data: [80, 20],
-        backgroundColor: [
-          'rgba(251, 146, 60, 0.8)',
-          'rgba(59, 130, 246, 0.8)',
-        ],
-        borderColor: [
-          'rgb(251, 146, 60)',
-          'rgb(59, 130, 246)',
-        ],
-        borderWidth: 2,
-        hoverOffset: 8
-      }
-    ]
-  };
-
   // Time of Use Distribution (Horizontal Bar Chart)
   const timeOfUseData = {
     labels: ['Peak Hours (6PM-10PM)', 'Normal Hours (6AM-6PM)', 'Off-Peak (10PM-6AM)'],
@@ -142,21 +120,6 @@ export default function CustomerDashboard() {
         ],
         borderWidth: 2,
         borderRadius: 8,
-      }
-    ]
-  };
-
-  // Daily Usage Pattern (Vertical Bar Chart)
-  const dailyUsageData = {
-    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    datasets: [
-      {
-        label: 'Daily Consumption (kWh)',
-        data: [14.5, 16.2, 15.8, 17.3, 16.9, 18.5, 12.8],
-        backgroundColor: 'rgba(168, 85, 247, 0.7)',
-        borderColor: 'rgb(168, 85, 247)',
-        borderWidth: 2,
-        borderRadius: 6,
       }
     ]
   };
@@ -216,15 +179,15 @@ export default function CustomerDashboard() {
   ))}
 </div>
 
-        {/* Charts Section - Extended Height */}
+        {/* Main Charts - Optimized */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Usage Trend Chart */}
-          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
+          {/* Usage Trend Chart - Full Width on Mobile */}
+          <div className="lg:col-span-2 bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
               <TrendingUp className="w-5 h-5 mr-2 text-orange-500" />
               Consumption Trend (6 Months)
             </h3>
-            <div className="h-80">
+            <div className="h-72">
               <Line
                 data={usageTrendData}
                 options={{
@@ -277,122 +240,9 @@ export default function CustomerDashboard() {
               />
             </div>
           </div>
-
-          {/* Cost Breakdown Chart */}
-          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-              <DollarSign className="w-5 h-5 mr-2 text-green-500" />
-              Bill Status Distribution
-            </h3>
-            <div className="h-80 flex items-center justify-center">
-              <Doughnut
-                data={billStatusData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'bottom',
-                      labels: {
-                        color: 'rgba(156, 163, 175, 0.8)',
-                        padding: 15,
-                        font: { size: 12 }
-                      }
-                    },
-                    tooltip: {
-                      backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                      titleColor: '#fff',
-                      bodyColor: '#fff',
-                      padding: 12,
-                      borderColor: 'rgba(251, 146, 60, 0.5)',
-                      borderWidth: 1,
-                      callbacks: {
-                        label: function(context: any) {
-                          return `${context.label}: ${context.parsed}%`;
-                        }
-                      }
-                    }
-                  },
-                  cutout: '65%'
-                }}
-              />
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded-full bg-orange-500" />
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Energy Charge</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">$195.50 (80%)</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500" />
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Fixed Charges</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">$50.00 (20%)</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
-        {/* Daily Usage Pattern Chart - Full Width */}
-        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-            <Activity className="w-5 h-5 mr-2 text-purple-500" />
-            Weekly Usage Pattern
-          </h3>
-          <div className="h-64">
-            <Bar
-              data={dailyUsageData}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: {
-                    display: true,
-                    position: 'bottom',
-                    labels: {
-                      color: 'rgba(156, 163, 175, 0.8)',
-                      padding: 15,
-                      font: { size: 12 }
-                    }
-                  },
-                  tooltip: {
-                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    padding: 12,
-                    borderColor: 'rgba(168, 85, 247, 0.5)',
-                    borderWidth: 1,
-                    callbacks: {
-                      label: function(context: any) {
-                        return `${context.dataset.label}: ${context.parsed.y} kWh`;
-                      }
-                    }
-                  }
-                },
-                scales: {
-                  y: {
-                    grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                    ticks: {
-                      color: 'rgba(156, 163, 175, 0.6)',
-                      callback: function(value: any) {
-                        return value + ' kWh';
-                      }
-                    }
-                  },
-                  x: {
-                    grid: { display: false },
-                    ticks: { color: 'rgba(156, 163, 175, 0.6)' }
-                  }
-                }
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Quick Stats and Recent Activity */}
+        {/* Usage Insights */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Time of Use Distribution */}
           <div className="lg:col-span-2 bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">

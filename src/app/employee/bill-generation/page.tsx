@@ -50,7 +50,7 @@ export default function EmployeeBillGeneration() {
       id: 1,
       requestId: 'REQ-2024-0001',
       customerId: 1,
-      customerName: 'John Doe',
+      customerName: 'Huzaifa',
       accountNumber: 'ELX-2024-001234',
       billingMonth: 'October 2024',
       requestDate: '2024-10-10',

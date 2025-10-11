@@ -332,7 +332,7 @@ export default function ViewBills() {
   };
 
   return (
-    <DashboardLayout userType="customer" userName="John Doe">
+    <DashboardLayout userType="customer" userName="Huzaifa">
       <div className="max-w-[1920px] mx-auto space-y-6 pb-8">
         {/* Header with Request Button */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">

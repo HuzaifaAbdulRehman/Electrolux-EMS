@@ -178,7 +178,7 @@ export default function BillingOverview() {
   const recentTransactions = [
     {
       id: 1,
-      customer: 'John Doe',
+      customer: '',
       accountNumber: 'ELX-2024-001234',
       amount: 245.50,
       method: 'Online Banking',

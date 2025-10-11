@@ -28,6 +28,7 @@ export default function MeterReadingForm() {
     notes: '',
     photoUploaded: false
   });
+  const [autoGenerateBill, setAutoGenerateBill] = useState(true); // NEW: Auto-generate bill option
   const [errors, setErrors] = useState<any>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -39,7 +40,7 @@ export default function MeterReadingForm() {
     {
       id: 1,
       accountNumber: 'ELX-2024-001234',
-      name: 'John Doe',
+      name: 'Huzaifa',
       address: '123 Main Street, Apt 4B',
       meterNumber: 'MTR-485729',
       lastReading: 12485,
@@ -98,7 +99,11 @@ export default function MeterReadingForm() {
       setTimeout(() => {
         setIsSubmitting(false);
         setShowSuccess(true);
-        // Don't auto-reset - let user choose to generate bill or continue
+
+        // Auto-generate bill if option is enabled
+        if (autoGenerateBill) {
+          handleGenerateBill();
+        }
       }, 1500);
     }
   };
@@ -178,13 +183,13 @@ export default function MeterReadingForm() {
             </div>
 
             {/* Success Message */}
-            {showSuccess && !billGenerated && (
+            {showSuccess && !billGenerated && !autoGenerateBill && (
               <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-2xl p-4 border border-green-500/50">
                 <div className="flex items-center space-x-3 mb-3">
                   <CheckCircle className="w-6 h-6 text-green-400" />
                   <div>
                     <h3 className="text-white font-semibold text-base">Reading Submitted Successfully!</h3>
-                    <p className="text-gray-700 dark:text-gray-300 text-xs">Meter reading has been recorded and saved.</p>
+                    <p className="text-gray-700 dark:text-gray-300 text-xs">Meter reading has been recorded and saved. You can now generate the bill manually.</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -215,6 +220,19 @@ export default function MeterReadingForm() {
                   >
                     Record Another Reading
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Auto-Generating Bill Message */}
+            {showSuccess && !billGenerated && autoGenerateBill && generatingBill && (
+              <div className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 backdrop-blur-xl rounded-2xl p-4 border border-blue-500/50">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                  <div>
+                    <h3 className="text-white font-semibold text-base">Auto-Generating Bill...</h3>
+                    <p className="text-gray-700 dark:text-gray-300 text-xs">Reading saved successfully. Creating customer bill automatically...</p>
+                  </div>
                 </div>
               </div>
             )}
@@ -449,6 +467,27 @@ export default function MeterReadingForm() {
                     rows={2}
                     placeholder="Add any additional notes or observations..."
                   />
+                </div>
+
+                {/* Auto-Generate Bill Option */}
+                <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                  <label className="flex items-start space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autoGenerateBill}
+                      onChange={(e) => setAutoGenerateBill(e.target.checked)}
+                      className="w-5 h-5 text-blue-500 rounded focus:ring-blue-400 focus:ring-2 mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-4 h-4 text-blue-400" />
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">Auto-Generate Bill</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                        Automatically generate customer bill immediately after saving the meter reading. If disabled, you can manually generate the bill later.
+                      </p>
+                    </div>
+                  </label>
                 </div>
 
                 {/* Submit Button */}

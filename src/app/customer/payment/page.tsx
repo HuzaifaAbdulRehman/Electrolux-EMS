@@ -18,7 +18,8 @@ import {
   QrCode,
   ArrowRight,
   Eye,
-  EyeOff
+  EyeOff,
+  Zap
 } from 'lucide-react';
 
 export default function OnlinePayment() {
@@ -54,7 +55,7 @@ export default function OnlinePayment() {
       id: 1,
       type: 'visa',
       last4: '4242',
-      name: 'John Doe',
+      name: 'Huzaifa',
       expiry: '12/25',
       isDefault: true
     },
@@ -62,7 +63,7 @@ export default function OnlinePayment() {
       id: 2,
       type: 'mastercard',
       last4: '8888',
-      name: 'John Doe',
+      name: 'Huzaifa',
       expiry: '06/24',
       isDefault: false
     }
@@ -166,7 +167,7 @@ export default function OnlinePayment() {
   };
 
   return (
-    <DashboardLayout userType="customer" userName="John Doe">
+    <DashboardLayout userType="customer" userName="Huzaifa">
       <div className="h-full flex flex-col overflow-hidden">
         {/* Compact Header */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10 mb-4 flex-shrink-0">
@@ -419,7 +420,7 @@ export default function OnlinePayment() {
                             value={cardDetails.cardName}
                             onChange={(e) => setCardDetails({ ...cardDetails, cardName: e.target.value })}
                             className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-                            placeholder="John Doe"
+                            placeholder="Huzaifa"
                           />
                         </div>
 

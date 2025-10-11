@@ -131,7 +131,7 @@ export default function ComplaintsFeedback() {
   };
 
   return (
-    <DashboardLayout userType="customer" userName="John Doe">
+    <DashboardLayout userType="customer" userName="Huzaifa">
       <div className="space-y-6">
         {/* Header */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">

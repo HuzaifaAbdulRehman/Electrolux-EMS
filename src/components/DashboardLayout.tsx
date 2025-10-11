@@ -30,7 +30,8 @@ import {
   Info,
   Clock,
   Calculator,
-  ZapOff
+  ZapOff,
+  Database
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -114,6 +115,7 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
           { icon: Home, label: 'Dashboard', href: '/customer/dashboard' },
           { icon: FileText, label: 'View Bills', href: '/customer/view-bills' },
           { icon: Calculator, label: 'Bill Calculator', href: '/customer/bill-calculator' },
+          { icon: Gauge, label: 'Request Reading', href: '/customer/request-reading' },
           { icon: BarChart3, label: 'Analytics', href: '/customer/analytics' },
           { icon: DollarSign, label: 'Payment', href: '/customer/payment' },
           { icon: ZapOff, label: 'Outage Schedule', href: '/customer/outage-schedule' },
@@ -133,6 +135,7 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
       case 'admin':
         return [
           { icon: Home, label: 'Dashboard', href: '/admin/dashboard' },
+          { icon: Database, label: 'Import Data', href: '/admin/data-import' },
           { icon: Users, label: 'Customers', href: '/admin/customers' },
           { icon: Building, label: 'Employees', href: '/admin/employees' },
           { icon: FileText, label: 'Generate Bills', href: '/admin/bills/generate' },
@@ -254,7 +257,7 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
           type: 'success',
           icon: CheckCircle,
           title: 'Employee Added',
-          message: 'New employee "John Doe" has been successfully onboarded',
+          message: 'New employee "Huzaifa" has been successfully onboarded',
           time: '1 day ago',
           read: true
         },

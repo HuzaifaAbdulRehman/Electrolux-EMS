@@ -125,7 +125,7 @@ export default function NewConnection() {
   };
 
   return (
-    <DashboardLayout userType="customer" userName="John Doe">
+    <DashboardLayout userType="customer" userName="Huzaifa">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-2xl p-6 border border-blue-500/20">

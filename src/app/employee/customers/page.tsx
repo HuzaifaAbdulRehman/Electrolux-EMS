@@ -30,7 +30,7 @@ export default function EmployeeCustomers() {
     {
       id: 1,
       accountNumber: 'ELX-2024-001234',
-      name: 'John Doe',
+      name: 'Huzaifa',
       email: 'john.doe@email.com',
       phone: '1234567890',
       address: '123 Main Street, Apt 4B',

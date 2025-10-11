@@ -65,7 +65,7 @@ export default function AdminCustomers() {
     {
       id: 1,
       accountNumber: 'ELX-2024-001234',
-      name: 'John Doe',
+      name: 'Huzaifa',
       email: 'john.doe@email.com',
       phone: '+1 (555) 123-4567',
       address: '123 Main St, New York, NY 10001',

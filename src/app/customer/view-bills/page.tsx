@@ -541,25 +541,6 @@ export default function ViewBills() {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => handleDownloadPDF(bill)}
-                          disabled={bill.status !== 'paid'}
-                          className={`p-2 rounded-lg transition-all ${
-                            bill.status === 'paid'
-                              ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/10'
-                              : 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
-                          }`}
-                          title={bill.status === 'paid' ? 'Download PDF' : 'Only available for paid bills'}
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handlePrint(bill)}
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                          title="Print"
-                        >
-                          <Printer className="w-4 h-4" />
-                        </button>
                       </div>
                     </td>
                   </tr>

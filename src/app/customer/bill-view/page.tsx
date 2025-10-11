@@ -1,11 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import {
-  Printer,
-  Download,
-  ArrowLeft,
   Zap,
   AlertTriangle,
   Lightbulb,
@@ -14,7 +10,6 @@ import {
 } from 'lucide-react';
 
 export default function BillView() {
-  const router = useRouter();
 
   // Mock bill data (will come from backend)
   const billData = {
@@ -61,107 +56,88 @@ export default function BillView() {
     ]
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <>
       {/* Print Styles */}
       <style jsx global>{`
         @media print {
-          body {
+          html, body {
             background: white !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .print-container {
-            max-width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-          }
-          .page-break {
-            page-break-after: always;
-          }
-          @page {
-            margin: 0.5cm;
-          }
-
-          /* Force print colors and backgrounds for all elements */
-          * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             color-adjust: exact !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
           }
-
-          /* Ensure gradient backgrounds print correctly */
+          body, .print-container, .bg-white {
+            background: white !important;
+            box-shadow: none !important;
+            color: #222 !important;
+          }
+          /* Ensure both ELECTROLUX company headers always print */
+          .bg-gradient-to-r[from-yellow-400][to-orange-500],
           .bg-gradient-to-r,
-          .bg-gradient-to-br,
-          .bg-yellow-500,
-          .bg-blue-400,
-          .bg-orange-50,
-          .bg-blue-50,
-          .bg-green-50,
-          .bg-red-50,
-          .bg-gray-100,
-          .bg-gray-50,
+          .bg-gradient-to-br {
+            background: linear-gradient(to right, #facc15, #f97316) !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            background-image: linear-gradient(to right, #facc15, #f97316) !important;
+            background-blend-mode: normal !important;
+            color: #fff !important;
+          }
           .bg-gray-800 {
+            background: #1f2937 !important;
+            color: #fff !important;
+          }
+          /* Company name h1 and h2 always visible and bold */
+          h1, h2, .print-company-header {
+            color: #fff !important;
+            font-weight: bold !important;
+            text-shadow: none !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-
-          /* Ensure text colors print correctly */
-          .text-white,
-          .text-orange-600,
-          .text-yellow-500,
-          .text-yellow-600,
-          .text-blue-400,
-          .text-gray-700,
-          .text-gray-900 {
+          /* Hide navigation/topbar and only UI, not headers */
+          .no-print, nav, .sidebar, .nav, .topbar {
+            display: none !important;
+            height: 0 !important;
+            visibility: hidden !important;
+          }
+          .border, .border-yellow-400, .border-l-4, .border-orange-500, .border-green-500, .border-red-500, .border-blue-500, .border-t-2, .border-gray-300 {
+            border-color-adjust: exact !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-
-          /* Ensure borders print */
-          .border-yellow-400,
-          .border-l-4,
-          .border-orange-500,
-          .border-green-500,
-          .border-red-500,
-          .border-blue-500,
-          .border-t-2,
-          .border-gray-300 {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
+          .rounded-lg, .rounded-xl, .rounded-2xl {
+            border-radius: 0.25rem !important;
+          }
+          .shadow, .shadow-lg {
+            box-shadow: none !important;
+          }
+          .px-6, .py-4, .py-3, .p-4, .p-3, .p-2 {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+          }
+          .page-break {
+            display: block !important;
+            page-break-before: always !important;
+            break-before: page !important;
+            height: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: none !important;
+            border: none !important;
+          }
+          @page {
+            margin: 0.3cm;
           }
         }
       `}</style>
-
-      {/* Navigation Bar - Hidden on Print */}
-      <div className="no-print bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-medium">Back</span>
-            </button>
-
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handlePrint}
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all flex items-center space-x-2 font-medium"
-              >
-                <Printer className="w-4 h-4" />
-                <span>Print Bill</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Bill Content */}
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-4 print-container">
@@ -483,7 +459,7 @@ export default function BillView() {
               <Phone className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-blue-800 dark:text-blue-300">
                 <p className="font-semibold mb-1">Printing Instructions:</p>
-                <p>Click "Print Bill" button above. In the print dialog, you can save the bill as PDF using "Save as PDF" or "Microsoft Print to PDF" option.</p>
+                <p>Press <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-xs font-mono">Ctrl+P</kbd> or use your browser's print function. You can save as PDF using "Save as PDF" or "Microsoft Print to PDF" option.</p>
               </div>
             </div>
           </div>

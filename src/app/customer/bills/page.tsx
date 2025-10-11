@@ -468,12 +468,6 @@ export default function BillHistory() {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 rounded-lg transition-all" title="Download PDF">
-                          <Download className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 rounded-lg transition-all" title="Print">
-                          <Printer className="w-4 h-4" />
-                        </button>
                       </div>
                     </td>
                   </tr>

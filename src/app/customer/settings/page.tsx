@@ -415,11 +415,11 @@ export default function CustomerSettings() {
                       <select
                         value={preferences.language}
                         onChange={(e) => setPreferences({...preferences, language: e.target.value})}
-                        className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
+                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400 font-medium"
                       >
-                        <option value="english">English</option>
-                        <option value="spanish">Spanish</option>
-                        <option value="french">French</option>
+                        <option value="english" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">English</option>
+                        <option value="spanish" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Spanish</option>
+                        <option value="french" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">French</option>
                       </select>
                     </div>
 
@@ -430,11 +430,11 @@ export default function CustomerSettings() {
                       <select
                         value={preferences.dateFormat}
                         onChange={(e) => setPreferences({...preferences, dateFormat: e.target.value})}
-                        className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
+                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400 font-medium"
                       >
-                        <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                        <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                        <option value="MM/DD/YYYY" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">MM/DD/YYYY</option>
+                        <option value="DD/MM/YYYY" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">DD/MM/YYYY</option>
+                        <option value="YYYY-MM-DD" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">YYYY-MM-DD</option>
                       </select>
                     </div>
 
@@ -445,11 +445,11 @@ export default function CustomerSettings() {
                       <select
                         value={preferences.currency}
                         onChange={(e) => setPreferences({...preferences, currency: e.target.value})}
-                        className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
+                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400 font-medium"
                       >
-                        <option value="USD">USD ($)</option>
-                        <option value="EUR">EUR (€)</option>
-                        <option value="GBP">GBP (£)</option>
+                        <option value="USD" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">USD ($)</option>
+                        <option value="EUR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">EUR (€)</option>
+                        <option value="GBP" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">GBP (£)</option>
                       </select>
                     </div>
                   </div>

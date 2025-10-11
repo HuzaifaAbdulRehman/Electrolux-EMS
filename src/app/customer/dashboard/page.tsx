@@ -55,9 +55,9 @@ export default function CustomerDashboard() {
 
   return (
     <DashboardLayout userType="customer" userName={customerName}>
-      <div className="space-y-6">
-        {/* Welcome Header */}
-        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+      <div className="h-full flex flex-col">
+        {/* Header - Fixed height */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10 mb-6 flex-shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -78,45 +78,32 @@ export default function CustomerDashboard() {
           </div>
         </div>
 
+        {/* Main Content - Scrollable */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="space-y-6">
+
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
   {summaryCards.map((card, index) => (
-    <div key={index} className="relative group h-full">
-      <div className="absolute inset-0 bg-gradient-to-r from-gray-100/50 dark:from-white/5 to-gray-200/50 dark:to-white/10 rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity"></div>
-      <div className="relative bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-all h-full min-h-[180px] flex flex-col">
-        <div className="flex items-start justify-between mb-4">
-          <div className={`w-12 h-12 bg-gradient-to-r ${card.color} rounded-xl flex items-center justify-center`}>
-            <card.icon className="w-6 h-6 text-white" />
-          </div>
-          <div
-            className={`flex items-center space-x-1 text-sm h-5 ${
-              card.trend === 'up'
-                ? 'text-green-400'
-                : card.trend === 'down'
-                ? 'text-red-400'
-                : 'text-transparent'
-            }`}
-          >
-            {card.trend === 'up' ? (
-              <ArrowUp className="w-4 h-4" />
-            ) : card.trend === 'down' ? (
-              <ArrowDown className="w-4 h-4" />
-            ) : (
-              <span className="w-4 h-4 inline-block" />
-            )}
-            <span>{card.trend === 'neutral' ? '' : card.change}</span>
-          </div>
+    <div key={index} className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+      <div className="flex items-center justify-between mb-2">
+        <div className={`w-10 h-10 bg-gradient-to-r ${card.color} rounded-lg flex items-center justify-center`}>
+          <card.icon className="w-5 h-5 text-white" />
         </div>
-
-        <h3 className="text-gray-600 dark:text-gray-400 text-sm mb-1">{card.title}</h3>
-        <p className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</p>
-
-        <div className="mt-2 h-5">
-          {card.trend === 'neutral' && (
-            <p className="text-xs text-gray-500 dark:text-gray-500">{card.change}</p>
-          )}
-        </div>
+        {card.trend !== 'neutral' && (
+          <span className={`text-xs flex items-center space-x-1 ${
+            card.trend === 'up' ? 'text-green-400' : 'text-red-400'
+          }`}>
+            {card.trend === 'up' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+            <span>{card.change}</span>
+          </span>
+        )}
       </div>
+      <p className="text-gray-600 dark:text-gray-400 text-sm">{card.title}</p>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</p>
+      {card.trend === 'neutral' && (
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{card.change}</p>
+      )}
     </div>
   ))}
 </div>
@@ -125,13 +112,14 @@ export default function CustomerDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Usage Trend Chart */}
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2 text-yellow-500" />
               Monthly Usage Trend
             </h3>
-            <div className="h-64 flex items-center justify-center">
+            <div className="h-48 flex items-center justify-center">
               <div className="w-full">
                 {/* Mock chart visualization */}
-                <div className="flex items-end justify-between h-48 px-2">
+                <div className="flex items-end justify-between h-40 px-2">
                   {[65, 80, 45, 90, 70, 60, 85, 75, 95, 60, 70, 80].map((height, index) => (
                     <div key={index} className="flex-1 mx-1">
                       <div
@@ -164,18 +152,19 @@ export default function CustomerDashboard() {
 
           {/* Cost Breakdown Chart */}
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <DollarSign className="w-5 h-5 mr-2 text-green-500" />
               Cost Breakdown
             </h3>
-            <div className="h-64 flex items-center justify-center">
-              <div className="relative w-48 h-48">
-                <svg className="transform -rotate-90 w-48 h-48">
-                  <circle cx="96" cy="96" r="88" stroke="currentColor" strokeWidth="8" fill="none"
+            <div className="h-48 flex items-center justify-center">
+              <div className="relative w-40 h-40">
+                <svg className="transform -rotate-90 w-40 h-40">
+                  <circle cx="80" cy="80" r="72" stroke="currentColor" strokeWidth="8" fill="none"
                     className="text-gray-200 dark:text-gray-700" />
-                  <circle cx="96" cy="96" r="88" stroke="url(#gradient1)" strokeWidth="8" fill="none"
-                    strokeDasharray="276.46 276.46" strokeDashoffset="82.94" strokeLinecap="round" />
-                  <circle cx="96" cy="96" r="88" stroke="url(#gradient2)" strokeWidth="8" fill="none"
-                    strokeDasharray="276.46 276.46" strokeDashoffset="193.52" strokeLinecap="round" />
+                  <circle cx="80" cy="80" r="72" stroke="url(#gradient1)" strokeWidth="8" fill="none"
+                    strokeDasharray="226.19 226.19" strokeDashoffset="67.86" strokeLinecap="round" />
+                  <circle cx="80" cy="80" r="72" stroke="url(#gradient2)" strokeWidth="8" fill="none"
+                    strokeDasharray="226.19 226.19" strokeDashoffset="158.33" strokeLinecap="round" />
                   <defs>
                     <linearGradient id="gradient1">
                       <stop offset="0%" stopColor="#facc15" />
@@ -188,8 +177,8 @@ export default function CustomerDashboard() {
                   </defs>
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">$245.50</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Bill</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">$245.50</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Total Bill</p>
                 </div>
               </div>
             </div>
@@ -216,7 +205,8 @@ export default function CustomerDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Time of Use Distribution */}
           <div className="lg:col-span-2 bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Activity className="w-5 h-5 mr-2 text-purple-500" />
               Time of Use Distribution
             </h3>
             <div className="space-y-4">
@@ -248,7 +238,7 @@ export default function CustomerDashboard() {
                 </div>
               </div>
             </div>
-            <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+            <div className="mt-6 p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg border border-green-500/20">
               <p className="text-sm text-green-700 dark:text-green-400">
                 💡 Tip: Shift 10% of your usage to off-peak hours to save $15-20 monthly!
               </p>
@@ -257,7 +247,8 @@ export default function CustomerDashboard() {
 
           {/* Recent Payments */}
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <CreditCard className="w-5 h-5 mr-2 text-blue-500" />
               Recent Payments
             </h3>
             <div className="space-y-3">
@@ -283,6 +274,8 @@ export default function CustomerDashboard() {
                 <p className="text-sm font-semibold text-green-600 dark:text-green-400">$245.00</p>
               </div>
             </div>
+          </div>
+        </div>
           </div>
         </div>
       </div>

@@ -31,6 +31,8 @@ export default function MeterReadingForm() {
   const [errors, setErrors] = useState<any>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [generatingBill, setGeneratingBill] = useState(false);
+  const [billGenerated, setBillGenerated] = useState<any>(null);
 
   // Mock customer data
   const mockCustomers = [
@@ -88,22 +90,56 @@ export default function MeterReadingForm() {
       setTimeout(() => {
         setIsSubmitting(false);
         setShowSuccess(true);
-        setTimeout(() => {
-          setShowSuccess(false);
-          setSelectedCustomer(null);
-          setReadingData({
-            currentReading: '',
-            readingDate: new Date().toISOString().split('T')[0],
-            readingTime: new Date().toTimeString().slice(0, 5),
-            meterCondition: 'good',
-            accessibility: 'accessible',
-            notes: '',
-            photoUploaded: false
-          });
-          setSearchQuery('');
-        }, 3000);
+        // Don't auto-reset - let user choose to generate bill or continue
       }, 1500);
     }
+  };
+
+  const handleGenerateBill = async () => {
+    if (!selectedCustomer) return;
+
+    setGeneratingBill(true);
+    try {
+      const response = await fetch('/api/bills/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customerId: selectedCustomer.id,
+          billingMonth: new Date(readingData.readingDate).toISOString().split('T')[0].slice(0, 7) + '-01'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setBillGenerated(data.bill);
+      } else {
+        alert(data.error || 'Failed to generate bill');
+      }
+    } catch (error) {
+      console.error('Bill generation error:', error);
+      alert('Failed to generate bill. Please try again.');
+    } finally {
+      setGeneratingBill(false);
+    }
+  };
+
+  const handleReset = () => {
+    setShowSuccess(false);
+    setBillGenerated(null);
+    setSelectedCustomer(null);
+    setReadingData({
+      currentReading: '',
+      readingDate: new Date().toISOString().split('T')[0],
+      readingTime: new Date().toTimeString().slice(0, 5),
+      meterCondition: 'good',
+      accessibility: 'accessible',
+      notes: '',
+      photoUploaded: false
+    });
+    setSearchQuery('');
   };
 
   const calculateConsumption = () => {
@@ -117,233 +153,312 @@ export default function MeterReadingForm() {
 
   return (
     <DashboardLayout userType="employee" userName="Mike Johnson">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Meter Reading Entry</h1>
-              <p className="text-gray-600 dark:text-gray-400">Record customer meter readings accurately</p>
-            </div>
-            <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center">
-              <Gauge className="w-9 h-9 text-white" />
-            </div>
-          </div>
-        </div>
-
-        {/* Success Message */}
-        {showSuccess && (
-          <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-2xl p-6 border border-green-500/50 flex items-center space-x-4">
-            <CheckCircle className="w-8 h-8 text-green-400" />
-            <div>
-              <h3 className="text-white font-semibold text-lg">Reading Submitted Successfully!</h3>
-              <p className="text-gray-700 dark:text-gray-300 text-sm">Meter reading has been recorded and saved.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Customer Search */}
-        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Customer Search</h2>
-          <div className="flex space-x-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleCustomerSearch()}
-                placeholder="Enter account number, meter number, or customer name"
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-              />
-            </div>
-            <button
-              onClick={handleCustomerSearch}
-              className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl hover:shadow-lg hover:shadow-orange-500/50 transition-all font-semibold"
-            >
-              Search
-            </button>
-          </div>
-          {errors.search && (
-            <p className="text-red-400 text-sm mt-2 flex items-center">
-              <AlertCircle className="w-4 h-4 mr-1" />
-              {errors.search}
-            </p>
-          )}
-        </div>
-
-        {/* Customer Information */}
-        {selectedCustomer && (
-          <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl p-6 border border-green-500/20">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Customer Information</h2>
-              <CheckCircle className="w-6 h-6 text-green-400" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">Customer Name</p>
-                    <p className="text-white font-semibold">{selectedCustomer.name}</p>
-                  </div>
+      <div className="h-full flex flex-col">
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto space-y-4 py-2">
+            {/* Header */}
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Meter Reading Entry</h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Record customer meter readings accurately</p>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <FileText className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">Account Number</p>
-                    <p className="text-white font-semibold">{selectedCustomer.accountNumber}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <MapPin className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">Address</p>
-                    <p className="text-gray-900 dark:text-white">{selectedCustomer.address}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <Gauge className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">Meter Number</p>
-                    <p className="text-white font-semibold">{selectedCustomer.meterNumber}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Zap className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">Last Reading</p>
-                    <p className="text-white font-semibold">{selectedCustomer.lastReading} kWh</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">Last Reading Date</p>
-                    <p className="text-gray-900 dark:text-white">{selectedCustomer.lastReadingDate}</p>
-                  </div>
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                  <Gauge className="w-7 h-7 text-white" />
                 </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Reading Form */}
-        {selectedCustomer && (
-          <form onSubmit={handleSubmit} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10 space-y-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Meter Reading Details</h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Current Reading */}
-              <div>
-                <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Current Reading (kWh) *</label>
-                <input
-                  type="text"
-                  value={readingData.currentReading}
-                  onChange={(e) => setReadingData({ ...readingData, currentReading: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-                  placeholder="Enter current meter reading"
-                />
-                {errors.currentReading && (
-                  <p className="text-red-400 text-sm mt-2 flex items-center">
-                    <AlertCircle className="w-4 h-4 mr-1" />
-                    {errors.currentReading}
-                  </p>
-                )}
-                {readingData.currentReading && !errors.currentReading && (
-                  <div className="mt-3 p-3 bg-green-500/20 rounded-lg border border-green-500/50">
-                    <p className="text-green-400 text-sm">
-                      Consumption: {calculateConsumption()} kWh
-                    </p>
+            {/* Success Message */}
+            {showSuccess && !billGenerated && (
+              <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-2xl p-4 border border-green-500/50">
+                <div className="flex items-center space-x-3 mb-3">
+                  <CheckCircle className="w-6 h-6 text-green-400" />
+                  <div>
+                    <h3 className="text-white font-semibold text-base">Reading Submitted Successfully!</h3>
+                    <p className="text-gray-700 dark:text-gray-300 text-xs">Meter reading has been recorded and saved.</p>
                   </div>
-                )}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleGenerateBill}
+                    disabled={generatingBill}
+                    className={`px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg transition-all font-medium flex items-center space-x-2 ${
+                      generatingBill
+                        ? 'opacity-70 cursor-not-allowed'
+                        : 'hover:shadow-lg hover:shadow-blue-500/50'
+                    }`}
+                  >
+                    {generatingBill ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Generating Bill...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-4 h-4" />
+                        <span>Generate Bill Now</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    className="px-4 py-2 text-sm bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-white hover:bg-white/20 transition-all font-medium"
+                  >
+                    Record Another Reading
+                  </button>
+                </div>
               </div>
+            )}
 
-              {/* Reading Date */}
-              <div>
-                <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Reading Date *</label>
-                <input
-                  type="date"
-                  value={readingData.readingDate}
-                  onChange={(e) => setReadingData({ ...readingData, readingDate: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
-                />
-              </div>
+            {/* Bill Generated Success */}
+            {billGenerated && (
+              <div className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 backdrop-blur-xl rounded-2xl p-4 border border-blue-500/50">
+                <div className="flex items-center space-x-3 mb-4">
+                  <CheckCircle className="w-6 h-6 text-blue-400" />
+                  <div>
+                    <h3 className="text-white font-semibold text-base">Bill Generated Successfully!</h3>
+                    <p className="text-gray-700 dark:text-gray-300 text-xs">Customer bill has been created and is now available for viewing.</p>
+                  </div>
+                </div>
 
-              {/* Reading Time */}
-              <div>
-                <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Reading Time *</label>
-                <input
-                  type="time"
-                  value={readingData.readingTime}
-                  onChange={(e) => setReadingData({ ...readingData, readingTime: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
-                />
-              </div>
+                {/* Bill Details */}
+                <div className="bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-white/10 mb-3">
+                  <h4 className="text-white font-semibold text-sm mb-3">Bill Summary</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div>
+                      <p className="text-gray-400 text-xs mb-1">Bill Number</p>
+                      <p className="text-white font-semibold text-xs">{billGenerated.bill_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-xs mb-1">Units Consumed</p>
+                      <p className="text-white font-semibold text-xs">{billGenerated.units_consumed} kWh</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-xs mb-1">Total Amount</p>
+                      <p className="text-green-400 font-bold text-xs">₹{billGenerated.total_amount}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400 text-xs mb-1">Due Date</p>
+                      <p className="text-white font-semibold text-xs">{new Date(billGenerated.due_date).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                </div>
 
-              {/* Meter Condition */}
-              <div>
-                <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Meter Condition</label>
-                <select
-                  value={readingData.meterCondition}
-                  onChange={(e) => setReadingData({ ...readingData, meterCondition: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                <button
+                  onClick={handleReset}
+                  className="px-4 py-2 text-sm bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all font-medium flex items-center space-x-2"
                 >
-                  <option value="good">Good</option>
-                  <option value="fair">Fair</option>
-                  <option value="poor">Poor - Needs Replacement</option>
-                  <option value="damaged">Damaged</option>
-                </select>
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Record Another Reading</span>
+                </button>
               </div>
+            )}
+
+            {/* Customer Search */}
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10">
+              <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">Customer Search</h2>
+              <div className="flex space-x-2">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 dark:text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleCustomerSearch()}
+                    placeholder="Enter account number, meter number, or customer name"
+                    className="w-full pl-10 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                  />
+                </div>
+                <button
+                  onClick={handleCustomerSearch}
+                  className="px-4 py-2 text-sm bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all font-medium"
+                >
+                  Search
+                </button>
+              </div>
+              {errors.search && (
+                <p className="text-red-400 text-xs mt-2 flex items-center">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  {errors.search}
+                </p>
+              )}
             </div>
 
-            {/* Notes */}
-            <div>
-              <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Notes (Optional)</label>
-              <textarea
-                value={readingData.notes}
-                onChange={(e) => setReadingData({ ...readingData, notes: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
-                rows={3}
-                placeholder="Add any additional notes or observations..."
-              />
-            </div>
+            {/* Customer Information */}
+            {selectedCustomer && (
+              <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl p-4 border border-green-500/20">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-base font-bold text-gray-900 dark:text-white">Customer Information</h2>
+                  <CheckCircle className="w-5 h-5 text-green-400" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <User className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">Customer Name</p>
+                        <p className="text-white font-semibold text-sm">{selectedCustomer.name}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <FileText className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">Account Number</p>
+                        <p className="text-white font-semibold text-sm">{selectedCustomer.accountNumber}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">Address</p>
+                        <p className="text-gray-900 dark:text-white text-sm">{selectedCustomer.address}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Gauge className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">Meter Number</p>
+                        <p className="text-white font-semibold text-sm">{selectedCustomer.meterNumber}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Zap className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">Last Reading</p>
+                        <p className="text-white font-semibold text-sm">{selectedCustomer.lastReading} kWh</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">Last Reading Date</p>
+                        <p className="text-gray-900 dark:text-white text-sm">{selectedCustomer.lastReadingDate}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
-            {/* Submit Button */}
-            <div className="flex items-center justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => setSelectedCustomer(null)}
-                className="px-6 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={`px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl transition-all font-semibold flex items-center space-x-2 ${
-                  isSubmitting
-                    ? 'opacity-70 cursor-not-allowed'
-                    : 'hover:shadow-lg hover:shadow-green-500/50'
-                }`}
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Submitting...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5" />
-                    <span>Submit Reading</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        )}
+            {/* Reading Form */}
+            {selectedCustomer && (
+              <form onSubmit={handleSubmit} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10 space-y-4">
+                <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">Meter Reading Details</h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Current Reading */}
+                  <div>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">Current Reading (kWh) *</label>
+                    <input
+                      type="text"
+                      value={readingData.currentReading}
+                      onChange={(e) => setReadingData({ ...readingData, currentReading: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                      placeholder="Enter current meter reading"
+                    />
+                    {errors.currentReading && (
+                      <p className="text-red-400 text-xs mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.currentReading}
+                      </p>
+                    )}
+                    {readingData.currentReading && !errors.currentReading && (
+                      <div className="mt-2 p-2 bg-green-500/20 rounded-lg border border-green-500/50">
+                        <p className="text-green-400 text-xs">
+                          Consumption: {calculateConsumption()} kWh
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Reading Date */}
+                  <div>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">Reading Date *</label>
+                    <input
+                      type="date"
+                      value={readingData.readingDate}
+                      onChange={(e) => setReadingData({ ...readingData, readingDate: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                    />
+                  </div>
+
+                  {/* Reading Time */}
+                  <div>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">Reading Time *</label>
+                    <input
+                      type="time"
+                      value={readingData.readingTime}
+                      onChange={(e) => setReadingData({ ...readingData, readingTime: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                    />
+                  </div>
+
+                  {/* Meter Condition */}
+                  <div>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">Meter Condition</label>
+                    <select
+                      value={readingData.meterCondition}
+                      onChange={(e) => setReadingData({ ...readingData, meterCondition: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors font-medium"
+                    >
+                      <option value="good" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Good</option>
+                      <option value="fair" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Fair</option>
+                      <option value="poor" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Poor - Needs Replacement</option>
+                      <option value="damaged" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Damaged</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">Notes (Optional)</label>
+                  <textarea
+                    value={readingData.notes}
+                    onChange={(e) => setReadingData({ ...readingData, notes: e.target.value })}
+                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
+                    rows={2}
+                    placeholder="Add any additional notes or observations..."
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <div className="flex items-center justify-end space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCustomer(null)}
+                    className="px-4 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`px-6 py-2 text-sm bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg transition-all font-medium flex items-center space-x-2 ${
+                      isSubmitting
+                        ? 'opacity-70 cursor-not-allowed'
+                        : 'hover:shadow-lg hover:shadow-green-500/50'
+                    }`}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Submitting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>Submit Reading</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );

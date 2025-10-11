@@ -142,12 +142,12 @@ export default function EmployeeCustomers() {
             <select
               value={selectedFilter}
               onChange={(e) => setSelectedFilter(e.target.value)}
-              className="px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
+              className="px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 font-medium"
             >
-              <option value="all">All Customers</option>
-              <option value="active">Active</option>
-              <option value="overdue">Overdue</option>
-              <option value="suspended">Suspended</option>
+              <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">All Customers</option>
+              <option value="active" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Active</option>
+              <option value="overdue" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Overdue</option>
+              <option value="suspended" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Suspended</option>
             </select>
           </div>
         </div>

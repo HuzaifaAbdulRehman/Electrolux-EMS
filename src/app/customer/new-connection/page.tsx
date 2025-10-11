@@ -266,11 +266,11 @@ export default function NewConnection() {
                   <select
                     value={formData.idType}
                     onChange={(e) => handleInputChange('idType', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 transition-colors"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 transition-colors font-medium"
                   >
-                    <option value="">Select ID Type</option>
+                    <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Select ID Type</option>
                     {idTypes.map((type) => (
-                      <option key={type.value} value={type.value}>
+                      <option key={type.value} value={type.value} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">
                         {type.label}
                       </option>
                     ))}
@@ -309,11 +309,11 @@ export default function NewConnection() {
                   <select
                     value={formData.propertyType}
                     onChange={(e) => handleInputChange('propertyType', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 transition-colors"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 transition-colors font-medium"
                   >
-                    <option value="">Select Property Type</option>
+                    <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Select Property Type</option>
                     {propertyTypes.map((type) => (
-                      <option key={type.value} value={type.value}>
+                      <option key={type.value} value={type.value} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">
                         {type.label}
                       </option>
                     ))}
@@ -327,11 +327,11 @@ export default function NewConnection() {
                   <select
                     value={formData.connectionType}
                     onChange={(e) => handleInputChange('connectionType', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 transition-colors"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 transition-colors font-medium"
                   >
-                    <option value="">Select Connection Type</option>
+                    <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Select Connection Type</option>
                     {connectionTypes.map((type) => (
-                      <option key={type.value} value={type.value}>
+                      <option key={type.value} value={type.value} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">
                         {type.label} ({type.load})
                       </option>
                     ))}
@@ -446,13 +446,13 @@ export default function NewConnection() {
                   <select
                     value={formData.purposeOfConnection}
                     onChange={(e) => handleInputChange('purposeOfConnection', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 transition-colors"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 transition-colors font-medium"
                   >
-                    <option value="">Select Purpose</option>
-                    <option value="domestic">Domestic Use</option>
-                    <option value="business">Business Use</option>
-                    <option value="industrial">Industrial Use</option>
-                    <option value="agricultural">Agricultural Use</option>
+                    <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Select Purpose</option>
+                    <option value="domestic" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Domestic Use</option>
+                    <option value="business" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Business Use</option>
+                    <option value="industrial" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Industrial Use</option>
+                    <option value="agricultural" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Agricultural Use</option>
                   </select>
                 </div>
 

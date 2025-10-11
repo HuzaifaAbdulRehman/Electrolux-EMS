@@ -38,9 +38,9 @@ export default function UsageAnalytics() {
 
   return (
     <DashboardLayout userType="customer" userName="John Doe">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+      <div className="h-full flex flex-col">
+        {/* Header - Fixed height */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10 mb-6 flex-shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Usage Analytics</h1>
@@ -50,7 +50,7 @@ export default function UsageAnalytics() {
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-4 py-2 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
+                className="px-4 py-2 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
               >
                 <option value="month">This Month</option>
                 <option value="6months">Last 6 Months</option>
@@ -63,6 +63,10 @@ export default function UsageAnalytics() {
             </div>
           </div>
         </div>
+
+        {/* Main Content - Scrollable */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="space-y-6">
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -299,6 +303,8 @@ export default function UsageAnalytics() {
           <p className="text-gray-700 dark:text-gray-300">
             Interactive line charts, bar charts, doughnut charts, radar charts, and weather impact analysis will be available soon.
           </p>
+        </div>
+          </div>
         </div>
       </div>
     </DashboardLayout>

@@ -28,7 +28,9 @@ import {
   AlertCircle,
   CheckCircle,
   Info,
-  Clock
+  Clock,
+  Calculator,
+  ZapOff
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -82,11 +84,13 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
       case 'customer':
         return [
           { icon: Home, label: 'Dashboard', href: '/customer/dashboard' },
-          { icon: FileText, label: 'Bills', href: '/customer/bills' },
+          { icon: FileText, label: 'View Bills', href: '/customer/view-bills' },
+          { icon: Calculator, label: 'Bill Calculator', href: '/customer/bill-calculator' },
           { icon: BarChart3, label: 'Analytics', href: '/customer/analytics' },
           { icon: DollarSign, label: 'Payment', href: '/customer/payment' },
+          { icon: ZapOff, label: 'Outage Schedule', href: '/customer/outage-schedule' },
+          { icon: MessageSquare, label: 'Support Tickets', href: '/customer/complaints' },
           { icon: Bell, label: 'Service Center', href: '/customer/services' },
-          { icon: MessageSquare, label: 'Complaints', href: '/customer/complaints' },
           { icon: Settings, label: 'Settings', href: '/customer/settings' },
         ];
       case 'employee':
@@ -103,6 +107,7 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
           { icon: Home, label: 'Dashboard', href: '/admin/dashboard' },
           { icon: Users, label: 'Customers', href: '/admin/customers' },
           { icon: Building, label: 'Employees', href: '/admin/employees' },
+          { icon: FileText, label: 'Generate Bills', href: '/admin/bills/generate' },
           { icon: DollarSign, label: 'Tariffs', href: '/admin/tariffs' },
           { icon: BarChart3, label: 'Reports', href: '/admin/reports' },
           { icon: Activity, label: 'Analytics', href: '/admin/analytics' },
@@ -130,6 +135,110 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
       default: return 'Customer';
     }
   };
+
+  // Mock notifications data
+  const getNotifications = () => {
+    const baseNotifications = [
+      {
+        id: 1,
+        type: 'success',
+        icon: CheckCircle,
+        title: 'Payment Successful',
+        message: 'Your bill payment of ₹2,450 has been processed',
+        time: '5 min ago',
+        read: false
+      },
+      {
+        id: 2,
+        type: 'info',
+        icon: Info,
+        title: 'New Bill Generated',
+        message: 'Your electricity bill for January 2025 is ready',
+        time: '2 hours ago',
+        read: false
+      },
+      {
+        id: 3,
+        type: 'warning',
+        icon: AlertCircle,
+        title: 'Scheduled Maintenance',
+        message: 'Power outage scheduled for tomorrow 10 AM - 2 PM',
+        time: '1 day ago',
+        read: true
+      },
+      {
+        id: 4,
+        type: 'info',
+        icon: Clock,
+        title: 'Meter Reading Update',
+        message: 'Your meter reading has been recorded: 1,234 kWh',
+        time: '2 days ago',
+        read: true
+      }
+    ];
+
+    if (userType === 'employee') {
+      return [
+        {
+          id: 1,
+          type: 'warning',
+          icon: AlertCircle,
+          title: 'New Work Order',
+          message: '5 new meter reading assignments in your area',
+          time: '10 min ago',
+          read: false
+        },
+        {
+          id: 2,
+          type: 'info',
+          icon: Info,
+          title: 'Customer Query',
+          message: 'Customer #12345 has raised a billing query',
+          time: '1 hour ago',
+          read: false
+        },
+        ...baseNotifications.slice(2)
+      ];
+    }
+
+    if (userType === 'admin') {
+      return [
+        {
+          id: 1,
+          type: 'warning',
+          icon: AlertCircle,
+          title: 'System Alert',
+          message: 'High load detected in Zone-A. Immediate attention required',
+          time: '15 min ago',
+          read: false
+        },
+        {
+          id: 2,
+          type: 'info',
+          icon: Info,
+          title: 'Monthly Report Ready',
+          message: 'Revenue report for January 2025 is available',
+          time: '3 hours ago',
+          read: false
+        },
+        {
+          id: 3,
+          type: 'success',
+          icon: CheckCircle,
+          title: 'Employee Added',
+          message: 'New employee "John Doe" has been successfully onboarded',
+          time: '1 day ago',
+          read: true
+        },
+        ...baseNotifications.slice(2)
+      ];
+    }
+
+    return baseNotifications;
+  };
+
+  const notifications = getNotifications();
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <div className={`min-h-screen transition-colors duration-500 ${
@@ -213,14 +322,127 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
               </button>
 
               {/* Notifications */}
-              <button className={`relative p-2 rounded-lg transition-all ${
-                isDarkMode
-                  ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-              }`}>
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                  className={`relative p-2 rounded-lg transition-all ${
+                    isDarkMode
+                      ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                  }`}
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 flex items-center justify-center w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {isNotificationOpen && (
+                  <div className={`absolute right-0 mt-2 w-96 max-h-[500px] overflow-y-auto backdrop-blur-xl rounded-lg shadow-lg border ${
+                    isDarkMode
+                      ? 'bg-white dark:bg-black/80 border-gray-200 dark:border-white/10'
+                      : 'bg-white/90 border-gray-200'
+                  }`}>
+                    {/* Header */}
+                    <div className={`px-4 py-3 border-b ${isDarkMode ? 'border-gray-200 dark:border-white/10' : 'border-gray-200'}`}>
+                      <div className="flex items-center justify-between">
+                        <h3 className={`font-semibold ${isDarkMode ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>
+                          Notifications
+                        </h3>
+                        {unreadCount > 0 && (
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            isDarkMode
+                              ? 'bg-yellow-400/20 text-yellow-400'
+                              : 'bg-yellow-400/30 text-yellow-600'
+                          }`}>
+                            {unreadCount} new
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Notifications List */}
+                    <div className="py-2">
+                      {notifications.length === 0 ? (
+                        <div className={`px-4 py-8 text-center ${
+                          isDarkMode ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600'
+                        }`}>
+                          <Bell className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p>No notifications</p>
+                        </div>
+                      ) : (
+                        notifications.map((notification) => {
+                          const NotificationIcon = notification.icon;
+                          const iconColor =
+                            notification.type === 'success' ? 'text-green-500' :
+                            notification.type === 'warning' ? 'text-yellow-500' :
+                            'text-blue-500';
+
+                          return (
+                            <div
+                              key={notification.id}
+                              className={`px-4 py-3 transition-colors border-l-2 ${
+                                !notification.read
+                                  ? isDarkMode
+                                    ? 'bg-yellow-400/5 border-yellow-400'
+                                    : 'bg-yellow-400/10 border-yellow-400'
+                                  : 'border-transparent'
+                              } ${
+                                isDarkMode
+                                  ? 'hover:bg-white/5'
+                                  : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-start space-x-3">
+                                <div className={`mt-0.5 ${iconColor}`}>
+                                  <NotificationIcon className="h-5 w-5" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between">
+                                    <p className={`font-medium text-sm ${
+                                      isDarkMode ? 'text-gray-900 dark:text-white' : 'text-gray-900'
+                                    }`}>
+                                      {notification.title}
+                                    </p>
+                                    {!notification.read && (
+                                      <span className="ml-2 w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5"></span>
+                                    )}
+                                  </div>
+                                  <p className={`text-sm mt-1 ${
+                                    isDarkMode ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600'
+                                  }`}>
+                                    {notification.message}
+                                  </p>
+                                  <p className={`text-xs mt-1 ${
+                                    isDarkMode ? 'text-gray-500 dark:text-gray-500' : 'text-gray-500'
+                                  }`}>
+                                    {notification.time}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    {notifications.length > 0 && (
+                      <div className={`px-4 py-3 border-t ${isDarkMode ? 'border-gray-200 dark:border-white/10' : 'border-gray-200'}`}>
+                        <button className={`text-sm font-medium transition-colors ${
+                          isDarkMode
+                            ? 'text-yellow-400 hover:text-yellow-300'
+                            : 'text-yellow-600 hover:text-yellow-700'
+                        }`}>
+                          View all notifications
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Profile Dropdown */}
               <div className="relative">

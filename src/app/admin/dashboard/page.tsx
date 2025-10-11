@@ -318,12 +318,12 @@ export default function BillingOverview() {
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
+                className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
               >
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-                <option value="quarter">This Quarter</option>
-                <option value="year">This Year</option>
+                <option value="week" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Week</option>
+                <option value="month" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Month</option>
+                <option value="quarter" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Quarter</option>
+                <option value="year" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Year</option>
               </select>
               <button className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-red-500/50 transition-all flex items-center space-x-2">
                 <Download className="w-5 h-5" />

@@ -202,38 +202,40 @@ export default function ServiceRequests() {
 
   return (
     <DashboardLayout userType="customer" userName="John Doe">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+      <div className="h-full flex flex-col">
+        {/* Header - Fixed height */}
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10 mb-4 flex-shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Service Center</h1>
-              <p className="text-gray-600 dark:text-gray-400">Manage service requests, complaints, and view outage notifications</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Service Center</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Manage service requests, complaints, and view outage notifications</p>
             </div>
-            <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+            <div className="mt-3 sm:mt-0 flex items-center space-x-2">
               <a
                 href="/customer/new-connection"
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition-all flex items-center space-x-2 font-semibold"
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition-all flex items-center space-x-2 font-medium text-sm"
               >
-                <Zap className="w-5 h-5" />
+                <Zap className="w-4 h-4" />
                 <span>New Connection</span>
               </a>
               <button
                 onClick={() => setShowNewRequest(true)}
-                className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2 font-semibold"
+                className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2 font-medium text-sm"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 <span>Service Request</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex space-x-1 bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-1">
+        {/* Main Content Area - Fills remaining space */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Tabs */}
+          <div className="flex space-x-1 bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-1 mb-4 flex-shrink-0">
           <button
             onClick={() => setActiveTab('requests')}
-            className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all ${
               activeTab === 'requests'
                 ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-100 dark:hover:bg-white/10'
@@ -243,7 +245,7 @@ export default function ServiceRequests() {
           </button>
           <button
             onClick={() => setActiveTab('outages')}
-            className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all ${
               activeTab === 'outages'
                 ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-100 dark:hover:bg-white/10'
@@ -251,227 +253,231 @@ export default function ServiceRequests() {
           >
             Outage Notifications
           </button>
-        </div>
+          </div>
 
-        {activeTab === 'requests' ? (
-          <>
-            {/* Statistics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">Total Requests</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{serviceRequests.length}</p>
-                  </div>
-                  <MessageSquare className="w-8 h-8 text-blue-400" />
-                </div>
-              </div>
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">In Progress</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {serviceRequests.filter(r => r.status === 'in-progress').length}
-                    </p>
-                  </div>
-                  <Clock className="w-8 h-8 text-yellow-400" />
-                </div>
-              </div>
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">Resolved</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {serviceRequests.filter(r => r.status === 'resolved').length}
-                    </p>
-                  </div>
-                  <CheckCircle className="w-8 h-8 text-green-400" />
-                </div>
-              </div>
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">Avg. Response</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">4 hrs</p>
-                  </div>
-                  <Activity className="w-8 h-8 text-purple-400" />
-                </div>
-              </div>
-            </div>
-
-            {/* Filter and Search */}
-            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 dark:text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search requests..."
-                    className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-                  />
-                </div>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="px-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="assigned">Assigned</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="resolved">Resolved</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Service Requests List */}
-            <div className="space-y-4">
-              {filteredRequests.map((request) => (
-                <div key={request.id} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-start space-x-4">
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                        request.type === 'complaint' ? 'bg-red-500/20' :
-                        request.type === 'service' ? 'bg-blue-500/20' : 'bg-green-500/20'
-                      }`}>
-                        {request.type === 'complaint' ? <AlertTriangle className="w-6 h-6 text-red-400" /> :
-                         request.type === 'service' ? <Wrench className="w-6 h-6 text-blue-400" /> :
-                         <FileQuestion className="w-6 h-6 text-green-400" />}
+          {/* Tab Content - Scrollable area */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            {activeTab === 'requests' ? (
+              <div className="space-y-4">
+                {/* Statistics */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">Total Requests</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">{serviceRequests.length}</p>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-1">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{request.subject}</h3>
-                          <span className={`text-sm ${getPriorityColor(request.priority)}`}>
-                            {request.priority.toUpperCase()}
+                      <MessageSquare className="w-6 h-6 text-blue-400" />
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">In Progress</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">
+                          {serviceRequests.filter(r => r.status === 'in-progress').length}
+                        </p>
+                      </div>
+                      <Clock className="w-6 h-6 text-yellow-400" />
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">Resolved</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">
+                          {serviceRequests.filter(r => r.status === 'resolved').length}
+                        </p>
+                      </div>
+                      <CheckCircle className="w-6 h-6 text-green-400" />
+                    </div>
+                  </div>
+                  <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">Avg. Response</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">4 hrs</p>
+                      </div>
+                      <Activity className="w-6 h-6 text-purple-400" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filter and Search */}
+                <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search requests..."
+                        className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                      />
+                    </div>
+                    <select
+                      value={filterStatus}
+                      onChange={(e) => setFilterStatus(e.target.value)}
+                      className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 font-medium"
+                    >
+                      <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">All Status</option>
+                      <option value="pending" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Pending</option>
+                      <option value="assigned" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Assigned</option>
+                      <option value="in-progress" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">In Progress</option>
+                      <option value="resolved" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Resolved</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Service Requests List */}
+                <div className="space-y-3">
+                  {filteredRequests.map((request) => (
+                    <div key={request.id} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-start space-x-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            request.type === 'complaint' ? 'bg-red-500/20' :
+                            request.type === 'service' ? 'bg-blue-500/20' : 'bg-green-500/20'
+                          }`}>
+                            {request.type === 'complaint' ? <AlertTriangle className="w-5 h-5 text-red-400" /> :
+                             request.type === 'service' ? <Wrench className="w-5 h-5 text-blue-400" /> :
+                             <FileQuestion className="w-5 h-5 text-green-400" />}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <h3 className="text-base font-semibold text-gray-900 dark:text-white">{request.subject}</h3>
+                              <span className={`text-xs ${getPriorityColor(request.priority)}`}>
+                                {request.priority.toUpperCase()}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 dark:text-gray-400 text-xs mb-2">{request.id} • {request.category}</p>
+                            <p className="text-gray-700 dark:text-gray-300 text-sm">{request.description}</p>
+                          </div>
+                        </div>
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(request.status)}`}>
+                          {request.status.replace('-', ' ')}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-white/10">
+                        <div className="flex items-center space-x-3 text-xs text-gray-600 dark:text-gray-400">
+                          <span className="flex items-center space-x-1">
+                            <Calendar className="w-3 h-3" />
+                            <span>{request.createdDate}</span>
+                          </span>
+                          <span className="flex items-center space-x-1">
+                            <User className="w-3 h-3" />
+                            <span>{request.assignedTo}</span>
+                          </span>
+                          <span className="flex items-center space-x-1">
+                            <Clock className="w-3 h-3" />
+                            <span>Updated {request.lastUpdate}</span>
                           </span>
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{request.id} • {request.category}</p>
-                        <p className="text-gray-700 dark:text-gray-300">{request.description}</p>
+                        <button
+                          onClick={() => setSelectedRequest(request)}
+                          className="px-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all flex items-center space-x-1"
+                        >
+                          <span>View Details</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </button>
                       </div>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(request.status)}`}>
-                      {request.status.replace('-', ' ')}
-                    </span>
-                  </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-white/10">
-                    <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
-                      <span className="flex items-center space-x-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>{request.createdDate}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <User className="w-4 h-4" />
-                        <span>{request.assignedTo}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <Clock className="w-4 h-4" />
-                        <span>Updated {request.lastUpdate}</span>
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setSelectedRequest(request)}
-                      className="px-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all flex items-center space-x-2"
-                    >
-                      <span>View Details</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {request.responses.length > 0 && (
-                    <div className="mt-4 p-3 bg-white dark:bg-white/5 rounded-lg border-l-4 border-blue-500">
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Latest Response:</p>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">{request.responses[0].message}</p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          /* Outage Notifications Tab */
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Current Outages */}
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                  <AlertCircle className="w-6 h-6 text-red-400 mr-2" />
-                  Current & Upcoming Outages
-                </h2>
-                <div className="space-y-4">
-                  {outageNotifications.filter(o => o.status === 'upcoming').map((outage) => (
-                    <div key={outage.id} className="p-4 bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
-                      <div className="flex items-start justify-between mb-2">
-                        <span className={`px-2 py-1 rounded text-xs font-semibold border ${getOutageTypeColor(outage.type)}`}>
-                          {outage.type.toUpperCase()}
-                        </span>
-                        <span className="text-xs text-gray-600 dark:text-gray-400">{outage.date}</span>
-                      </div>
-                      <h3 className="text-white font-semibold mb-2">{outage.area}</h3>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{outage.reason}</p>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600 dark:text-gray-400">
-                          <Clock className="w-4 h-4 inline mr-1" />
-                          {outage.time}
-                        </span>
-                        <span className="text-yellow-400">
-                          {outage.affected} affected
-                        </span>
-                      </div>
+                      {request.responses.length > 0 && (
+                        <div className="mt-3 p-2 bg-white dark:bg-white/5 rounded-lg border-l-4 border-blue-500">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Latest Response:</p>
+                          <p className="text-xs text-gray-700 dark:text-gray-300">{request.responses[0].message}</p>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
               </div>
-
-              {/* Outage Map/Statistics */}
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Outage Statistics</h2>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/20">
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">System Reliability</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">99.8%</p>
-                      <p className="text-green-400 text-xs">This month</p>
-                    </div>
-                    <div className="p-4 bg-gradient-to-r from-red-500/10 to-rose-500/10 rounded-xl border border-red-500/20">
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">Avg. Restoration</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">2.5 hrs</p>
-                      <p className="text-red-400 text-xs">Unplanned outages</p>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
-                    <h3 className="text-white font-semibold mb-3">Recent Resolutions</h3>
-                    {outageNotifications.filter(o => o.status === 'resolved').map((outage) => (
-                      <div key={outage.id} className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-white/10 last:border-0">
-                        <div>
-                          <p className="text-gray-900 dark:text-white text-sm">{outage.area}</p>
-                          <p className="text-gray-600 dark:text-gray-400 text-xs">{outage.date} • Resolved in {outage.resolutionTime}</p>
+            ) : (
+              /* Outage Notifications Tab */
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Current Outages */}
+                  <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                    <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3 flex items-center">
+                      <AlertCircle className="w-5 h-5 text-red-400 mr-2" />
+                      Current & Upcoming Outages
+                    </h2>
+                    <div className="space-y-3">
+                      {outageNotifications.filter(o => o.status === 'upcoming').map((outage) => (
+                        <div key={outage.id} className="p-3 bg-white dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10">
+                          <div className="flex items-start justify-between mb-2">
+                            <span className={`px-2 py-1 rounded text-xs font-semibold border ${getOutageTypeColor(outage.type)}`}>
+                              {outage.type.toUpperCase()}
+                            </span>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{outage.date}</span>
+                          </div>
+                          <h3 className="text-sm text-white font-semibold mb-1">{outage.area}</h3>
+                          <p className="text-gray-600 dark:text-gray-400 text-xs mb-2">{outage.reason}</p>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-600 dark:text-gray-400">
+                              <Clock className="w-3 h-3 inline mr-1" />
+                              {outage.time}
+                            </span>
+                            <span className="text-yellow-400">
+                              {outage.affected} affected
+                            </span>
+                          </div>
                         </div>
-                        <CheckCircle className="w-5 h-5 text-green-400" />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Outage Map/Statistics */}
+                  <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                    <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">Outage Statistics</h2>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg border border-green-500/20">
+                          <p className="text-gray-600 dark:text-gray-400 text-xs">System Reliability</p>
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">99.8%</p>
+                          <p className="text-green-400 text-xs">This month</p>
+                        </div>
+                        <div className="p-3 bg-gradient-to-r from-red-500/10 to-rose-500/10 rounded-lg border border-red-500/20">
+                          <p className="text-gray-600 dark:text-gray-400 text-xs">Avg. Restoration</p>
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">2.5 hrs</p>
+                          <p className="text-red-400 text-xs">Unplanned outages</p>
+                        </div>
                       </div>
-                    ))}
+
+                      <div className="p-3 bg-white dark:bg-white/5 rounded-lg">
+                        <h3 className="text-sm text-white font-semibold mb-2">Recent Resolutions</h3>
+                        {outageNotifications.filter(o => o.status === 'resolved').map((outage) => (
+                          <div key={outage.id} className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-white/10 last:border-0">
+                            <div>
+                              <p className="text-gray-900 dark:text-white text-xs">{outage.area}</p>
+                              <p className="text-gray-600 dark:text-gray-400 text-xs">{outage.date} • Resolved in {outage.resolutionTime}</p>
+                            </div>
+                            <CheckCircle className="w-4 h-4 text-green-400" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Outage Alert Settings */}
+                <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-xl p-4 border border-blue-500/20">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">Outage Alert Preferences</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Configure how you receive outage notifications</p>
+                    </div>
+                    <button className="px-3 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all">
+                      Configure Alerts
+                    </button>
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Outage Alert Settings */}
-            <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-2xl p-6 border border-blue-500/20">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Outage Alert Preferences</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Configure how you receive outage notifications</p>
-                </div>
-                <button className="px-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all">
-                  Configure Alerts
-                </button>
-              </div>
-            </div>
-          </>
-        )}
+            )}
+          </div>
+        </div>
 
         {/* New Request Modal */}
         {showNewRequest && (
@@ -485,12 +491,12 @@ export default function ServiceRequests() {
                   <select
                     value={newRequest.type}
                     onChange={(e) => setNewRequest({ ...newRequest, type: e.target.value, category: '' })}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors font-medium"
                   >
-                    <option value="">Select Type</option>
-                    <option value="complaint">Complaint</option>
-                    <option value="service">Service Request</option>
-                    <option value="inquiry">General Inquiry</option>
+                    <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Select Type</option>
+                    <option value="complaint" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Complaint</option>
+                    <option value="service" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Service Request</option>
+                    <option value="inquiry" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">General Inquiry</option>
                   </select>
                 </div>
 
@@ -500,11 +506,11 @@ export default function ServiceRequests() {
                     <select
                       value={newRequest.category}
                       onChange={(e) => setNewRequest({ ...newRequest, category: e.target.value })}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors font-medium"
                     >
-                      <option value="">Select Category</option>
+                      <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Select Category</option>
                       {requestCategories[newRequest.type as keyof typeof requestCategories]?.map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
+                        <option key={cat} value={cat} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">{cat}</option>
                       ))}
                     </select>
                   </div>
@@ -537,11 +543,11 @@ export default function ServiceRequests() {
                   <select
                     value={newRequest.priority}
                     onChange={(e) => setNewRequest({ ...newRequest, priority: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors font-medium"
                   >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
+                    <option value="low" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Low</option>
+                    <option value="medium" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Medium</option>
+                    <option value="high" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">High</option>
                   </select>
                 </div>
 

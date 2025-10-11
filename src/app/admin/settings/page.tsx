@@ -226,12 +226,12 @@ export default function AdminSettings() {
                         ...settings,
                         general: { ...settings.general, timezone: e.target.value }
                       })}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
                     >
-                      <option value="UTC-5">UTC-5 (Eastern)</option>
-                      <option value="UTC-6">UTC-6 (Central)</option>
-                      <option value="UTC-7">UTC-7 (Mountain)</option>
-                      <option value="UTC-8">UTC-8 (Pacific)</option>
+                      <option value="UTC-5" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">UTC-5 (Eastern)</option>
+                      <option value="UTC-6" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">UTC-6 (Central)</option>
+                      <option value="UTC-7" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">UTC-7 (Mountain)</option>
+                      <option value="UTC-8" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">UTC-8 (Pacific)</option>
                     </select>
                   </div>
 
@@ -243,12 +243,12 @@ export default function AdminSettings() {
                         ...settings,
                         general: { ...settings.general, currency: e.target.value }
                       })}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
                     >
-                      <option value="USD">USD ($)</option>
-                      <option value="EUR">EUR (€)</option>
-                      <option value="GBP">GBP (£)</option>
-                      <option value="INR">INR (₹)</option>
+                      <option value="USD" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">USD ($)</option>
+                      <option value="EUR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">EUR (€)</option>
+                      <option value="GBP" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">GBP (£)</option>
+                      <option value="INR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">INR (₹)</option>
                     </select>
                   </div>
 
@@ -260,12 +260,12 @@ export default function AdminSettings() {
                         ...settings,
                         general: { ...settings.general, language: e.target.value }
                       })}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
                     >
-                      <option>English</option>
-                      <option>Spanish</option>
-                      <option>French</option>
-                      <option>German</option>
+                      <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">English</option>
+                      <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Spanish</option>
+                      <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">French</option>
+                      <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">German</option>
                     </select>
                   </div>
 
@@ -277,11 +277,11 @@ export default function AdminSettings() {
                         ...settings,
                         general: { ...settings.general, dateFormat: e.target.value }
                       })}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
                     >
-                      <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                      <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                      <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                      <option value="MM/DD/YYYY" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">MM/DD/YYYY</option>
+                      <option value="DD/MM/YYYY" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">DD/MM/YYYY</option>
+                      <option value="YYYY-MM-DD" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">YYYY-MM-DD</option>
                     </select>
                   </div>
 
@@ -293,12 +293,12 @@ export default function AdminSettings() {
                         ...settings,
                         general: { ...settings.general, fiscalYearStart: e.target.value }
                       })}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
+                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
                     >
-                      <option value="January">January</option>
-                      <option value="April">April</option>
-                      <option value="July">July</option>
-                      <option value="October">October</option>
+                      <option value="January" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">January</option>
+                      <option value="April" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">April</option>
+                      <option value="July" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">July</option>
+                      <option value="October" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">October</option>
                     </select>
                   </div>
                 </div>
@@ -343,12 +343,12 @@ export default function AdminSettings() {
                           ...settings,
                           billing: { ...settings.billing, billingCycle: e.target.value }
                         })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
+                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
                       >
-                        <option value="monthly">Monthly</option>
-                        <option value="bimonthly">Bi-Monthly</option>
-                        <option value="quarterly">Quarterly</option>
-                        <option value="annually">Annually</option>
+                        <option value="monthly" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Monthly</option>
+                        <option value="bimonthly" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Bi-Monthly</option>
+                        <option value="quarterly" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Quarterly</option>
+                        <option value="annually" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Annually</option>
                       </select>
                     </div>
 
@@ -476,11 +476,11 @@ export default function AdminSettings() {
                           ...settings,
                           security: { ...settings.security, twoFactorAuth: e.target.value }
                         })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
+                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
                       >
-                        <option value="disabled">Disabled</option>
-                        <option value="optional">Optional</option>
-                        <option value="required">Required</option>
+                        <option value="disabled" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Disabled</option>
+                        <option value="optional" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Optional</option>
+                        <option value="required" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Required</option>
                       </select>
                     </div>
 
@@ -531,12 +531,12 @@ export default function AdminSettings() {
                           ...settings,
                           security: { ...settings.security, backupFrequency: e.target.value }
                         })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
+                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
                       >
-                        <option value="hourly">Hourly</option>
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
+                        <option value="hourly" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Hourly</option>
+                        <option value="daily" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Daily</option>
+                        <option value="weekly" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Weekly</option>
+                        <option value="monthly" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Monthly</option>
                       </select>
                     </div>
                   </div>

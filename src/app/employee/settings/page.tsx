@@ -220,13 +220,13 @@ export default function EmployeeSettings() {
                             ...settings,
                             work: { ...settings.work, maxDailyTasks: e.target.value }
                           })}
-                          className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400"
+                          className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400 font-medium"
                         >
-                          <option value="3">3 tasks</option>
-                          <option value="5">5 tasks</option>
-                          <option value="8">8 tasks</option>
-                          <option value="10">10 tasks</option>
-                          <option value="unlimited">Unlimited</option>
+                          <option value="3" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">3 tasks</option>
+                          <option value="5" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">5 tasks</option>
+                          <option value="8" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">8 tasks</option>
+                          <option value="10" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">10 tasks</option>
+                          <option value="unlimited" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Unlimited</option>
                         </select>
                       </div>
 
@@ -238,12 +238,12 @@ export default function EmployeeSettings() {
                             ...settings,
                             work: { ...settings.work, taskPriority: e.target.value }
                           })}
-                          className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400"
+                          className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400 font-medium"
                         >
-                          <option value="distance">Nearest first</option>
-                          <option value="priority">High priority first</option>
-                          <option value="deadline">Earliest deadline</option>
-                          <option value="type">By task type</option>
+                          <option value="distance" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Nearest first</option>
+                          <option value="priority" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">High priority first</option>
+                          <option value="deadline" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Earliest deadline</option>
+                          <option value="type" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">By task type</option>
                         </select>
                       </div>
                     </div>
@@ -467,12 +467,12 @@ export default function EmployeeSettings() {
                           ...settings,
                           device: { ...settings.device, syncInterval: e.target.value }
                         })}
-                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400"
+                        className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400 font-medium"
                       >
-                        <option value="5">Every 5 minutes</option>
-                        <option value="15">Every 15 minutes</option>
-                        <option value="30">Every 30 minutes</option>
-                        <option value="60">Every hour</option>
+                        <option value="5" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Every 5 minutes</option>
+                        <option value="15" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Every 15 minutes</option>
+                        <option value="30" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Every 30 minutes</option>
+                        <option value="60" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Every hour</option>
                       </select>
                     </div>
 
@@ -587,12 +587,12 @@ export default function EmployeeSettings() {
                             ...settings,
                             security: { ...settings.security, autoLogout: e.target.value }
                           })}
-                          className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400"
+                          className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400 font-medium"
                         >
-                          <option value="15">15 minutes</option>
-                          <option value="30">30 minutes</option>
-                          <option value="60">1 hour</option>
-                          <option value="never">Never</option>
+                          <option value="15" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">15 minutes</option>
+                          <option value="30" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">30 minutes</option>
+                          <option value="60" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">1 hour</option>
+                          <option value="never" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Never</option>
                         </select>
                       </div>
 

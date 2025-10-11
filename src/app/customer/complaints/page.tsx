@@ -246,12 +246,12 @@ export default function ComplaintsFeedback() {
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="px-4 py-2 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
+                  className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400 font-medium"
                 >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="resolved">Resolved</option>
+                  <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">All Status</option>
+                  <option value="pending" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Pending</option>
+                  <option value="in_progress" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">In Progress</option>
+                  <option value="resolved" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Resolved</option>
                 </select>
               </div>
             </div>
@@ -441,15 +441,15 @@ export default function ComplaintsFeedback() {
                     required
                     value={formData.category}
                     onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400 font-medium"
                   >
-                    <option value="">Select Category</option>
-                    <option value="billing">Billing Issues</option>
-                    <option value="service">Service Disruption</option>
-                    <option value="technical">Technical Problems</option>
-                    <option value="meter">Meter Reading</option>
-                    <option value="payment">Payment Issues</option>
-                    <option value="other">Other</option>
+                    <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Select Category</option>
+                    <option value="billing" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Billing Issues</option>
+                    <option value="service" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Service Disruption</option>
+                    <option value="technical" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Technical Problems</option>
+                    <option value="meter" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Meter Reading</option>
+                    <option value="payment" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Payment Issues</option>
+                    <option value="other" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Other</option>
                   </select>
                 </div>
 

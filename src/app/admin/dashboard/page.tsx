@@ -61,17 +61,18 @@ export default function BillingOverview() {
     collectionRate: 86.3
   };
 
-  // Revenue by Category
+  // Revenue by Category - Professional Bar Chart
   const categoryData = {
     labels: ['Residential', 'Commercial', 'Industrial', 'Agricultural'],
     datasets: [
       {
-        data: [45, 30, 20, 5],
+        label: 'Revenue ($)',
+        data: [1281375, 854250, 569500, 142375], // 45%, 30%, 20%, 5% of 2847500
         backgroundColor: [
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(236, 72, 153, 0.8)',
-          'rgba(168, 85, 247, 0.8)',
-          'rgba(59, 130, 246, 0.8)'
+          'rgba(239, 68, 68, 0.85)',
+          'rgba(236, 72, 153, 0.85)',
+          'rgba(168, 85, 247, 0.85)',
+          'rgba(59, 130, 246, 0.85)'
         ],
         borderColor: [
           'rgba(239, 68, 68, 1)',
@@ -79,10 +80,13 @@ export default function BillingOverview() {
           'rgba(168, 85, 247, 1)',
           'rgba(59, 130, 246, 1)'
         ],
-        borderWidth: 2
+        borderWidth: 2,
+        borderRadius: 8
       }
     ]
   };
+
+  const categoryPercentages = [45, 30, 20, 5];
 
   // Monthly Revenue Trend
   const revenueData = {
@@ -427,28 +431,238 @@ export default function BillingOverview() {
           <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revenue by Category</h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Customer type distribution</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revenue by Customer Category</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Connection type revenue breakdown</p>
               </div>
-              <PieChart className="w-6 h-6 text-pink-400" />
+              <BarChart3 className="w-6 h-6 text-pink-400" />
             </div>
             <div className="h-64">
-              <Doughnut data={categoryData} options={doughnutOptions} />
+              <Bar
+                data={categoryData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false
+                    },
+                    tooltip: {
+                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                      padding: 12,
+                      titleFont: { size: 14, weight: 'bold' },
+                      bodyFont: { size: 13 },
+                      callbacks: {
+                        label: function(context: any) {
+                          const index = context.dataIndex;
+                          const revenue = context.parsed.y;
+                          const percentage = categoryPercentages[index];
+                          return [
+                            `Revenue: $${revenue.toLocaleString()}`,
+                            `Market Share: ${percentage}%`
+                          ];
+                        }
+                      }
+                    }
+                  },
+                  scales: {
+                    x: {
+                      ticks: {
+                        color: 'rgba(255, 255, 255, 0.8)',
+                        font: { size: 12 }
+                      },
+                      grid: { display: false }
+                    },
+                    y: {
+                      ticks: {
+                        color: 'rgba(255, 255, 255, 0.8)',
+                        callback: function(value: any) {
+                          return '$' + (value / 1000).toFixed(0) + 'K';
+                        }
+                      },
+                      grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                  }
+                }}
+              />
+            </div>
+            <div className="mt-4 grid grid-cols-4 gap-3">
+              {['Residential', 'Commercial', 'Industrial', 'Agricultural'].map((category, index) => (
+                <div key={index} className="text-center p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg border border-gray-200 dark:border-gray-200 dark:border-white/10">
+                  <div className="flex items-center justify-center space-x-2 mb-1">
+                    <div className={`w-3 h-3 rounded-full`} style={{
+                      backgroundColor: ['#ef4444', '#ec4899', '#a855f7', '#3b82f6'][index]
+                    }}></div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{category}</p>
+                  </div>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{categoryPercentages[index]}%</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Payment Methods Chart */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Payment Methods</h2>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">Transaction volume by payment type</p>
+        {/* Payment Methods Analytics Table */}
+        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-gray-200 dark:border-white/10 overflow-hidden">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Payment Methods Analytics</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Transaction volume and revenue by payment type</p>
+              </div>
+              <CreditCard className="w-6 h-6 text-purple-400" />
             </div>
-            <CreditCard className="w-6 h-6 text-purple-400" />
           </div>
-          <div className="h-64">
-            <Bar data={paymentMethodsData} options={chartOptions} />
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Payment Method</th>
+                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Transactions</th>
+                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Total Revenue</th>
+                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Avg Transaction</th>
+                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Market Share</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10">
+                <tr className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                      <p className="text-gray-900 dark:text-white font-medium">Online Banking</p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-semibold">3,500</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-semibold">$862,500</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-600 dark:text-gray-400">$246.43</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-semibold">24.8%</span>
+                  </td>
+                </tr>
+                <tr className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+                      <p className="text-gray-900 dark:text-white font-medium">Credit Card</p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-semibold">2,800</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-semibold">$689,200</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-600 dark:text-gray-400">$246.14</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <span className="px-3 py-1 bg-pink-500/20 text-pink-400 rounded-full text-xs font-semibold">19.8%</span>
+                  </td>
+                </tr>
+                <tr className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                      <p className="text-gray-900 dark:text-white font-medium">Mobile Wallet</p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-semibold">2,400</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-semibold">$588,000</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-600 dark:text-gray-400">$245.00</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-semibold">17.0%</span>
+                  </td>
+                </tr>
+                <tr className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                      <p className="text-gray-900 dark:text-white font-medium">Debit Card</p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-semibold">2,200</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-semibold">$539,000</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-600 dark:text-gray-400">$245.00</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs font-semibold">15.6%</span>
+                  </td>
+                </tr>
+                <tr className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <p className="text-gray-900 dark:text-white font-medium">Auto Debit</p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-semibold">1,800</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-semibold">$441,000</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-600 dark:text-gray-400">$245.00</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-semibold">12.7%</span>
+                  </td>
+                </tr>
+                <tr className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <p className="text-gray-900 dark:text-white font-medium">Cash</p>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-semibold">1,500</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-semibold">$367,500</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-600 dark:text-gray-400">$245.00</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-semibold">10.6%</span>
+                  </td>
+                </tr>
+                <tr className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 font-bold">
+                  <td className="px-6 py-4">
+                    <p className="text-gray-900 dark:text-white font-bold">TOTAL</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-bold">14,200</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-bold">$3,487,200</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <p className="text-gray-900 dark:text-white font-bold">$245.58</p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-xs font-semibold">100%</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 

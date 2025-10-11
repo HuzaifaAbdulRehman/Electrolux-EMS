@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   FileText,
@@ -20,15 +21,13 @@ import {
   Search,
   Filter
 } from 'lucide-react';
-import { Line, Doughnut, Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
-  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -40,8 +39,6 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
-  BarElement,
-  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -74,6 +71,7 @@ interface Bill {
 }
 
 export default function ViewBills() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
@@ -180,51 +178,37 @@ export default function ViewBills() {
   const consumptionChange = ((currentMonth.units - lastMonth.units) / lastMonth.units * 100).toFixed(1);
   const amountChange = ((currentMonth.amount - lastMonth.amount) / lastMonth.amount * 100).toFixed(1);
 
-  // Chart data
-  const consumptionTrendData = {
+  // Combined Chart Data - Shows both consumption and cost
+  const combinedTrendData = {
     labels: bills.map(b => b.month.split(' ')[0]).reverse(),
     datasets: [
       {
         label: 'Units Consumed (kWh)',
         data: bills.map(b => b.units).reverse(),
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: 'rgb(59, 130, 246)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        yAxisID: 'y'
+      },
+      {
+        label: 'Bill Amount (₹)',
+        data: bills.map(b => b.amount).reverse(),
         borderColor: 'rgb(251, 191, 36)',
         backgroundColor: 'rgba(251, 191, 36, 0.1)',
         fill: true,
         tension: 0.4,
-        pointRadius: 4,
-        pointHoverRadius: 6
-      }
-    ]
-  };
-
-  const amountTrendData = {
-    labels: bills.map(b => b.month.split(' ')[0]).reverse(),
-    datasets: [
-      {
-        label: 'Amount (₹)',
-        data: bills.map(b => b.amount).reverse(),
-        backgroundColor: 'rgba(251, 191, 36, 0.8)',
-        borderColor: 'rgb(251, 191, 36)',
-        borderWidth: 2
-      }
-    ]
-  };
-
-  const statusDistributionData = {
-    labels: ['Paid', 'Pending', 'Overdue'],
-    datasets: [
-      {
-        data: [
-          bills.filter(b => b.status === 'paid').length,
-          bills.filter(b => b.status === 'pending').length,
-          bills.filter(b => b.status === 'overdue').length
-        ],
-        backgroundColor: [
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(251, 191, 36, 0.8)',
-          'rgba(239, 68, 68, 0.8)'
-        ],
-        borderWidth: 0
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointBackgroundColor: 'rgb(251, 191, 36)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        yAxisID: 'y1'
       }
     ]
   };
@@ -232,22 +216,75 @@ export default function ViewBills() {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+      mode: 'index' as const,
+      intersect: false,
+    },
     plugins: {
       legend: {
+        position: 'top' as const,
         labels: {
           color: '#9CA3AF',
-          font: { size: 12 }
+          font: { size: 13, weight: '500' },
+          usePointStyle: true,
+          padding: 20
         }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        padding: 12,
+        titleFont: { size: 14, weight: 'bold' },
+        bodyFont: { size: 13 },
+        bodySpacing: 6,
+        usePointStyle: true
       }
     },
     scales: {
       x: {
-        ticks: { color: '#9CA3AF' },
-        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+        ticks: {
+          color: '#9CA3AF',
+          font: { size: 12 }
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.05)',
+          drawOnChartArea: false
+        }
       },
       y: {
-        ticks: { color: '#9CA3AF' },
-        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+        type: 'linear' as const,
+        display: true,
+        position: 'left' as const,
+        title: {
+          display: true,
+          text: 'Units (kWh)',
+          color: 'rgb(59, 130, 246)',
+          font: { size: 12, weight: 'bold' }
+        },
+        ticks: {
+          color: 'rgb(59, 130, 246)',
+          font: { size: 11 }
+        },
+        grid: {
+          color: 'rgba(59, 130, 246, 0.1)'
+        }
+      },
+      y1: {
+        type: 'linear' as const,
+        display: true,
+        position: 'right' as const,
+        title: {
+          display: true,
+          text: 'Amount (₹)',
+          color: 'rgb(251, 191, 36)',
+          font: { size: 12, weight: 'bold' }
+        },
+        ticks: {
+          color: 'rgb(251, 191, 36)',
+          font: { size: 11 }
+        },
+        grid: {
+          drawOnChartArea: false
+        }
       }
     }
   };
@@ -400,45 +437,40 @@ export default function ViewBills() {
           </div>
         </div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Consumption Trend */}
-          <div className="lg:col-span-2 bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Consumption Trend</h2>
-            <div className="h-[300px]">
-              <Line data={consumptionTrendData} options={chartOptions} />
-            </div>
-          </div>
-
-          {/* Bill Status Distribution */}
-          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Bill Status</h2>
-            <div className="h-[300px] flex items-center justify-center">
-              <Doughnut
-                data={statusDistributionData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'bottom',
-                      labels: {
-                        color: '#9CA3AF',
-                        padding: 15
-                      }
-                    }
-                  }
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Amount Trend Chart */}
+        {/* Combined Usage & Cost Analytics */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Bill Amount Trend</h2>
-          <div className="h-[300px]">
-            <Bar data={amountTrendData} options={chartOptions} />
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Consumption & Cost Trend Analysis</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">6-month historical comparison of energy usage and billing amounts</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span className="text-xs text-gray-600 dark:text-gray-400">Energy Usage</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                <span className="text-xs text-gray-600 dark:text-gray-400">Bill Amount</span>
+              </div>
+            </div>
+          </div>
+          <div className="h-[350px]">
+            <Line data={combinedTrendData} options={chartOptions} />
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-xl p-4 border border-blue-500/20">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Avg Units/Month</p>
+              <p className="text-2xl font-bold text-blue-500">{avgConsumption} kWh</p>
+            </div>
+            <div className="bg-gradient-to-br from-yellow-400/10 to-orange-500/10 rounded-xl p-4 border border-yellow-400/20">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Avg Bill/Month</p>
+              <p className="text-2xl font-bold text-yellow-400">₹{avgAmount}</p>
+            </div>
+            <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl p-4 border border-purple-500/20">
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Cost per Unit</p>
+              <p className="text-2xl font-bold text-purple-400">₹{(parseFloat(avgAmount) / avgConsumption).toFixed(2)}</p>
+            </div>
           </div>
         </div>
 
@@ -515,9 +547,9 @@ export default function ViewBills() {
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => setSelectedBill(bill)}
+                          onClick={() => router.push('/customer/bill-view')}
                           className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                          title="View Details"
+                          title="View Professional Bill"
                         >
                           <Eye className="w-4 h-4" />
                         </button>

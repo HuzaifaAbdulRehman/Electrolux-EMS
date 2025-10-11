@@ -63,13 +63,11 @@ export default function AdminAnalytics() {
   const [selectedMetric, setSelectedMetric] = useState('revenue');
   const [refreshing, setRefreshing] = useState(false);
 
-  // Key Performance Indicators
+  // Key Performance Indicators - Only realistic DB-driven metrics
   const kpis = {
     revenue: { value: '$2.45M', change: '+12.5%', trend: 'up' },
     customers: { value: '15,234', change: '+8.2%', trend: 'up' },
-    consumption: { value: '145 GWh', change: '+5.7%', trend: 'up' },
-    efficiency: { value: '94.2%', change: '-0.8%', trend: 'down' },
-    satisfaction: { value: '4.6/5', change: '+0.3', trend: 'up' },
+    consumption: { value: '145,000 kWh', change: '+5.7%', trend: 'up' }, // Total kWh This Month
     collections: { value: '96.8%', change: '+2.1%', trend: 'up' }
   };
 
@@ -128,55 +126,8 @@ export default function AdminAnalytics() {
     ]
   };
 
-  // System health metrics
-  const systemHealthData = {
-    labels: ['Uptime', 'Response Time', 'Error Rate', 'Security', 'Backup Status'],
-    datasets: [
-      {
-        label: 'Current',
-        data: [99.8, 95, 98, 100, 100],
-        backgroundColor: 'rgba(34, 197, 94, 0.2)',
-        borderColor: 'rgb(34, 197, 94)',
-        borderWidth: 2
-      },
-      {
-        label: 'Threshold',
-        data: [99, 90, 95, 95, 100],
-        backgroundColor: 'rgba(239, 68, 68, 0.2)',
-        borderColor: 'rgb(239, 68, 68)',
-        borderWidth: 2
-      }
-    ]
-  };
-
-  // Peak demand analysis
-  const peakDemandData = {
-    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
-    datasets: [
-      {
-        label: 'Today',
-        data: [120, 80, 180, 220, 280, 240],
-        borderColor: 'rgb(250, 204, 21)',
-        backgroundColor: 'rgba(250, 204, 21, 0.1)',
-        tension: 0.4
-      },
-      {
-        label: 'Average',
-        data: [100, 70, 160, 200, 250, 220],
-        borderColor: 'rgb(147, 51, 234)',
-        backgroundColor: 'rgba(147, 51, 234, 0.1)',
-        tension: 0.4
-      }
-    ]
-  };
-
-  // Predictive analytics
-  const predictions = [
-    { metric: 'Revenue Next Month', value: '$2.52M', confidence: '92%', trend: 'up' },
-    { metric: 'Peak Demand', value: '312 MW', confidence: '88%', trend: 'up' },
-    { metric: 'New Connections', value: '245', confidence: '85%', trend: 'stable' },
-    { metric: 'System Load', value: '78%', confidence: '90%', trend: 'down' }
-  ];
+  // REMOVED: System health metrics, Peak demand analysis, Predictive analytics
+  // These require infrastructure monitoring, smart meters, and AI/ML - not available in DBMS project
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -223,8 +174,8 @@ export default function AdminAnalytics() {
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        {/* KPI Cards - Only realistic DB-driven metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Object.entries(kpis).map(([key, data]) => (
             <div key={key} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
               <p className="text-gray-600 dark:text-gray-400 text-sm capitalize mb-1">{key}</p>
@@ -235,6 +186,12 @@ export default function AdminAnalytics() {
                 {data.trend === 'up' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
                 <span>{data.change}</span>
               </div>
+              {/* MySQL queries for each KPI:
+                  revenue: SELECT SUM(amount) FROM bills WHERE MONTH(bill_date) = CURRENT_MONTH
+                  customers: SELECT COUNT(*) FROM customers WHERE status='active'
+                  consumption: SELECT SUM(units) FROM bills WHERE MONTH(bill_date) = CURRENT_MONTH
+                  collections: SELECT (SUM(paid_amount)/SUM(total_amount))*100 FROM bills WHERE MONTH(bill_date) = CURRENT_MONTH
+              */}
             </div>
           ))}
         </div>
@@ -352,36 +309,31 @@ export default function AdminAnalytics() {
             </div>
           </div>
 
-          {/* System Health */}
+          {/* Monthly Consumption Summary */}
           <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">System Health Metrics</h2>
-            <div className="h-64">
-              <Radar
-                data={systemHealthData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: 'bottom',
-                      labels: { color: 'rgba(255, 255, 255, 0.6)' }
-                    }
-                  },
-                  scales: {
-                    r: {
-                      grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                      pointLabels: { color: 'rgba(255, 255, 255, 0.6)' },
-                      ticks: { display: false }
-                    }
-                  }
-                }}
-              />
-            </div>
-            <div className="flex items-center justify-center space-x-4 mt-4">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="w-5 h-5 text-green-400" />
-                <span className="text-green-400 text-sm">All Systems Operational</span>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Monthly Consumption Summary</h2>
+            <div className="space-y-4">
+              <div className="p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl border border-blue-500/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Total kWh This Month</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">145,000 kWh</p>
+                  </div>
+                  <Zap className="w-8 h-8 text-blue-400" />
+                </div>
+                <p className="text-sm text-blue-400 mt-2">+5.7% from last month</p>
+                {/* MySQL: SELECT SUM(units) FROM bills WHERE MONTH(bill_date) = CURRENT_MONTH */}
+              </div>
+              <div className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Average Bill Amount</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">$245.50</p>
+                  </div>
+                  <DollarSign className="w-8 h-8 text-green-400" />
+                </div>
+                <p className="text-sm text-green-400 mt-2">Per customer this month</p>
+                {/* MySQL: SELECT AVG(amount) FROM bills WHERE MONTH(bill_date) = CURRENT_MONTH */}
               </div>
             </div>
           </div>

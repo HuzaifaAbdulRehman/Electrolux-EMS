@@ -791,7 +791,7 @@ export default function BillingOverview() {
         </div>
 
         {/* Today's Billing Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-xl p-6 border border-green-500/20">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
@@ -802,6 +802,7 @@ export default function BillingOverview() {
             <p className="text-gray-700 dark:text-gray-300 mb-1">Bills Generated Today</p>
             <p className="text-3xl font-bold text-gray-900 dark:text-white">1,247</p>
             <p className="text-sm text-green-400 mt-2">+18% from yesterday</p>
+            {/* MySQL: SELECT COUNT(*) FROM bills WHERE DATE(created_date) = CURDATE() */}
           </div>
 
           <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-xl p-6 border border-blue-500/20">
@@ -814,18 +815,7 @@ export default function BillingOverview() {
             <p className="text-gray-700 dark:text-gray-300 mb-1">Payments Received Today</p>
             <p className="text-3xl font-bold text-gray-900 dark:text-white">$86,420</p>
             <p className="text-sm text-blue-400 mt-2">742 transactions</p>
-          </div>
-
-          <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-xl p-6 border border-purple-500/20">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <Activity className="w-5 h-5 text-purple-400" />
-            </div>
-            <p className="text-gray-700 dark:text-gray-300 mb-1">Active Customers</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">11,598</p>
-            <p className="text-sm text-purple-400 mt-2">96.5% payment rate</p>
+            {/* MySQL: SELECT SUM(amount), COUNT(*) FROM payments WHERE DATE(payment_date) = CURDATE() */}
           </div>
         </div>
       </div>

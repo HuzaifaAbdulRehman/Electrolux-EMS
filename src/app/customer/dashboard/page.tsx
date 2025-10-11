@@ -60,10 +60,10 @@ export default function CustomerDashboard() {
       color: 'from-yellow-400 to-orange-500'
     },
     {
-      title: 'Average Daily',
-      value: '16.2 kWh',
-      change: '+2.3%',
-      trend: 'up',
+      title: 'Avg Monthly Usage',
+      value: '457 kWh',
+      change: 'last 6 months',
+      trend: 'neutral',
       icon: Activity,
       color: 'from-purple-500 to-pink-500'
     },

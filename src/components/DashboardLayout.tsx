@@ -115,7 +115,6 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
           { icon: Home, label: 'Dashboard', href: '/customer/dashboard' },
           { icon: FileText, label: 'View Bills', href: '/customer/view-bills' },
           { icon: Calculator, label: 'Bill Calculator', href: '/customer/bill-calculator' },
-          { icon: Gauge, label: 'Request Reading', href: '/customer/request-reading' },
           { icon: BarChart3, label: 'Analytics', href: '/customer/analytics' },
           { icon: DollarSign, label: 'Payment', href: '/customer/payment' },
           { icon: ZapOff, label: 'Outage Schedule', href: '/customer/outage-schedule' },

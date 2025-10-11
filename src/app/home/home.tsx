@@ -258,7 +258,7 @@ export default function HomePage() {
               </div>
               <span className="text-xl font-bold text-white">Electrolux</span>
             </div>
-            <p className="text-gray-400">© 2024 Electrolux. All rights reserved.</p>
+            <p className="text-gray-400">© 2025 Electrolux. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -119,14 +119,14 @@ export default function MeterReadingForm() {
     <DashboardLayout userType="employee" userName="Mike Johnson">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">Meter Reading Entry</h1>
-              <p className="text-gray-400">Record customer meter readings accurately</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Meter Reading Entry</h1>
+              <p className="text-gray-600 dark:text-gray-400">Record customer meter readings accurately</p>
             </div>
             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center">
-              <Gauge className="w-9 h-9 text-white" />
+              <Gauge className="w-9 h-9 text-gray-900 dark:text-white" />
             </div>
           </div>
         </div>
@@ -137,24 +137,24 @@ export default function MeterReadingForm() {
             <CheckCircle className="w-8 h-8 text-green-400" />
             <div>
               <h3 className="text-white font-semibold text-lg">Reading Submitted Successfully!</h3>
-              <p className="text-gray-300 text-sm">Meter reading has been recorded and saved.</p>
+              <p className="text-gray-700 dark:text-gray-300 text-sm">Meter reading has been recorded and saved.</p>
             </div>
           </div>
         )}
 
         {/* Customer Search */}
-        <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
-          <h2 className="text-xl font-bold text-white mb-4">Customer Search</h2>
+        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Customer Search</h2>
           <div className="flex space-x-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 dark:text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleCustomerSearch()}
                 placeholder="Enter account number, meter number, or customer name"
-                className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
               />
             </div>
             <button
@@ -176,53 +176,53 @@ export default function MeterReadingForm() {
         {selectedCustomer && (
           <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl p-6 border border-green-500/20">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white">Customer Information</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Customer Information</h2>
               <CheckCircle className="w-6 h-6 text-green-400" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
-                  <User className="w-5 h-5 text-gray-400" />
+                  <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                   <div>
-                    <p className="text-gray-400 text-sm">Customer Name</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Customer Name</p>
                     <p className="text-white font-semibold">{selectedCustomer.name}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <FileText className="w-5 h-5 text-gray-400" />
+                  <FileText className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                   <div>
-                    <p className="text-gray-400 text-sm">Account Number</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Account Number</p>
                     <p className="text-white font-semibold">{selectedCustomer.accountNumber}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <MapPin className="w-5 h-5 text-gray-400" />
+                  <MapPin className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                   <div>
-                    <p className="text-gray-400 text-sm">Address</p>
-                    <p className="text-white">{selectedCustomer.address}</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Address</p>
+                    <p className="text-gray-900 dark:text-white">{selectedCustomer.address}</p>
                   </div>
                 </div>
               </div>
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
-                  <Gauge className="w-5 h-5 text-gray-400" />
+                  <Gauge className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                   <div>
-                    <p className="text-gray-400 text-sm">Meter Number</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Meter Number</p>
                     <p className="text-white font-semibold">{selectedCustomer.meterNumber}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <Zap className="w-5 h-5 text-gray-400" />
+                  <Zap className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                   <div>
-                    <p className="text-gray-400 text-sm">Last Reading</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Last Reading</p>
                     <p className="text-white font-semibold">{selectedCustomer.lastReading} kWh</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
-                  <Calendar className="w-5 h-5 text-gray-400" />
+                  <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                   <div>
-                    <p className="text-gray-400 text-sm">Last Reading Date</p>
-                    <p className="text-white">{selectedCustomer.lastReadingDate}</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">Last Reading Date</p>
+                    <p className="text-gray-900 dark:text-white">{selectedCustomer.lastReadingDate}</p>
                   </div>
                 </div>
               </div>
@@ -232,18 +232,18 @@ export default function MeterReadingForm() {
 
         {/* Reading Form */}
         {selectedCustomer && (
-          <form onSubmit={handleSubmit} className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 space-y-6">
-            <h2 className="text-xl font-bold text-white mb-4">Meter Reading Details</h2>
+          <form onSubmit={handleSubmit} className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10 space-y-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Meter Reading Details</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Current Reading */}
               <div>
-                <label className="text-sm text-gray-300 mb-2 block">Current Reading (kWh) *</label>
+                <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Current Reading (kWh) *</label>
                 <input
                   type="text"
                   value={readingData.currentReading}
                   onChange={(e) => setReadingData({ ...readingData, currentReading: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                   placeholder="Enter current meter reading"
                 />
                 {errors.currentReading && (
@@ -263,33 +263,33 @@ export default function MeterReadingForm() {
 
               {/* Reading Date */}
               <div>
-                <label className="text-sm text-gray-300 mb-2 block">Reading Date *</label>
+                <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Reading Date *</label>
                 <input
                   type="date"
                   value={readingData.readingDate}
                   onChange={(e) => setReadingData({ ...readingData, readingDate: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
                 />
               </div>
 
               {/* Reading Time */}
               <div>
-                <label className="text-sm text-gray-300 mb-2 block">Reading Time *</label>
+                <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Reading Time *</label>
                 <input
                   type="time"
                   value={readingData.readingTime}
                   onChange={(e) => setReadingData({ ...readingData, readingTime: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
                 />
               </div>
 
               {/* Meter Condition */}
               <div>
-                <label className="text-sm text-gray-300 mb-2 block">Meter Condition</label>
+                <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Meter Condition</label>
                 <select
                   value={readingData.meterCondition}
                   onChange={(e) => setReadingData({ ...readingData, meterCondition: e.target.value })}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
                 >
                   <option value="good">Good</option>
                   <option value="fair">Fair</option>
@@ -301,11 +301,11 @@ export default function MeterReadingForm() {
 
             {/* Notes */}
             <div>
-              <label className="text-sm text-gray-300 mb-2 block">Notes (Optional)</label>
+              <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Notes (Optional)</label>
               <textarea
                 value={readingData.notes}
                 onChange={(e) => setReadingData({ ...readingData, notes: e.target.value })}
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
                 rows={3}
                 placeholder="Add any additional notes or observations..."
               />
@@ -316,7 +316,7 @@ export default function MeterReadingForm() {
               <button
                 type="button"
                 onClick={() => setSelectedCustomer(null)}
-                className="px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white hover:bg-white/20 transition-all"
+                className="px-6 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all"
               >
                 Cancel
               </button>

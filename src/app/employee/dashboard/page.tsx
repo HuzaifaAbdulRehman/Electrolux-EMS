@@ -92,7 +92,7 @@ export default function EmployeeDashboard() {
       case 'high': return 'bg-red-500/20 text-red-400 border-red-500/50';
       case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
       case 'low': return 'bg-green-500/20 text-green-400 border-green-500/50';
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
+      default: return 'bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/50';
     }
   };
 
@@ -101,7 +101,7 @@ export default function EmployeeDashboard() {
       case 'completed': return <CheckCircle className="w-4 h-4 text-green-400" />;
       case 'in-progress': return <Clock className="w-4 h-4 text-yellow-400" />;
       case 'pending': return <AlertCircle className="w-4 h-4 text-blue-400" />;
-      default: return <AlertCircle className="w-4 h-4 text-gray-400" />;
+      default: return <AlertCircle className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
     }
   };
 
@@ -109,23 +109,23 @@ export default function EmployeeDashboard() {
     <DashboardLayout userType="employee" userName={employeeName}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Employee Dashboard
               </h1>
-              <p className="text-gray-400">
+              <p className="text-gray-600 dark:text-gray-400">
                 ID: {employeeId} • Department: {department}
               </p>
             </div>
             <div className="mt-4 sm:mt-0 flex items-center space-x-3">
               <div className="text-right">
-                <p className="text-sm text-gray-400">Today&apos;s Date</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Today&apos;s Date</p>
                 <p className="text-white font-semibold">October 10, 2024</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-white" />
+                <Calendar className="w-6 h-6 text-gray-900 dark:text-white" />
               </div>
             </div>
           </div>
@@ -136,17 +136,17 @@ export default function EmployeeDashboard() {
           {stats.map((stat, index) => (
             <div key={index} className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity"></div>
-              <div className="relative bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all">
+              <div className="relative bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
                 <div className="flex items-start justify-between mb-4">
                   <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center`}>
-                    <stat.icon className="w-6 h-6 text-white" />
+                    <stat.icon className="w-6 h-6 text-gray-900 dark:text-white" />
                   </div>
                   {stat.change && (
                     <span className="text-green-400 text-sm font-semibold">{stat.change}</span>
                   )}
                 </div>
-                <h3 className="text-gray-400 text-sm mb-1">{stat.title}</h3>
-                <p className="text-2xl font-bold text-white mb-2">{stat.value}</p>
+                <h3 className="text-gray-600 dark:text-gray-400 text-sm mb-1">{stat.title}</h3>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{stat.value}</p>
                 {stat.target && (
                   <p className="text-xs text-gray-500">Target: {stat.target}</p>
                 )}
@@ -156,7 +156,7 @@ export default function EmployeeDashboard() {
                 {stat.rating && (
                   <p className="text-xs text-green-400">{stat.rating}</p>
                 )}
-                <div className="mt-3 h-2 bg-white/10 rounded-full overflow-hidden">
+                <div className="mt-3 h-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 rounded-full overflow-hidden">
                   <div
                     className={`h-full bg-gradient-to-r ${stat.color} transition-all duration-500`}
                     style={{ width: `${stat.progress}%` }}
@@ -168,9 +168,9 @@ export default function EmployeeDashboard() {
         </div>
 
         {/* Pending Work Orders */}
-        <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-white">Pending Work Orders</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Pending Work Orders</h2>
             <button className="text-yellow-400 hover:text-yellow-300 text-sm font-semibold">
               View All
             </button>
@@ -178,7 +178,7 @@ export default function EmployeeDashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {workOrders.map((order) => (
-              <div key={order.id} className="p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 hover:border-white/20 transition-all">
+              <div key={order.id} className="p-4 bg-white dark:bg-white dark:bg-white/5 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-2">
                     {getStatusIcon(order.status)}
@@ -190,17 +190,17 @@ export default function EmployeeDashboard() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Users className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-300 text-sm">{order.customer}</span>
+                    <Users className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">{order.customer}</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-400 text-xs">{order.address}</span>
+                    <MapPin className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <span className="text-gray-600 dark:text-gray-400 text-xs">{order.address}</span>
                   </div>
                   <div className="flex items-center justify-between pt-2">
                     <div className="flex items-center space-x-2">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-400 text-xs">{order.time}</span>
+                      <Clock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <span className="text-gray-600 dark:text-gray-400 text-xs">{order.time}</span>
                     </div>
                     <button className="text-yellow-400 hover:text-yellow-300 text-xs font-semibold flex items-center space-x-1">
                       <span>Start</span>
@@ -214,8 +214,8 @@ export default function EmployeeDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
-          <h2 className="text-xl font-bold text-white mb-4">Quick Actions</h2>
+        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
               { icon: Gauge, label: 'New Reading', href: '/employee/meter-reading' },
@@ -225,11 +225,11 @@ export default function EmployeeDashboard() {
             ].map((action, index) => (
               <button key={index} className="group relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity blur-xl"></div>
-                <div className="relative flex flex-col items-center p-4 bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 hover:border-white/20 transition-all">
+                <div className="relative flex flex-col items-center p-4 bg-white dark:bg-white dark:bg-white/5 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
                   <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mb-3">
-                    <action.icon className="w-6 h-6 text-white" />
+                    <action.icon className="w-6 h-6 text-gray-900 dark:text-white" />
                   </div>
-                  <span className="text-white text-sm font-medium">{action.label}</span>
+                  <span className="text-gray-900 dark:text-white text-sm font-medium">{action.label}</span>
                 </div>
               </button>
             ))}

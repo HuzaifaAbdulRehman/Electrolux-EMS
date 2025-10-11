@@ -65,6 +65,16 @@ body {
   overflow-x: hidden;
 }
 
+/* Light mode background */
+html:not(.dark) body {
+  background: linear-gradient(to bottom right, #f9fafb, #f3f4f6, #e5e7eb);
+}
+
+/* Dark mode background */
+html.dark body {
+  background: linear-gradient(to bottom right, #0f172a, #581c87, #0f172a);
+}
+
 /* Animation keyframes */
 @keyframes float {
   0% { transform: translateY(0px); }

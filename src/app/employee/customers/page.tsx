@@ -97,7 +97,7 @@ export default function EmployeeCustomers() {
     <DashboardLayout userType="employee" userName="Mike Johnson">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Customer Database</h1>
@@ -114,10 +114,10 @@ export default function EmployeeCustomers() {
             { label: 'Overdue Bills', value: '156', icon: AlertCircle, color: 'from-red-500 to-rose-500' },
             { label: 'Avg Consumption', value: '438 kWh', icon: Activity, color: 'from-purple-500 to-pink-500' }
           ].map((stat, index) => (
-            <div key={index} className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div key={index} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
               <div className="flex items-center justify-between mb-2">
                 <div className={`w-10 h-10 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center`}>
-                  <stat.icon className="w-5 h-5 text-gray-900 dark:text-white" />
+                  <stat.icon className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</span>
               </div>
@@ -127,7 +127,7 @@ export default function EmployeeCustomers() {
         </div>
 
         {/* Search and Filter */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="flex-1 max-w-md relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -136,7 +136,7 @@ export default function EmployeeCustomers() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by name, account, or meter number..."
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
               />
             </div>
             <select
@@ -153,10 +153,10 @@ export default function EmployeeCustomers() {
         </div>
 
         {/* Customer Table */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-gray-200 dark:border-white/10 overflow-hidden">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <thead className="bg-white dark:bg-white dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Customer</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Contact</th>
@@ -168,7 +168,7 @@ export default function EmployeeCustomers() {
               </thead>
               <tbody className="divide-y divide-white/10">
                 {paginatedCustomers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
+                  <tr key={customer.id} className="hover:bg-white dark:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
@@ -230,7 +230,7 @@ export default function EmployeeCustomers() {
           </div>
 
           {/* Pagination */}
-          <div className="px-6 py-4 bg-white dark:bg-white dark:bg-white/5 border-t border-gray-200 dark:border-gray-200 dark:border-white/10 flex items-center justify-between">
+          <div className="px-6 py-4 bg-white dark:bg-white/5 border-t border-gray-200 dark:border-white/10 flex items-center justify-between">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredCustomers.length)} of {filteredCustomers.length} customers
             </p>

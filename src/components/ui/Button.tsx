@@ -33,14 +33,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variantStyles = {
       primary:
-        'bg-primary text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm',
+        'bg-primary text-gray-900 dark:text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm',
       secondary:
-        'bg-secondary text-white hover:bg-secondary-700 active:bg-secondary-900 shadow-sm',
+        'bg-secondary text-gray-900 dark:text-white hover:bg-secondary-700 active:bg-secondary-900 shadow-sm',
       outline:
         'border-2 border-primary text-primary hover:bg-primary-50 active:bg-primary-100',
       ghost: 'text-primary hover:bg-primary-50 active:bg-primary-100',
       danger:
-        'bg-error text-white hover:bg-red-600 active:bg-red-700 shadow-sm',
+        'bg-error text-gray-900 dark:text-white hover:bg-red-600 active:bg-red-700 shadow-sm',
     };
 
     const sizeStyles = {

@@ -135,7 +135,7 @@ export default function ReportGeneration() {
     <DashboardLayout userType="admin" userName="Sarah Johnson">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Report Generation</h1>
@@ -157,14 +157,14 @@ export default function ReportGeneration() {
         {/* Statistics */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           {reportStats.map((stat, index) => (
-            <div key={index} className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div key={index} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 dark:text-gray-400 text-sm">{stat.label}</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
                 </div>
                 <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center`}>
-                  <stat.icon className="w-6 h-6 text-gray-900 dark:text-white" />
+                  <stat.icon className="w-6 h-6 text-white" />
                 </div>
               </div>
             </div>
@@ -175,7 +175,7 @@ export default function ReportGeneration() {
           {/* Report Configuration */}
           <div className="lg:col-span-2 space-y-6">
             {/* Report Type Selection */}
-            <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Select Report Type</h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -189,12 +189,12 @@ export default function ReportGeneration() {
                     className={`p-4 rounded-xl border transition-all text-left ${
                       selectedReport === report.id
                         ? 'border-red-400/50 bg-white/10'
-                        : 'border-gray-200 dark:border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20'
+                        : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20'
                     }`}
                   >
                     <div className="flex items-start space-x-3">
                       <div className={`w-10 h-10 bg-gradient-to-r ${report.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                        <report.icon className="w-5 h-5 text-gray-900 dark:text-white" />
+                        <report.icon className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1">
                         <p className="text-white font-medium mb-1">{report.name}</p>
@@ -208,7 +208,7 @@ export default function ReportGeneration() {
 
             {/* Report Configuration */}
             {selectedReportData && !reportGenerated && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Configure Report</h2>
 
                 <div className="space-y-6">
@@ -227,7 +227,7 @@ export default function ReportGeneration() {
                           onClick={() => setDateRange(range.value)}
                           className={`py-2 px-3 rounded-lg font-medium transition-all text-sm ${
                             dateRange === range.value
-                              ? 'bg-gradient-to-r from-red-500 to-pink-500 text-gray-900 dark:text-white'
+                              ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
                               : 'bg-white/10 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-200 dark:hover:bg-white/20'
                           }`}
                         >
@@ -265,7 +265,7 @@ export default function ReportGeneration() {
                     <label className="text-sm text-gray-700 dark:text-gray-300 mb-3 block">Include Fields</label>
                     <div className="grid grid-cols-2 gap-3">
                       {selectedReportData.fields.map((field) => (
-                        <label key={field} className="flex items-center space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10">
+                        <label key={field} className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10">
                           <input
                             type="checkbox"
                             defaultChecked
@@ -286,7 +286,7 @@ export default function ReportGeneration() {
                         { value: 'excel', label: 'Excel', icon: FileSpreadsheet },
                         { value: 'csv', label: 'CSV', icon: FileSpreadsheet }
                       ].map((format) => (
-                        <label key={format.value} className="flex items-center space-x-2 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10">
+                        <label key={format.value} className="flex items-center space-x-2 p-3 bg-white dark:bg-white/5 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10">
                           <input type="radio" name="format" defaultChecked={format.value === 'pdf'} className="w-4 h-4" />
                           <format.icon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                           <span className="text-gray-900 dark:text-white text-sm">{format.label}</span>
@@ -337,7 +337,7 @@ export default function ReportGeneration() {
 
             {/* Report Preview */}
             {reportGenerated && selectedReportData && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">Report Generated Successfully</h2>
                   <CheckCircle className="w-8 h-8 text-green-400" />
@@ -346,7 +346,7 @@ export default function ReportGeneration() {
                 <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl p-6 border border-green-500/20 mb-6">
                   <div className="flex items-start space-x-4">
                     <div className={`w-12 h-12 bg-gradient-to-r ${selectedReportData.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                      <selectedReportData.icon className="w-6 h-6 text-gray-900 dark:text-white" />
+                      <selectedReportData.icon className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-semibold mb-1">{selectedReportData.name}</h3>
@@ -416,13 +416,13 @@ export default function ReportGeneration() {
             </div>
 
             {/* Recent Reports */}
-            <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Reports</h3>
               <div className="space-y-3">
                 {recentReports.map((report) => {
                   const ReportIcon = getReportIcon(report.type);
                   return (
-                    <div key={report.id} className="p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all cursor-pointer">
+                    <div key={report.id} className="p-3 bg-white dark:bg-white/5 rounded-lg hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all cursor-pointer">
                       <div className="flex items-start space-x-3">
                         <ReportIcon className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-1" />
                         <div className="flex-1 min-w-0">
@@ -441,7 +441,7 @@ export default function ReportGeneration() {
             </div>
 
             {/* Help */}
-            <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Need Help?</h3>
               <p className="text-gray-700 dark:text-gray-300 text-sm mb-4">
                 Learn more about generating and customizing reports in our documentation.

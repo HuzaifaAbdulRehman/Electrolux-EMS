@@ -204,7 +204,7 @@ export default function ServiceRequests() {
     <DashboardLayout userType="customer" userName="John Doe">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Service Center</h1>
@@ -230,12 +230,12 @@ export default function ServiceRequests() {
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-1 bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-1">
+        <div className="flex space-x-1 bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-1">
           <button
             onClick={() => setActiveTab('requests')}
             className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
               activeTab === 'requests'
-                ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 dark:text-white'
+                ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-100 dark:hover:bg-white/10'
             }`}
           >
@@ -245,7 +245,7 @@ export default function ServiceRequests() {
             onClick={() => setActiveTab('outages')}
             className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
               activeTab === 'outages'
-                ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 dark:text-white'
+                ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-100 dark:hover:bg-white/10'
             }`}
           >
@@ -257,7 +257,7 @@ export default function ServiceRequests() {
           <>
             {/* Statistics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm">Total Requests</p>
@@ -266,7 +266,7 @@ export default function ServiceRequests() {
                   <MessageSquare className="w-8 h-8 text-blue-400" />
                 </div>
               </div>
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm">In Progress</p>
@@ -277,7 +277,7 @@ export default function ServiceRequests() {
                   <Clock className="w-8 h-8 text-yellow-400" />
                 </div>
               </div>
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm">Resolved</p>
@@ -288,7 +288,7 @@ export default function ServiceRequests() {
                   <CheckCircle className="w-8 h-8 text-green-400" />
                 </div>
               </div>
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm">Avg. Response</p>
@@ -300,7 +300,7 @@ export default function ServiceRequests() {
             </div>
 
             {/* Filter and Search */}
-            <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10">
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                 <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -309,7 +309,7 @@ export default function ServiceRequests() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search requests..."
-                    className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                    className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                   />
                 </div>
                 <select
@@ -329,7 +329,7 @@ export default function ServiceRequests() {
             {/* Service Requests List */}
             <div className="space-y-4">
               {filteredRequests.map((request) => (
-                <div key={request.id} className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
+                <div key={request.id} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-start space-x-4">
                       <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
@@ -356,7 +356,7 @@ export default function ServiceRequests() {
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-200 dark:border-white/10">
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-white/10">
                     <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                       <span className="flex items-center space-x-1">
                         <Calendar className="w-4 h-4" />
@@ -381,7 +381,7 @@ export default function ServiceRequests() {
                   </div>
 
                   {request.responses.length > 0 && (
-                    <div className="mt-4 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg border-l-4 border-blue-500">
+                    <div className="mt-4 p-3 bg-white dark:bg-white/5 rounded-lg border-l-4 border-blue-500">
                       <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Latest Response:</p>
                       <p className="text-sm text-gray-700 dark:text-gray-300">{request.responses[0].message}</p>
                     </div>
@@ -395,14 +395,14 @@ export default function ServiceRequests() {
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Current Outages */}
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                   <AlertCircle className="w-6 h-6 text-red-400 mr-2" />
                   Current & Upcoming Outages
                 </h2>
                 <div className="space-y-4">
                   {outageNotifications.filter(o => o.status === 'upcoming').map((outage) => (
-                    <div key={outage.id} className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-gray-200 dark:border-white/10">
+                    <div key={outage.id} className="p-4 bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
                       <div className="flex items-start justify-between mb-2">
                         <span className={`px-2 py-1 rounded text-xs font-semibold border ${getOutageTypeColor(outage.type)}`}>
                           {outage.type.toUpperCase()}
@@ -426,7 +426,7 @@ export default function ServiceRequests() {
               </div>
 
               {/* Outage Map/Statistics */}
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Outage Statistics</h2>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -442,10 +442,10 @@ export default function ServiceRequests() {
                     </div>
                   </div>
 
-                  <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <h3 className="text-white font-semibold mb-3">Recent Resolutions</h3>
                     {outageNotifications.filter(o => o.status === 'resolved').map((outage) => (
-                      <div key={outage.id} className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-200 dark:border-white/10 last:border-0">
+                      <div key={outage.id} className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-white/10 last:border-0">
                         <div>
                           <p className="text-gray-900 dark:text-white text-sm">{outage.area}</p>
                           <p className="text-gray-600 dark:text-gray-400 text-xs">{outage.date} • Resolved in {outage.resolutionTime}</p>
@@ -476,7 +476,7 @@ export default function ServiceRequests() {
         {/* New Request Modal */}
         {showNewRequest && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-8 border border-gray-200 dark:border-gray-200 dark:border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-8 border border-gray-200 dark:border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Create New Request</h2>
 
               <form className="space-y-4">
@@ -516,7 +516,7 @@ export default function ServiceRequests() {
                     type="text"
                     value={newRequest.subject}
                     onChange={(e) => setNewRequest({ ...newRequest, subject: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                     placeholder="Brief description of your request"
                   />
                 </div>
@@ -526,7 +526,7 @@ export default function ServiceRequests() {
                   <textarea
                     value={newRequest.description}
                     onChange={(e) => setNewRequest({ ...newRequest, description: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
                     rows={4}
                     placeholder="Provide detailed information about your request..."
                   />
@@ -582,7 +582,7 @@ export default function ServiceRequests() {
         {/* Request Details Modal */}
         {selectedRequest && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-8 border border-gray-200 dark:border-gray-200 dark:border-white/10 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-8 border border-gray-200 dark:border-white/10 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Request Details</h2>
                 <button
@@ -595,7 +595,7 @@ export default function ServiceRequests() {
 
               <div className="space-y-6">
                 {/* Request Info */}
-                <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 rounded-xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+                <div className="bg-white dark:bg-white dark:bg-white/5 rounded-xl p-6 border border-gray-200 dark:border-white/10">
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{selectedRequest.subject}</h3>
@@ -616,7 +616,7 @@ export default function ServiceRequests() {
 
                   <p className="text-gray-700 dark:text-gray-300 mb-4">{selectedRequest.description}</p>
 
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-200 dark:border-white/10">
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-white/10">
                     <div>
                       <p className="text-gray-600 dark:text-gray-400 text-sm">Created Date</p>
                       <p className="text-gray-900 dark:text-white">{selectedRequest.createdDate}</p>
@@ -630,13 +630,13 @@ export default function ServiceRequests() {
 
                 {/* Response Thread */}
                 {selectedRequest.responses.length > 0 && (
-                  <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 rounded-xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+                  <div className="bg-white dark:bg-white dark:bg-white/5 rounded-xl p-6 border border-gray-200 dark:border-white/10">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Response Thread</h3>
                     <div className="space-y-3">
                       {selectedRequest.responses.map((response: any, index: number) => (
                         <div key={index} className="flex items-start space-x-3">
                           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-                            <MessageCircle className="w-4 h-4 text-gray-900 dark:text-white" />
+                            <MessageCircle className="w-4 h-4 text-white" />
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">
@@ -653,10 +653,10 @@ export default function ServiceRequests() {
 
                 {/* Add Response */}
                 {selectedRequest.status !== 'resolved' && (
-                  <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 rounded-xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+                  <div className="bg-white dark:bg-white dark:bg-white/5 rounded-xl p-6 border border-gray-200 dark:border-white/10">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add Response</h3>
                     <textarea
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
                       rows={3}
                       placeholder="Type your message..."
                     />

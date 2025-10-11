@@ -119,7 +119,7 @@ export default function BillHistory() {
     <DashboardLayout userType="customer" userName="John Doe">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Bill History</h1>
@@ -134,10 +134,10 @@ export default function BillHistory() {
 
         {/* Statistics */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-gray-900 dark:text-white" />
+                <DollarSign className="w-5 h-5 text-white" />
               </div>
               <span className="text-xs text-gray-600 dark:text-gray-400">6 months</span>
             </div>
@@ -145,10 +145,10 @@ export default function BillHistory() {
             <p className="text-2xl font-bold text-gray-900 dark:text-white">${totalAmount.toFixed(2)}</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
-                <Activity className="w-5 h-5 text-gray-900 dark:text-white" />
+                <Activity className="w-5 h-5 text-white" />
               </div>
               <span className="text-xs text-gray-600 dark:text-gray-400">Average</span>
             </div>
@@ -156,10 +156,10 @@ export default function BillHistory() {
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{avgConsumption} kWh</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-gray-900 dark:text-white" />
+                <TrendingUp className="w-5 h-5 text-white" />
               </div>
               <span className="text-xs text-gray-600 dark:text-gray-400">Total</span>
             </div>
@@ -167,10 +167,10 @@ export default function BillHistory() {
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalUnits} kWh</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-gray-900 dark:text-white" />
+                <CheckCircle className="w-5 h-5 text-white" />
               </div>
               <span className="text-xs text-gray-600 dark:text-gray-400">On-time</span>
             </div>
@@ -180,7 +180,7 @@ export default function BillHistory() {
         </div>
 
         {/* Search & Filter */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -189,7 +189,7 @@ export default function BillHistory() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search bills..."
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors text-sm"
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors text-sm"
               />
             </div>
             <select
@@ -206,10 +206,10 @@ export default function BillHistory() {
         </div>
 
         {/* Bills Table */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-gray-200 dark:border-white/10 overflow-hidden">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <thead className="bg-white dark:bg-white dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Bill Period</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Bill Number</th>
@@ -221,7 +221,7 @@ export default function BillHistory() {
               </thead>
               <tbody className="divide-y divide-white/10">
                 {filteredBills.map((bill) => (
-                  <tr key={bill.id} className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
+                  <tr key={bill.id} className="hover:bg-white dark:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
                       <div>
                         <p className="text-white font-medium">{bill.month}</p>
@@ -286,7 +286,7 @@ export default function BillHistory() {
         {/* Coming Soon Notice */}
         <div className="bg-gradient-to-r from-yellow-400/10 to-orange-500/10 backdrop-blur-xl rounded-2xl p-8 border border-yellow-400/20 text-center">
           <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <TrendingUp className="w-8 h-8 text-gray-900 dark:text-white" />
+            <TrendingUp className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Advanced Analytics Coming Soon

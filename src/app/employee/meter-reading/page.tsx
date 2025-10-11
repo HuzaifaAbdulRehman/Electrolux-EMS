@@ -119,14 +119,14 @@ export default function MeterReadingForm() {
     <DashboardLayout userType="employee" userName="Mike Johnson">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Meter Reading Entry</h1>
               <p className="text-gray-600 dark:text-gray-400">Record customer meter readings accurately</p>
             </div>
             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center">
-              <Gauge className="w-9 h-9 text-gray-900 dark:text-white" />
+              <Gauge className="w-9 h-9 text-white" />
             </div>
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function MeterReadingForm() {
         )}
 
         {/* Customer Search */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Customer Search</h2>
           <div className="flex space-x-3">
             <div className="flex-1 relative">
@@ -154,7 +154,7 @@ export default function MeterReadingForm() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleCustomerSearch()}
                 placeholder="Enter account number, meter number, or customer name"
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
               />
             </div>
             <button
@@ -232,7 +232,7 @@ export default function MeterReadingForm() {
 
         {/* Reading Form */}
         {selectedCustomer && (
-          <form onSubmit={handleSubmit} className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10 space-y-6">
+          <form onSubmit={handleSubmit} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10 space-y-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Meter Reading Details</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -243,7 +243,7 @@ export default function MeterReadingForm() {
                   type="text"
                   value={readingData.currentReading}
                   onChange={(e) => setReadingData({ ...readingData, currentReading: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                   placeholder="Enter current meter reading"
                 />
                 {errors.currentReading && (
@@ -305,7 +305,7 @@ export default function MeterReadingForm() {
               <textarea
                 value={readingData.notes}
                 onChange={(e) => setReadingData({ ...readingData, notes: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
                 rows={3}
                 placeholder="Add any additional notes or observations..."
               />

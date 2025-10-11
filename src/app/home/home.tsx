@@ -18,7 +18,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       {/* Navigation Bar */}
-      <nav className="fixed w-full top-0 z-50 bg-black/20 backdrop-blur-xl border-b border-white/10">
+      <nav className="fixed w-full top-0 z-50 bg-white dark:bg-black/20 backdrop-blur-xl border-b border-white/10">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -29,14 +29,14 @@ export default function HomePage() {
             </div>
             
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-300 hover:text-white transition-colors">Features</a>
-              <a href="#services" className="text-gray-300 hover:text-white transition-colors">Services</a>
-              <a href="#about" className="text-gray-300 hover:text-white transition-colors">About</a>
-              <a href="#contact" className="text-gray-300 hover:text-white transition-colors">Contact</a>
+              <a href="#features" className="text-gray-300 hover:text-gray-900 dark:text-white transition-colors">Features</a>
+              <a href="#services" className="text-gray-300 hover:text-gray-900 dark:text-white transition-colors">Services</a>
+              <a href="#about" className="text-gray-300 hover:text-gray-900 dark:text-white transition-colors">About</a>
+              <a href="#contact" className="text-gray-300 hover:text-gray-900 dark:text-white transition-colors">Contact</a>
             </div>
             
             <div className="flex items-center space-x-4">
-              <Link href="/login" className="px-6 py-2 text-white hover:text-gray-300 transition-colors">
+              <Link href="/login" className="px-6 py-2 text-gray-900 dark:text-white hover:text-gray-700 dark:text-gray-300 transition-colors">
                 Login
               </Link>
               <Link href="/register" className="px-6 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300">
@@ -52,19 +52,19 @@ export default function HomePage() {
         <div className="container mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
-              <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
+              <div className="inline-flex items-center px-4 py-2 bg-gray-50 dark:bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
                 <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2"></span>
                 <span className="text-sm text-gray-300">Powering 10,000+ Homes</span>
               </div>
               
-              <h1 className="text-5xl lg:text-7xl font-bold text-white leading-tight">
+              <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 dark:text-white leading-tight">
                 Smart Energy
                 <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
                   Distribution System
                 </span>
               </h1>
               
-              <p className="text-xl text-gray-300 leading-relaxed">
+              <p className="text-xl text-gray-700 dark:text-gray-300 leading-relaxed">
                 Experience the future of electricity management with real-time monitoring, 
                 intelligent distribution, and seamless billing solutions.
               </p>
@@ -74,7 +74,7 @@ export default function HomePage() {
                   <span className="font-semibold">Get Started</span>
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <button className="inline-flex items-center px-8 py-4 bg-white/10 backdrop-blur-sm text-white rounded-full border border-white/20 hover:bg-white/20 transition-all duration-300">
+                <button className="inline-flex items-center px-8 py-4 bg-gray-50 dark:bg-white/10 backdrop-blur-sm text-gray-900 dark:text-white rounded-full border border-gray-300 dark:border-white/20 hover:bg-gray-200 dark:hover:bg-white/20 transition-all duration-300">
                   <span className="font-semibold">Watch Demo</span>
                 </button>
               </div>
@@ -97,7 +97,7 @@ export default function HomePage() {
             
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 blur-3xl"></div>
-              <div className="relative bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10">
+              <div className="relative bg-white dark:bg-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/10">
                 {/* Placeholder for electricity grid visualization */}
                 <div className="aspect-square bg-gradient-to-br from-yellow-400/10 to-orange-500/10 rounded-2xl flex items-center justify-center">
                   <div className="text-center space-y-4">
@@ -119,7 +119,7 @@ export default function HomePage() {
             <h2 className="text-4xl lg:text-5xl font-bold text-white">
               Powerful Features
             </h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
               Everything you need to manage electricity distribution efficiently
             </p>
           </div>
@@ -165,11 +165,11 @@ export default function HomePage() {
             ].map((feature, index) => (
               <div key={index} className="group relative">
                 <div className="absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl ${feature.color}"></div>
-                <div className="relative bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-white/20 transition-all duration-300">
+                <div className="relative bg-white dark:bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-white/20 transition-all duration-300">
                   <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-xl flex items-center justify-center text-white mb-6`}>
                     {feature.icon}
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-3">{feature.title}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">{feature.title}</h3>
                   <p className="text-gray-400 leading-relaxed">{feature.description}</p>
                 </div>
               </div>
@@ -233,10 +233,10 @@ export default function HomePage() {
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/30 to-orange-500/30 blur-3xl"></div>
             <div className="relative bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl p-12 text-center">
-              <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
+              <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-6">
                 Ready to Get Started?
               </h2>
-              <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+              <p className="text-xl text-gray-900 dark:text-white/90 mb-8 max-w-2xl mx-auto">
                 Join thousands of satisfied customers who trust Electrolux for their electricity management needs
               </p>
               <Link href="/register" className="inline-flex items-center px-8 py-4 bg-white text-gray-900 rounded-full font-semibold hover:shadow-xl transition-all duration-300">

@@ -109,7 +109,7 @@ export default function EmployeeDashboard() {
     <DashboardLayout userType="employee" userName={employeeName}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -125,7 +125,7 @@ export default function EmployeeDashboard() {
                 <p className="text-white font-semibold">October 10, 2024</p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-gray-900 dark:text-white" />
+                <Calendar className="w-6 h-6 text-white" />
               </div>
             </div>
           </div>
@@ -136,10 +136,10 @@ export default function EmployeeDashboard() {
           {stats.map((stat, index) => (
             <div key={index} className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity"></div>
-              <div className="relative bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
+              <div className="relative bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
                 <div className="flex items-start justify-between mb-4">
                   <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center`}>
-                    <stat.icon className="w-6 h-6 text-gray-900 dark:text-white" />
+                    <stat.icon className="w-6 h-6 text-white" />
                   </div>
                   {stat.change && (
                     <span className="text-green-400 text-sm font-semibold">{stat.change}</span>
@@ -168,7 +168,7 @@ export default function EmployeeDashboard() {
         </div>
 
         {/* Pending Work Orders */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Pending Work Orders</h2>
             <button className="text-yellow-400 hover:text-yellow-300 text-sm font-semibold">
@@ -178,7 +178,7 @@ export default function EmployeeDashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {workOrders.map((order) => (
-              <div key={order.id} className="p-4 bg-white dark:bg-white dark:bg-white/5 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
+              <div key={order.id} className="p-4 bg-white dark:bg-white/5 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-2">
                     {getStatusIcon(order.status)}
@@ -214,7 +214,7 @@ export default function EmployeeDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {[
@@ -225,9 +225,9 @@ export default function EmployeeDashboard() {
             ].map((action, index) => (
               <button key={index} className="group relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity blur-xl"></div>
-                <div className="relative flex flex-col items-center p-4 bg-white dark:bg-white dark:bg-white/5 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
+                <div className="relative flex flex-col items-center p-4 bg-white dark:bg-white/5 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
                   <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mb-3">
-                    <action.icon className="w-6 h-6 text-gray-900 dark:text-white" />
+                    <action.icon className="w-6 h-6 text-white" />
                   </div>
                   <span className="text-gray-900 dark:text-white text-sm font-medium">{action.label}</span>
                 </div>

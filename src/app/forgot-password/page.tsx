@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-gray-900 dark:text-white" />
+                  <Zap className="w-6 h-6 text-white" />
                 </div>
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">Electrolux</span>
               </div>
@@ -120,7 +120,7 @@ export default function ForgotPasswordPage() {
             </div>
 
             {/* Help Section */}
-            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
               <h3 className="text-white font-semibold text-sm mb-2">Need Additional Help?</h3>
               <p className="text-gray-600 dark:text-gray-400 text-xs mb-3">
                 If you&apos;re still having trouble accessing your account, our support team is here to help.
@@ -148,7 +148,7 @@ export default function ForgotPasswordPage() {
                   {/* Form Header */}
                   <div className="text-center mb-6">
                     <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center mx-auto mb-3">
-                      <KeyRound className="w-8 h-8 text-gray-900 dark:text-white" />
+                      <KeyRound className="w-8 h-8 text-white" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Forgot Password?</h2>
                     <p className="text-sm text-gray-600 dark:text-gray-400">No worries, we&apos;ll send you reset instructions</p>
@@ -167,7 +167,7 @@ export default function ForgotPasswordPage() {
                             setEmail(e.target.value);
                             setError('');
                           }}
-                          className="w-full pl-10 pr-10 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                          className="w-full pl-10 pr-10 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                           placeholder="john@example.com"
                           disabled={isLoading}
                         />
@@ -184,7 +184,7 @@ export default function ForgotPasswordPage() {
                     </div>
 
                     {/* Instructions */}
-                    <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-gray-200 dark:border-white/10">
+                    <div className="bg-white dark:bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-gray-200 dark:border-white/10">
                       <p className="text-xs text-gray-700 dark:text-gray-300">
                         Enter the email address associated with your account and we&apos;ll send you a link to reset your password.
                       </p>
@@ -245,7 +245,7 @@ export default function ForgotPasswordPage() {
                         Click the link in the email to reset your password. The link will expire in 1 hour for security reasons.
                       </p>
 
-                      <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-gray-200 dark:border-white/10">
+                      <div className="bg-white dark:bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-gray-200 dark:border-white/10">
                         <p className="text-xs text-gray-700 dark:text-gray-300 mb-2">Didn&apos;t receive the email?</p>
                         <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
                           <p>• Check your spam or junk folder</p>

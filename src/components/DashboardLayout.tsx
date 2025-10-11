@@ -24,7 +24,11 @@ import {
   Activity,
   Gauge,
   ClipboardList,
-  MessageSquare
+  MessageSquare,
+  AlertCircle,
+  CheckCircle,
+  Info,
+  Clock
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -36,6 +40,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children, userType, userName = 'User' }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const pathname = usePathname();
 
@@ -145,7 +150,7 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
       {/* Top Navigation Bar */}
       <nav className={`fixed top-0 left-0 right-0 z-40 backdrop-blur-xl border-b transition-colors duration-300 ${
         isDarkMode
-          ? 'bg-black/20 border-white/10'
+          ? 'bg-white dark:bg-black/20 border-gray-200 dark:border-white/10'
           : 'bg-white/60 border-gray-200'
       }`}>
         <div className="px-4 sm:px-6 lg:px-8">
@@ -156,7 +161,7 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                 className={`lg:hidden p-2 rounded-lg transition-all ${
                   isDarkMode
-                    ? 'text-gray-400 hover:text-white hover:bg-white/10'
+                    ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
                 }`}
               >
@@ -168,7 +173,7 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
                   <Zap className="w-6 h-6 text-white" />
                 </div>
                 <span className={`text-xl font-bold transition-colors ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
+                  isDarkMode ? 'text-gray-900 dark:text-white' : 'text-gray-900'
                 }`}>Electrolux</span>
                 <span className={`px-2 py-1 bg-gradient-to-r ${getUserTypeColor()} text-white text-xs rounded-full font-semibold`}>
                   {getUserTypeBadge()}
@@ -181,14 +186,14 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
               {/* Search Bar */}
               <div className="hidden md:block relative">
                 <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${
-                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                  isDarkMode ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600 dark:text-gray-500'
                 }`} />
                 <input
                   type="text"
                   placeholder="Search..."
                   className={`pl-10 pr-4 py-2 backdrop-blur-sm border rounded-lg focus:outline-none focus:border-yellow-400 transition-colors w-64 ${
                     isDarkMode
-                      ? 'bg-white/10 border-white/20 text-white placeholder-gray-400'
+                      ? 'bg-gray-50 dark:bg-white/10 border-gray-300 dark:border-white/20 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400'
                       : 'bg-white/80 border-gray-300 text-gray-900 placeholder-gray-500'
                   }`}
                 />
@@ -199,7 +204,7 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
                 onClick={toggleDarkMode}
                 className={`p-2 rounded-lg transition-all ${
                   isDarkMode
-                    ? 'text-gray-400 hover:text-white hover:bg-white/10'
+                    ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
                 }`}
                 title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
@@ -210,7 +215,7 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
               {/* Notifications */}
               <button className={`relative p-2 rounded-lg transition-all ${
                 isDarkMode
-                  ? 'text-gray-400 hover:text-white hover:bg-white/10'
+                  ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
               }`}>
                 <Bell className="h-5 w-5" />
@@ -222,29 +227,29 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className={`flex items-center space-x-3 p-2 rounded-lg transition-all ${
-                    isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-200'
+                    isDarkMode ? 'hover:bg-gray-50 dark:bg-white/10' : 'hover:bg-gray-200'
                   }`}
                 >
                   <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                     <User className="w-5 h-5 text-white" />
                   </div>
                   <span className={`hidden md:block transition-colors ${
-                    isDarkMode ? 'text-white' : 'text-gray-900'
+                    isDarkMode ? 'text-gray-900 dark:text-white' : 'text-gray-900'
                   }`}>{userName}</span>
                   <ChevronDown className={`hidden md:block h-4 w-4 ${
-                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                    isDarkMode ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600'
                   }`} />
                 </button>
 
                 {isProfileOpen && (
                   <div className={`absolute right-0 mt-2 w-48 backdrop-blur-xl rounded-lg shadow-lg border py-2 ${
                     isDarkMode
-                      ? 'bg-black/80 border-white/10'
+                      ? 'bg-white dark:bg-black/80 border-gray-200 dark:border-white/10'
                       : 'bg-white/90 border-gray-200'
                   }`}>
                     <Link href={`/${userType}/profile`} className={`flex items-center px-4 py-2 transition-colors ${
                       isDarkMode
-                        ? 'text-gray-300 hover:text-white hover:bg-white/10'
+                        ? 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
                         : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
                     }`}>
                       <User className="h-4 w-4 mr-2" />
@@ -252,16 +257,16 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
                     </Link>
                     <Link href={`/${userType}/settings`} className={`flex items-center px-4 py-2 transition-colors ${
                       isDarkMode
-                        ? 'text-gray-300 hover:text-white hover:bg-white/10'
+                        ? 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
                         : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
                     }`}>
                       <Settings className="h-4 w-4 mr-2" />
                       Settings
                     </Link>
-                    <hr className={`my-2 ${isDarkMode ? 'border-white/10' : 'border-gray-200'}`} />
+                    <hr className={`my-2 ${isDarkMode ? 'border-gray-200 dark:border-white/10' : 'border-gray-200'}`} />
                     <button className={`flex items-center w-full px-4 py-2 transition-colors ${
                       isDarkMode
-                        ? 'text-gray-300 hover:text-white hover:bg-white/10'
+                        ? 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
                         : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
                     }`}>
                       <LogOut className="h-4 w-4 mr-2" />
@@ -280,7 +285,7 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
       } ${
         isDarkMode
-          ? 'bg-black/20 border-white/10'
+          ? 'bg-white dark:bg-black/20 border-gray-200 dark:border-white/10'
           : 'bg-white/60 border-gray-200'
       }`}>
         <div className="p-4">
@@ -298,7 +303,7 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
                         ? 'bg-gradient-to-r from-yellow-400/20 to-orange-500/20 text-white border border-yellow-400/50'
                         : 'bg-gradient-to-r from-yellow-400/30 to-orange-500/30 text-gray-900 border border-yellow-400/60'
                       : isDarkMode
-                      ? 'text-gray-300 hover:text-white hover:bg-white/10'
+                      ? 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
                       : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
                   }`}
                 >

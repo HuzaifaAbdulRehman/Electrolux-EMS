@@ -76,7 +76,7 @@ export default function BillGeneration() {
     <DashboardLayout userType="employee" userName="Mike Johnson">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Bill Generation</h1>
           <p className="text-gray-600 dark:text-gray-400">Generate customer electricity bills</p>
         </div>
@@ -89,14 +89,14 @@ export default function BillGeneration() {
             { label: 'Total Amount', value: '$18.5K', icon: DollarSign, color: 'from-green-500 to-emerald-500' },
             { label: 'Avg Bill', value: '$245', icon: Calculator, color: 'from-purple-500 to-pink-500' }
           ].map((stat, index) => (
-            <div key={index} className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div key={index} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 dark:text-gray-400 text-sm">{stat.label}</p>
                   <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
                 </div>
                 <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center`}>
-                  <stat.icon className="w-6 h-6 text-gray-900 dark:text-white" />
+                  <stat.icon className="w-6 h-6 text-white" />
                 </div>
               </div>
             </div>
@@ -104,7 +104,7 @@ export default function BillGeneration() {
         </div>
 
         {/* Customer Search */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Select Customer</h2>
           <div className="flex space-x-3">
             <div className="flex-1 relative">
@@ -115,7 +115,7 @@ export default function BillGeneration() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="Enter account number, meter number, or customer name"
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
               />
             </div>
             <button
@@ -172,7 +172,7 @@ export default function BillGeneration() {
 
         {/* Bill Form */}
         {selectedCustomer && !generatedBill && (
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Bill Details</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -182,7 +182,7 @@ export default function BillGeneration() {
                   type="number"
                   value={billData.previousReading}
                   onChange={(e) => setBillData({ ...billData, previousReading: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                 />
               </div>
 
@@ -192,7 +192,7 @@ export default function BillGeneration() {
                   type="number"
                   value={billData.currentReading}
                   onChange={(e) => setBillData({ ...billData, currentReading: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                 />
               </div>
 
@@ -202,7 +202,7 @@ export default function BillGeneration() {
                   type="number"
                   value={billData.additionalCharges}
                   onChange={(e) => setBillData({ ...billData, additionalCharges: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                 />
               </div>
 
@@ -212,7 +212,7 @@ export default function BillGeneration() {
                   type="number"
                   value={billData.discount}
                   onChange={(e) => setBillData({ ...billData, discount: e.target.value })}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                 />
               </div>
             </div>
@@ -248,7 +248,7 @@ export default function BillGeneration() {
 
         {/* Bill Preview */}
         {generatedBill && (
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Bill Preview</h2>
               <div className="flex items-center space-x-3">
@@ -317,7 +317,7 @@ export default function BillGeneration() {
         {!selectedCustomer && (
           <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl p-12 border border-green-500/20 text-center">
             <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <FileText className="w-10 h-10 text-gray-900 dark:text-white" />
+              <FileText className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
               Advanced Bill Generation

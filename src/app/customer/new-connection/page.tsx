@@ -131,7 +131,7 @@ export default function NewConnection() {
         <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-2xl p-6 border border-blue-500/20">
           <div className="flex items-center space-x-4">
             <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center">
-              <Zap className="w-8 h-8 text-gray-900 dark:text-white" />
+              <Zap className="w-8 h-8 text-white" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">New Connection Application</h1>
@@ -141,7 +141,7 @@ export default function NewConnection() {
         </div>
 
         {/* Progress Stepper */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex items-center justify-between">
             {[1, 2, 3, 4].map((step, index) => (
               <React.Fragment key={step}>
@@ -149,7 +149,7 @@ export default function NewConnection() {
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center font-bold transition-all ${
                       currentStep === step
-                        ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-gray-900 dark:text-white scale-110'
+                        ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white scale-110'
                         : currentStep > step
                         ? 'bg-green-500 text-gray-900 dark:text-white'
                         : 'bg-white/10 text-gray-600 dark:text-gray-400'
@@ -179,7 +179,7 @@ export default function NewConnection() {
         </div>
 
         {/* Form Content */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-gray-200 dark:border-white/10">
           {/* Step 1: Personal Information */}
           {currentStep === 1 && (
             <div className="space-y-6">
@@ -197,7 +197,7 @@ export default function NewConnection() {
                     type="text"
                     value={formData.applicantName}
                     onChange={(e) => handleInputChange('applicantName', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
                     placeholder="Enter your full name"
                   />
                 </div>
@@ -208,7 +208,7 @@ export default function NewConnection() {
                     type="text"
                     value={formData.fatherName}
                     onChange={(e) => handleInputChange('fatherName', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
                     placeholder="Enter father's or spouse name"
                   />
                 </div>
@@ -223,7 +223,7 @@ export default function NewConnection() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
                       placeholder="your@email.com"
                     />
                   </div>
@@ -239,7 +239,7 @@ export default function NewConnection() {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
                       placeholder="+1 (555) 000-0000"
                     />
                   </div>
@@ -253,7 +253,7 @@ export default function NewConnection() {
                       type="tel"
                       value={formData.alternatePhone}
                       onChange={(e) => handleInputChange('alternatePhone', e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
                       placeholder="+1 (555) 000-0000"
                     />
                   </div>
@@ -285,7 +285,7 @@ export default function NewConnection() {
                     type="text"
                     value={formData.idNumber}
                     onChange={(e) => handleInputChange('idNumber', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
                     placeholder="Enter ID number"
                   />
                 </div>
@@ -347,7 +347,7 @@ export default function NewConnection() {
                     <textarea
                       value={formData.propertyAddress}
                       onChange={(e) => handleInputChange('propertyAddress', e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors resize-none"
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors resize-none"
                       rows={3}
                       placeholder="Enter complete property address"
                     />
@@ -362,7 +362,7 @@ export default function NewConnection() {
                     type="text"
                     value={formData.city}
                     onChange={(e) => handleInputChange('city', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
                     placeholder="City"
                   />
                 </div>
@@ -373,7 +373,7 @@ export default function NewConnection() {
                     type="text"
                     value={formData.state}
                     onChange={(e) => handleInputChange('state', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
                     placeholder="State"
                   />
                 </div>
@@ -384,7 +384,7 @@ export default function NewConnection() {
                     type="text"
                     value={formData.pincode}
                     onChange={(e) => handleInputChange('pincode', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
                     placeholder="000000"
                   />
                 </div>
@@ -395,7 +395,7 @@ export default function NewConnection() {
                     type="text"
                     value={formData.landmark}
                     onChange={(e) => handleInputChange('landmark', e.target.value)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
                     placeholder="Nearby landmark"
                   />
                 </div>
@@ -475,7 +475,7 @@ export default function NewConnection() {
                       type="text"
                       value={formData.existingAccountNumber}
                       onChange={(e) => handleInputChange('existingAccountNumber', e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
                       placeholder="ACC-XXXXX"
                     />
                   </div>
@@ -487,7 +487,7 @@ export default function NewConnection() {
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Required Documents</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border border-gray-200 dark:border-gray-200 dark:border-white/10 rounded-lg p-4">
+                  <div className="bg-white dark:bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm text-gray-700 dark:text-gray-300">Identity Proof</span>
                       <Upload className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -501,7 +501,7 @@ export default function NewConnection() {
                     <p className="text-xs text-gray-500 mt-2">PDF, JPG or PNG (Max 5MB)</p>
                   </div>
 
-                  <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border border-gray-200 dark:border-gray-200 dark:border-white/10 rounded-lg p-4">
+                  <div className="bg-white dark:bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm text-gray-700 dark:text-gray-300">Address Proof</span>
                       <Upload className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -515,7 +515,7 @@ export default function NewConnection() {
                     <p className="text-xs text-gray-500 mt-2">PDF, JPG or PNG (Max 5MB)</p>
                   </div>
 
-                  <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border border-gray-200 dark:border-gray-200 dark:border-white/10 rounded-lg p-4">
+                  <div className="bg-white dark:bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm text-gray-700 dark:text-gray-300">Property Proof</span>
                       <Upload className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -543,7 +543,7 @@ export default function NewConnection() {
 
               {/* Summary Cards */}
               <div className="space-y-4">
-                <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border border-gray-200 dark:border-gray-200 dark:border-white/10 rounded-lg p-4">
+                <div className="bg-white dark:bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-4">
                   <h3 className="text-white font-semibold mb-3 flex items-center">
                     <User className="w-4 h-4 mr-2" />
                     Personal Information
@@ -568,7 +568,7 @@ export default function NewConnection() {
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border border-gray-200 dark:border-gray-200 dark:border-white/10 rounded-lg p-4">
+                <div className="bg-white dark:bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-4">
                   <h3 className="text-white font-semibold mb-3 flex items-center">
                     <Home className="w-4 h-4 mr-2" />
                     Property Details
@@ -589,7 +589,7 @@ export default function NewConnection() {
                   </div>
                 </div>
 
-                <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border border-gray-200 dark:border-gray-200 dark:border-white/10 rounded-lg p-4">
+                <div className="bg-white dark:bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-4">
                   <h3 className="text-white font-semibold mb-3 flex items-center">
                     <FileText className="w-4 h-4 mr-2" />
                     Connection Details
@@ -608,7 +608,7 @@ export default function NewConnection() {
               </div>
 
               {/* Terms & Conditions */}
-              <div className="space-y-4 bg-white dark:bg-white dark:bg-white/5 border border-gray-200 dark:border-gray-200 dark:border-white/10 rounded-lg p-6">
+              <div className="space-y-4 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-6">
                 <h3 className="text-white font-semibold mb-4">Terms & Conditions</h3>
 
                 <label className="flex items-start space-x-3 cursor-pointer">
@@ -652,7 +652,7 @@ export default function NewConnection() {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200 dark:border-white/10">
             <button
               onClick={prevStep}
               disabled={currentStep === 1}
@@ -678,7 +678,7 @@ export default function NewConnection() {
                   disabled={!isStepComplete(currentStep)}
                   className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 transition-all ${
                     isStepComplete(currentStep)
-                      ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-gray-900 dark:text-white hover:shadow-lg hover:shadow-cyan-500/50'
+                      ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:shadow-lg hover:shadow-cyan-500/50'
                       : 'bg-white/5 text-gray-500 cursor-not-allowed'
                   }`}
                 >
@@ -691,7 +691,7 @@ export default function NewConnection() {
                   disabled={!isStepComplete(currentStep)}
                   className={`px-8 py-3 rounded-lg font-semibold flex items-center space-x-2 transition-all ${
                     isStepComplete(currentStep)
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-gray-900 dark:text-white hover:shadow-lg hover:shadow-green-500/50'
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-lg hover:shadow-green-500/50'
                       : 'bg-white/5 text-gray-500 cursor-not-allowed'
                   }`}
                 >
@@ -704,7 +704,7 @@ export default function NewConnection() {
         </div>
 
         {/* Help Section */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex items-start space-x-4">
             <AlertCircle className="w-6 h-6 text-blue-400 mt-1" />
             <div>

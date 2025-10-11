@@ -91,15 +91,15 @@ export default function EmployeeProfile() {
     <DashboardLayout userType="employee" userName="Mike Johnson">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center space-x-6">
               <div className="relative">
                 <div className="w-24 h-24 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                  <User className="w-12 h-12 text-gray-900 dark:text-white" />
+                  <User className="w-12 h-12 text-white" />
                 </div>
                 <button className="absolute bottom-0 right-0 w-8 h-8 bg-gray-100 dark:bg-gray-100 dark:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30 hover:bg-white/30 transition-all">
-                  <Camera className="w-4 h-4 text-gray-900 dark:text-white" />
+                  <Camera className="w-4 h-4 text-white" />
                 </button>
               </div>
               <div>
@@ -140,61 +140,61 @@ export default function EmployeeProfile() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Performance</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{employeeInfo.performanceScore}%</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-gray-900 dark:text-white" />
+                <TrendingUp className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Total Tasks</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{workStats.totalTasks}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-gray-900 dark:text-white" />
+                <CheckCircle className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Customer Rating</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">⭐ {workStats.customerRating}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                <Star className="w-5 h-5 text-gray-900 dark:text-white" />
+                <Star className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">On-Time Rate</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{workStats.onTimeCompletion}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Clock className="w-5 h-5 text-gray-900 dark:text-white" />
+                <Clock className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-1 bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-1">
+        <div className="flex space-x-1 bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-1">
           {['personal', 'work', 'performance', 'achievements'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`flex-1 py-3 px-4 rounded-lg font-semibold capitalize transition-all ${
                 activeTab === tab
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-gray-900 dark:text-white'
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-100 dark:hover:bg-white/10'
               }`}
             >
@@ -207,7 +207,7 @@ export default function EmployeeProfile() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             {activeTab === 'personal' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Personal Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -220,7 +220,7 @@ export default function EmployeeProfile() {
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400"
                       />
                     ) : (
-                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <span className="text-gray-900 dark:text-white">{profileData.fullName}</span>
                       </div>
@@ -229,7 +229,7 @@ export default function EmployeeProfile() {
 
                   <div>
                     <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Work Email</label>
-                    <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                    <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                       <Mail className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                       <span className="text-gray-900 dark:text-white">{profileData.email}</span>
                     </div>
@@ -245,7 +245,7 @@ export default function EmployeeProfile() {
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400"
                       />
                     ) : (
-                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <span className="text-gray-900 dark:text-white">{profileData.phone}</span>
                       </div>
@@ -262,7 +262,7 @@ export default function EmployeeProfile() {
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400"
                       />
                     ) : (
-                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <span className="text-gray-900 dark:text-white">{profileData.emergencyContact}</span>
                       </div>
@@ -279,7 +279,7 @@ export default function EmployeeProfile() {
                         rows={2}
                       />
                     ) : (
-                      <div className="flex items-start space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="flex items-start space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <MapPin className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5" />
                         <span className="text-gray-900 dark:text-white">{profileData.address}</span>
                       </div>
@@ -290,38 +290,38 @@ export default function EmployeeProfile() {
             )}
 
             {activeTab === 'work' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Work Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Employee ID</p>
                     <p className="text-white font-semibold">{employeeInfo.employeeId}</p>
                   </div>
-                  <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Department</p>
                     <p className="text-white font-semibold">{employeeInfo.department}</p>
                   </div>
-                  <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Position</p>
                     <p className="text-white font-semibold">{employeeInfo.position}</p>
                   </div>
-                  <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Supervisor</p>
                     <p className="text-white font-semibold">{employeeInfo.supervisor}</p>
                   </div>
-                  <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Join Date</p>
                     <p className="text-white font-semibold">{employeeInfo.joinDate}</p>
                   </div>
-                  <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Experience</p>
                     <p className="text-white font-semibold">{employeeInfo.experience}</p>
                   </div>
-                  <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Work Zone</p>
                     <p className="text-white font-semibold">{employeeInfo.workZone}</p>
                   </div>
-                  <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Status</p>
                     <span className="px-2 py-1 bg-green-500/20 text-green-400 text-sm rounded-full">
                       {employeeInfo.status}
@@ -343,11 +343,11 @@ export default function EmployeeProfile() {
             )}
 
             {activeTab === 'performance' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Performance History</h2>
                 <div className="space-y-4">
                   {recentPerformance.map((month, index) => (
-                    <div key={index} className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                    <div key={index} className="p-4 bg-white dark:bg-white/5 rounded-xl">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-white font-semibold">{month.month} 2024</h3>
                         <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
@@ -375,14 +375,14 @@ export default function EmployeeProfile() {
             )}
 
             {activeTab === 'achievements' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Achievements & Recognition</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {achievements.map((achievement, index) => (
-                    <div key={index} className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-gray-200 dark:border-white/10">
+                    <div key={index} className="p-4 bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
                       <div className="flex items-center space-x-4">
                         <div className={`w-12 h-12 bg-gradient-to-r ${achievement.color} rounded-lg flex items-center justify-center`}>
-                          <achievement.icon className="w-6 h-6 text-gray-900 dark:text-white" />
+                          <achievement.icon className="w-6 h-6 text-white" />
                         </div>
                         <div>
                           <h3 className="text-white font-semibold">{achievement.title}</h3>
@@ -399,7 +399,7 @@ export default function EmployeeProfile() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Work Statistics */}
-            <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Work Statistics</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
@@ -426,24 +426,24 @@ export default function EmployeeProfile() {
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
               <div className="space-y-3">
-                <button className="w-full p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
+                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
                   <span className="flex items-center space-x-3">
                     <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <span className="text-gray-900 dark:text-white">Request Leave</span>
                   </span>
                   <span className="text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
                 </button>
-                <button className="w-full p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
+                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
                   <span className="flex items-center space-x-3">
                     <FileText className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <span className="text-gray-900 dark:text-white">View Payslip</span>
                   </span>
                   <span className="text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
                 </button>
-                <button className="w-full p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
+                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
                   <span className="flex items-center space-x-3">
                     <Shield className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <span className="text-gray-900 dark:text-white">Training Modules</span>

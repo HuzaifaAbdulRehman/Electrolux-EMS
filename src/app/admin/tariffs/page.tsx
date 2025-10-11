@@ -73,6 +73,21 @@ export default function TariffManagement() {
         normal: { hours: '6AM-8AM', rate: 0.12 },
         offPeak: { hours: '10PM-6AM', rate: 0.06 }
       }
+    },
+    agricultural: {
+      fixedCharge: 30,
+      slabs: [
+        { range: '0-200 kWh', rate: 0.05 },
+        { range: '201-500 kWh', rate: 0.07 },
+        { range: '501-1000 kWh', rate: 0.09 },
+        { range: '1001-2000 kWh', rate: 0.11 },
+        { range: '2000+ kWh', rate: 0.13 }
+      ],
+      timeOfUse: {
+        peak: { hours: '6AM-10AM', rate: 0.08 },
+        normal: { hours: '10AM-6PM', rate: 0.06 },
+        offPeak: { hours: '6PM-6AM', rate: 0.04 }
+      }
     }
   };
 
@@ -82,7 +97,7 @@ export default function TariffManagement() {
     <DashboardLayout userType="admin" userName="Admin User">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Tariff Management</h1>
@@ -105,10 +120,10 @@ export default function TariffManagement() {
             >
               <div className={`absolute inset-0 bg-gradient-to-r ${category.color} rounded-xl blur-xl opacity-${selectedCategory === category.id ? '50' : '0'} group-hover:opacity-30 transition-opacity`}></div>
               <div className={`relative flex items-center space-x-3 px-6 py-3 bg-white/5 backdrop-blur-sm rounded-xl border ${
-                selectedCategory === category.id ? 'border-yellow-400/50 bg-white/10' : 'border-gray-200 dark:border-gray-200 dark:border-white/10'
+                selectedCategory === category.id ? 'border-yellow-400/50 bg-white/10' : 'border-gray-200 dark:border-white/10'
               } hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all`}>
                 <div className={`w-10 h-10 bg-gradient-to-r ${category.color} rounded-lg flex items-center justify-center`}>
-                  <category.icon className="w-5 h-5 text-gray-900 dark:text-white" />
+                  <category.icon className="w-5 h-5 text-white" />
                 </div>
                 <span className={`font-medium ${selectedCategory === category.id ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>
                   {category.name}
@@ -120,14 +135,14 @@ export default function TariffManagement() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Basic Charges */}
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Basic Charges</h2>
               <button className="p-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all">
                 <Edit2 className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+            <div className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-xl">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Fixed Monthly Charge</p>
                 <p className="text-3xl font-bold text-gray-900 dark:text-white">${currentTariff.fixedCharge}</p>
@@ -137,7 +152,7 @@ export default function TariffManagement() {
           </div>
 
           {/* Revenue Impact */}
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Revenue Impact</h2>
             <div className="space-y-4">
               <div>
@@ -153,16 +168,16 @@ export default function TariffManagement() {
           </div>
 
           {/* Slab Rates */}
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Slab Rates</h2>
             </div>
             <div className="space-y-3">
               {currentTariff.slabs.map((slab, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all">
+                <div key={index} className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-xl hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all">
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
-                      <Zap className="w-5 h-5 text-gray-900 dark:text-white" />
+                      <Zap className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <p className="text-white font-medium">{slab.range}</p>
@@ -179,7 +194,7 @@ export default function TariffManagement() {
           </div>
 
           {/* Time of Use Rates */}
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Time of Use Rates</h2>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-4 bg-gradient-to-r from-red-500/10 to-rose-500/10 rounded-xl border border-red-500/20">
@@ -221,7 +236,7 @@ export default function TariffManagement() {
         {/* Coming Soon Notice */}
         <div className="bg-gradient-to-r from-yellow-400/10 to-orange-500/10 backdrop-blur-xl rounded-2xl p-8 border border-yellow-400/20 text-center">
           <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <BarChart3 className="w-8 h-8 text-gray-900 dark:text-white" />
+            <BarChart3 className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Advanced Tariff Analytics Coming Soon

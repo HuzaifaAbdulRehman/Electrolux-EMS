@@ -169,7 +169,7 @@ export default function OnlinePayment() {
     <DashboardLayout userType="customer" userName="John Doe">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Payment Center</h1>
@@ -185,7 +185,7 @@ export default function OnlinePayment() {
         </div>
 
         {/* Payment Steps */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex items-center justify-between">
             {[
               { step: 1, label: 'Bill Details' },
@@ -196,7 +196,7 @@ export default function OnlinePayment() {
                 <div className="flex items-center space-x-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
                     paymentStep >= item.step
-                      ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 dark:text-white'
+                      ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
                       : 'bg-white/10 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-300 dark:border-white/20'
                   }`}>
                     {paymentStep > item.step ? <CheckCircle className="w-5 h-5" /> : item.step}
@@ -221,7 +221,7 @@ export default function OnlinePayment() {
             {paymentStep === 1 && (
               <>
                 {/* Bill Summary */}
-                <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+                <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Current Bill Details</h2>
 
                   <div className="space-y-4">
@@ -234,17 +234,17 @@ export default function OnlinePayment() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                      <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                         <p className="text-gray-600 dark:text-gray-400 text-sm">Amount Due</p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-white">${currentBill.amount.toFixed(2)}</p>
                       </div>
-                      <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                      <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                         <p className="text-gray-600 dark:text-gray-400 text-sm">Due Date</p>
                         <p className="text-xl font-semibold text-gray-900 dark:text-white">{currentBill.dueDate}</p>
                       </div>
                     </div>
 
-                    <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                    <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-gray-600 dark:text-gray-400">Units Consumed</span>
                         <span className="text-gray-900 dark:text-white">{currentBill.units} kWh</span>
@@ -266,7 +266,7 @@ export default function OnlinePayment() {
                 </div>
 
                 {/* Quick Pay Options */}
-                <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+                <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Pay Amount</h3>
                   <div className="grid grid-cols-4 gap-3 mb-4">
                     {quickAmounts.map((amount) => (
@@ -275,7 +275,7 @@ export default function OnlinePayment() {
                         onClick={() => setPaymentAmount(amount.toString())}
                         className={`py-3 rounded-lg font-semibold transition-all ${
                           paymentAmount === amount.toString()
-                            ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 dark:text-white'
+                            ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
                             : 'bg-white/10 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-200 dark:hover:bg-white/20'
                         }`}
                       >
@@ -300,7 +300,7 @@ export default function OnlinePayment() {
                           type="number"
                           value={paymentAmount}
                           onChange={(e) => setPaymentAmount(e.target.value)}
-                          className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                          className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                           placeholder="Enter amount"
                         />
                       </div>
@@ -313,7 +313,7 @@ export default function OnlinePayment() {
             {paymentStep === 2 && (
               <>
                 {/* Payment Methods */}
-                <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+                <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Select Payment Method</h2>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
@@ -324,17 +324,17 @@ export default function OnlinePayment() {
                         className={`relative p-4 rounded-xl border transition-all ${
                           selectedMethod === method.id
                             ? 'border-yellow-400/50 bg-white/10'
-                            : 'border-gray-200 dark:border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20'
+                            : 'border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20'
                         }`}
                       >
                         {method.popular && (
-                          <span className="absolute -top-2 -right-2 px-2 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 dark:text-white text-xs rounded-full font-semibold">
+                          <span className="absolute -top-2 -right-2 px-2 py-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs rounded-full font-semibold">
                             Popular
                           </span>
                         )}
                         <div className="flex items-center space-x-3">
                           <div className={`w-10 h-10 bg-gradient-to-r ${method.color} rounded-lg flex items-center justify-center`}>
-                            <method.icon className="w-5 h-5 text-gray-900 dark:text-white" />
+                            <method.icon className="w-5 h-5 text-white" />
                           </div>
                           <div className="text-left">
                             <p className="text-white font-medium">{method.name}</p>
@@ -355,7 +355,7 @@ export default function OnlinePayment() {
                         <div className="space-y-3 mb-4">
                           <p className="text-sm text-gray-600 dark:text-gray-400">Use saved card</p>
                           {savedCards.map((card) => (
-                            <label key={card.id} className="flex items-center space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10">
+                            <label key={card.id} className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10">
                               <input type="radio" name="savedCard" className="w-4 h-4" />
                               <CreditCard className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                               <div className="flex-1">
@@ -379,7 +379,7 @@ export default function OnlinePayment() {
                               type="text"
                               value={cardDetails.cardNumber}
                               onChange={handleCardNumberChange}
-                              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                              className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                               placeholder="1234 5678 9012 3456"
                               maxLength={19}
                             />
@@ -392,7 +392,7 @@ export default function OnlinePayment() {
                             type="text"
                             value={cardDetails.cardName}
                             onChange={(e) => setCardDetails({ ...cardDetails, cardName: e.target.value })}
-                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                             placeholder="John Doe"
                           />
                         </div>
@@ -405,7 +405,7 @@ export default function OnlinePayment() {
                                 type="text"
                                 value={cardDetails.expiryMonth}
                                 onChange={(e) => setCardDetails({ ...cardDetails, expiryMonth: e.target.value })}
-                                className="px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                                className="px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                                 placeholder="MM"
                                 maxLength={2}
                               />
@@ -413,7 +413,7 @@ export default function OnlinePayment() {
                                 type="text"
                                 value={cardDetails.expiryYear}
                                 onChange={(e) => setCardDetails({ ...cardDetails, expiryYear: e.target.value })}
-                                className="px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                                className="px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                                 placeholder="YY"
                                 maxLength={2}
                               />
@@ -426,7 +426,7 @@ export default function OnlinePayment() {
                                 type={showCardDetails ? 'text' : 'password'}
                                 value={cardDetails.cvv}
                                 onChange={(e) => setCardDetails({ ...cardDetails, cvv: e.target.value })}
-                                className="w-full pr-12 px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                                className="w-full pr-12 px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                                 placeholder="123"
                                 maxLength={3}
                               />
@@ -487,14 +487,14 @@ export default function OnlinePayment() {
 
             {paymentStep === 3 && (
               /* Success Screen */
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-gray-200 dark:border-gray-200 dark:border-white/10 text-center">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-8 border border-gray-200 dark:border-white/10 text-center">
                 <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                   <CheckCircle className="w-12 h-12 text-green-400" />
                 </div>
                 <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Payment Successful!</h2>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">Your payment has been processed successfully</p>
 
-                <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 rounded-xl p-6 mb-6">
+                <div className="bg-white dark:bg-white dark:bg-white/5 rounded-xl p-6 mb-6">
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Transaction ID</span>
@@ -537,7 +537,7 @@ export default function OnlinePayment() {
           {/* Right Sidebar */}
           <div className="space-y-6">
             {/* Payment Summary */}
-            <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Summary</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
@@ -552,7 +552,7 @@ export default function OnlinePayment() {
                   <span className="text-gray-600 dark:text-gray-400">Processing Fee</span>
                   <span className="text-gray-900 dark:text-white">$0.00</span>
                 </div>
-                <div className="border-t border-gray-200 dark:border-gray-200 dark:border-white/10 pt-3 flex justify-between">
+                <div className="border-t border-gray-200 dark:border-white/10 pt-3 flex justify-between">
                   <span className="text-white font-semibold">Total Amount</span>
                   <span className="text-2xl font-bold text-green-400">${paymentAmount}</span>
                 </div>
@@ -585,11 +585,11 @@ export default function OnlinePayment() {
             </div>
 
             {/* Recent Transactions */}
-            <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Transactions</h3>
               <div className="space-y-3">
                 {recentTransactions.map((transaction) => (
-                  <div key={transaction.id} className="p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                  <div key={transaction.id} className="p-3 bg-white dark:bg-white/5 rounded-lg">
                     <div className="flex justify-between mb-1">
                       <span className="text-white font-medium">${transaction.amount.toFixed(2)}</span>
                       <span className="text-green-400 text-xs">Success</span>

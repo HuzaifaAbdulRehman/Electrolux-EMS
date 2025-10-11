@@ -187,7 +187,7 @@ export default function AdminAnalytics() {
     <DashboardLayout userType="admin" userName="Admin User">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Analytics & Insights</h1>
@@ -226,7 +226,7 @@ export default function AdminAnalytics() {
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {Object.entries(kpis).map(([key, data]) => (
-            <div key={key} className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div key={key} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
               <p className="text-gray-600 dark:text-gray-400 text-sm capitalize mb-1">{key}</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.value}</p>
               <div className={`flex items-center space-x-1 text-sm ${
@@ -242,7 +242,7 @@ export default function AdminAnalytics() {
         {/* Main Analytics Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Revenue Trend */}
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revenue Trend</h2>
               <div className="flex items-center space-x-2">
@@ -285,7 +285,7 @@ export default function AdminAnalytics() {
           </div>
 
           {/* Zone Performance */}
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Zone Performance</h2>
               <div className="flex items-center space-x-2">
@@ -323,7 +323,7 @@ export default function AdminAnalytics() {
           </div>
 
           {/* Customer Segmentation */}
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Customer Segmentation</h2>
             <div className="h-64">
               <Doughnut
@@ -341,11 +341,11 @@ export default function AdminAnalytics() {
               />
             </div>
             <div className="grid grid-cols-2 gap-4 mt-4">
-              <div className="p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+              <div className="p-3 bg-white dark:bg-white/5 rounded-lg">
                 <p className="text-gray-600 dark:text-gray-400 text-xs">Highest Growth</p>
                 <p className="text-white font-semibold">Commercial +15%</p>
               </div>
-              <div className="p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+              <div className="p-3 bg-white dark:bg-white/5 rounded-lg">
                 <p className="text-gray-600 dark:text-gray-400 text-xs">Largest Segment</p>
                 <p className="text-white font-semibold">Residential 65%</p>
               </div>
@@ -353,7 +353,7 @@ export default function AdminAnalytics() {
           </div>
 
           {/* System Health */}
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">System Health Metrics</h2>
             <div className="h-64">
               <Radar
@@ -388,7 +388,7 @@ export default function AdminAnalytics() {
         </div>
 
         {/* Peak Demand Analysis */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Peak Demand Analysis</h2>
             <div className="flex items-center space-x-4">
@@ -430,19 +430,19 @@ export default function AdminAnalytics() {
             />
           </div>
           <div className="grid grid-cols-4 gap-4 mt-6">
-            <div className="p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-center">
+            <div className="p-3 bg-white dark:bg-white/5 rounded-lg text-center">
               <p className="text-gray-600 dark:text-gray-400 text-xs">Current Load</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">245 MW</p>
             </div>
-            <div className="p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-center">
+            <div className="p-3 bg-white dark:bg-white/5 rounded-lg text-center">
               <p className="text-gray-600 dark:text-gray-400 text-xs">Peak Today</p>
               <p className="text-xl font-bold text-yellow-400">280 MW</p>
             </div>
-            <div className="p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-center">
+            <div className="p-3 bg-white dark:bg-white/5 rounded-lg text-center">
               <p className="text-gray-600 dark:text-gray-400 text-xs">Capacity</p>
               <p className="text-xl font-bold text-green-400">400 MW</p>
             </div>
-            <div className="p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-center">
+            <div className="p-3 bg-white dark:bg-white/5 rounded-lg text-center">
               <p className="text-gray-600 dark:text-gray-400 text-xs">Utilization</p>
               <p className="text-xl font-bold text-blue-400">70%</p>
             </div>
@@ -460,7 +460,7 @@ export default function AdminAnalytics() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {predictions.map((pred, index) => (
-              <div key={index} className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+              <div key={index} className="p-4 bg-white dark:bg-white/5 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-gray-600 dark:text-gray-400 text-sm">{pred.metric}</p>
                   {pred.trend === 'up' ? (
@@ -488,7 +488,7 @@ export default function AdminAnalytics() {
 
         {/* Real-time Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Live Connections</h3>
               <Activity className="w-5 h-5 text-green-400 animate-pulse" />
@@ -509,7 +509,7 @@ export default function AdminAnalytics() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Revenue Today</h3>
               <DollarSign className="w-5 h-5 text-yellow-400" />
@@ -530,7 +530,7 @@ export default function AdminAnalytics() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">System Status</h3>
               <Shield className="w-5 h-5 text-blue-400" />

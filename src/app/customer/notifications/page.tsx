@@ -208,7 +208,7 @@ export default function Notifications() {
     <DashboardLayout userType="customer" userName="John Doe">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Notifications</h1>
@@ -232,7 +232,7 @@ export default function Notifications() {
 
         {/* Statistics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Total</p>
@@ -241,7 +241,7 @@ export default function Notifications() {
               <Bell className="w-8 h-8 text-blue-400" />
             </div>
           </div>
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Unread</p>
@@ -250,7 +250,7 @@ export default function Notifications() {
               <BellOff className="w-8 h-8 text-yellow-400" />
             </div>
           </div>
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">High Priority</p>
@@ -259,7 +259,7 @@ export default function Notifications() {
               <AlertTriangle className="w-8 h-8 text-red-400" />
             </div>
           </div>
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">This Week</p>
@@ -273,7 +273,7 @@ export default function Notifications() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Filters Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Categories</h2>
               <div className="space-y-2">
                 {categories.map((category) => (
@@ -282,7 +282,7 @@ export default function Notifications() {
                     onClick={() => setActiveFilter(category.id)}
                     className={`w-full px-4 py-3 rounded-lg text-left transition-all flex items-center justify-between ${
                       activeFilter === category.id
-                        ? 'bg-gradient-to-r from-yellow-400/20 to-orange-500/20 text-gray-900 dark:text-white border border-yellow-400/30'
+                        ? 'bg-gradient-to-r from-yellow-400/20 to-orange-500/20 text-white border border-yellow-400/30'
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-100 dark:hover:bg-white/10'
                     }`}
                   >
@@ -295,14 +295,14 @@ export default function Notifications() {
               </div>
 
               {/* Quick Actions */}
-              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/10">
                 <h3 className="text-white font-semibold mb-3">Quick Actions</h3>
                 <div className="space-y-2">
-                  <button className="w-full p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center space-x-3">
+                  <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center space-x-3">
                     <Archive className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     <span className="text-gray-700 dark:text-gray-300 text-sm">Archive All</span>
                   </button>
-                  <button className="w-full p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center space-x-3">
+                  <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center space-x-3">
                     <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                     <span className="text-gray-700 dark:text-gray-300 text-sm">Clear Old</span>
                   </button>
@@ -318,7 +318,7 @@ export default function Notifications() {
                 <div
                   key={notification.id}
                   className={`bg-white/5 backdrop-blur-xl rounded-2xl p-6 border transition-all hover:border-gray-300 dark:border-gray-300 dark:border-white/20 ${
-                    notification.read ? 'border-gray-200 dark:border-gray-200 dark:border-white/10 opacity-75' : 'border-gray-300 dark:border-gray-300 dark:border-white/20'
+                    notification.read ? 'border-gray-200 dark:border-white/10 opacity-75' : 'border-gray-300 dark:border-gray-300 dark:border-white/20'
                   }`}
                 >
                   <div className="flex items-start space-x-4">
@@ -387,7 +387,7 @@ export default function Notifications() {
               ))}
 
               {filteredNotifications.length === 0 && (
-                <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-12 border border-gray-200 dark:border-gray-200 dark:border-white/10 text-center">
+                <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-12 border border-gray-200 dark:border-white/10 text-center">
                   <BellOff className="w-16 h-16 text-gray-500 mx-auto mb-4" />
                   <h3 className="text-gray-900 dark:text-white text-lg font-semibold mb-2">No notifications</h3>
                   <p className="text-gray-600 dark:text-gray-400">You're all caught up! Check back later for new updates.</p>

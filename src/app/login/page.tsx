@@ -89,7 +89,7 @@ export default function LoginPage() {
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-gray-900 dark:text-white" />
+                  <Zap className="w-6 h-6 text-white" />
                 </div>
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">Electrolux</span>
               </div>
@@ -173,7 +173,7 @@ export default function LoginPage() {
               {/* Form Header */}
               <div className="text-center mb-6">
                 <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <User className="w-8 h-8 text-gray-900 dark:text-white" />
+                  <User className="w-8 h-8 text-white" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Sign In</h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Enter your credentials to access your account</p>
@@ -214,7 +214,7 @@ export default function LoginPage() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full pl-10 pr-10 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                      className="w-full pl-10 pr-10 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                       placeholder="john@example.com"
                       disabled={isLoading}
                     />
@@ -239,7 +239,7 @@ export default function LoginPage() {
                       type={showPassword ? 'text' : 'password'}
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full pl-10 pr-10 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                      className="w-full pl-10 pr-10 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                       placeholder="Enter your password"
                       disabled={isLoading}
                     />

@@ -93,15 +93,15 @@ export default function CustomerProfile() {
     <DashboardLayout userType="customer" userName="John Doe">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center space-x-6">
               <div className="relative">
                 <div className="w-24 h-24 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                  <User className="w-12 h-12 text-gray-900 dark:text-white" />
+                  <User className="w-12 h-12 text-white" />
                 </div>
                 <button className="absolute bottom-0 right-0 w-8 h-8 bg-gray-100 dark:bg-gray-100 dark:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30 hover:bg-white/30 transition-all">
-                  <Camera className="w-4 h-4 text-gray-900 dark:text-white" />
+                  <Camera className="w-4 h-4 text-white" />
                 </button>
               </div>
               <div>
@@ -142,61 +142,61 @@ export default function CustomerProfile() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Credit Score</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{accountInfo.creditScore}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                <Award className="w-5 h-5 text-gray-900 dark:text-white" />
+                <Award className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Total Saved</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{usageStats.savedAmount}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-gray-900 dark:text-white" />
+                <DollarSign className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">On-time Payments</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{usageStats.onTimePayments}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-gray-900 dark:text-white" />
+                <CheckCircle className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">CO₂ Reduced</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{usageStats.co2Reduced}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Zap className="w-5 h-5 text-gray-900 dark:text-white" />
+                <Zap className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-1 bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-1">
+        <div className="flex space-x-1 bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-1">
           {['personal', 'account', 'usage', 'achievements'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`flex-1 py-3 px-4 rounded-lg font-semibold capitalize transition-all ${
                 activeTab === tab
-                  ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 dark:text-white'
+                  ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-100 dark:hover:bg-white/10'
               }`}
             >
@@ -209,7 +209,7 @@ export default function CustomerProfile() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             {activeTab === 'personal' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Personal Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -222,7 +222,7 @@ export default function CustomerProfile() {
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
                       />
                     ) : (
-                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <span className="text-gray-900 dark:text-white">{profileData.fullName}</span>
                       </div>
@@ -239,7 +239,7 @@ export default function CustomerProfile() {
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
                       />
                     ) : (
-                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <Mail className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <span className="text-gray-900 dark:text-white">{profileData.email}</span>
                       </div>
@@ -256,7 +256,7 @@ export default function CustomerProfile() {
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
                       />
                     ) : (
-                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <span className="text-gray-900 dark:text-white">{profileData.phone}</span>
                       </div>
@@ -273,7 +273,7 @@ export default function CustomerProfile() {
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
                       />
                     ) : (
-                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <span className="text-gray-900 dark:text-white">{profileData.dateOfBirth}</span>
                       </div>
@@ -290,7 +290,7 @@ export default function CustomerProfile() {
                         rows={2}
                       />
                     ) : (
-                      <div className="flex items-start space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="flex items-start space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <MapPin className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5" />
                         <span className="text-gray-900 dark:text-white">{profileData.address}</span>
                       </div>
@@ -318,11 +318,11 @@ export default function CustomerProfile() {
             )}
 
             {activeTab === 'account' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Account Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {Object.entries(accountInfo).map(([key, value]) => (
-                    <div key={key} className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                    <div key={key} className="p-4 bg-white dark:bg-white/5 rounded-xl">
                       <p className="text-gray-600 dark:text-gray-400 text-sm mb-1 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</p>
                       <p className="text-white font-semibold flex items-center">
                         {key === 'status' ? (
@@ -340,11 +340,11 @@ export default function CustomerProfile() {
             )}
 
             {activeTab === 'usage' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Usage Statistics</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {Object.entries(usageStats).map(([key, value]) => (
-                    <div key={key} className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl">
+                    <div key={key} className="p-4 bg-white dark:bg-white/5 rounded-xl">
                       <p className="text-gray-600 dark:text-gray-400 text-sm mb-1 capitalize">
                         {key.replace(/([A-Z])/g, ' $1').trim()}
                       </p>
@@ -356,14 +356,14 @@ export default function CustomerProfile() {
             )}
 
             {activeTab === 'achievements' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Achievements & Badges</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {achievements.map((achievement, index) => (
-                    <div key={index} className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-gray-200 dark:border-white/10">
+                    <div key={index} className="p-4 bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
                       <div className="flex items-center space-x-4">
                         <div className={`w-12 h-12 bg-gradient-to-r ${achievement.color} rounded-lg flex items-center justify-center`}>
-                          <achievement.icon className="w-6 h-6 text-gray-900 dark:text-white" />
+                          <achievement.icon className="w-6 h-6 text-white" />
                         </div>
                         <div>
                           <h3 className="text-white font-semibold">{achievement.title}</h3>
@@ -380,31 +380,31 @@ export default function CustomerProfile() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
               <div className="space-y-3">
-                <button className="w-full p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
+                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
                   <span className="flex items-center space-x-3">
                     <Key className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <span className="text-gray-900 dark:text-white">Change Password</span>
                   </span>
                   <span className="text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
                 </button>
-                <button className="w-full p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
+                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
                   <span className="flex items-center space-x-3">
                     <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <span className="text-gray-900 dark:text-white">Notification Settings</span>
                   </span>
                   <span className="text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
                 </button>
-                <button className="w-full p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
+                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
                   <span className="flex items-center space-x-3">
                     <CreditCard className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <span className="text-gray-900 dark:text-white">Payment Methods</span>
                   </span>
                   <span className="text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
                 </button>
-                <button className="w-full p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
+                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
                   <span className="flex items-center space-x-3">
                     <Shield className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <span className="text-gray-900 dark:text-white">Privacy Settings</span>
@@ -415,11 +415,11 @@ export default function CustomerProfile() {
             </div>
 
             {/* Recent Activity */}
-            <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
               <div className="space-y-3">
                 {recentActivities.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                  <div key={index} className="flex items-start space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                     <div className={`w-2 h-2 mt-2 rounded-full ${
                       activity.status === 'success' ? 'bg-green-400' : 'bg-blue-400'
                     }`} />

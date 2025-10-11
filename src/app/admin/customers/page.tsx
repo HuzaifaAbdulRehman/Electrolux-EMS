@@ -1,0 +1,484 @@
+'use client';
+
+import React, { useState } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
+import {
+  Users,
+  Search,
+  Filter,
+  Download,
+  Eye,
+  Edit,
+  Trash2,
+  Plus,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Activity,
+  DollarSign,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  TrendingUp,
+  TrendingDown,
+  MoreVertical,
+  User,
+  Zap
+} from 'lucide-react';
+
+export default function AdminCustomers() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [selectedCustomer, setSelectedCustomer] = useState<number | null>(null);
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+
+  // Mock customer data
+  const customers = [
+    {
+      id: 1,
+      accountNumber: 'ELX-2024-001234',
+      name: 'John Doe',
+      email: 'john.doe@email.com',
+      phone: '+1 (555) 123-4567',
+      address: '123 Main St, New York, NY 10001',
+      meterNumber: 'MTR-485729',
+      connectionType: 'Residential',
+      status: 'active',
+      joinDate: '2024-01-15',
+      lastBillAmount: 245.50,
+      lastPaymentDate: '2024-10-05',
+      averageMonthlyUsage: 485,
+      outstandingBalance: 0,
+      paymentStatus: 'paid'
+    },
+    {
+      id: 2,
+      accountNumber: 'ELX-2024-001235',
+      name: 'Sarah Johnson',
+      email: 'sarah.j@email.com',
+      phone: '+1 (555) 234-5678',
+      address: '456 Oak Ave, Los Angeles, CA 90001',
+      meterNumber: 'MTR-485730',
+      connectionType: 'Commercial',
+      status: 'active',
+      joinDate: '2024-02-20',
+      lastBillAmount: 892.30,
+      lastPaymentDate: '2024-10-08',
+      averageMonthlyUsage: 1250,
+      outstandingBalance: 0,
+      paymentStatus: 'paid'
+    },
+    {
+      id: 3,
+      accountNumber: 'ELX-2024-001236',
+      name: 'Michael Brown',
+      email: 'michael.b@email.com',
+      phone: '+1 (555) 345-6789',
+      address: '789 Elm St, Chicago, IL 60601',
+      meterNumber: 'MTR-485731',
+      connectionType: 'Residential',
+      status: 'suspended',
+      joinDate: '2024-03-10',
+      lastBillAmount: 315.75,
+      lastPaymentDate: '2024-09-15',
+      averageMonthlyUsage: 520,
+      outstandingBalance: 631.50,
+      paymentStatus: 'overdue'
+    },
+    {
+      id: 4,
+      accountNumber: 'ELX-2024-001237',
+      name: 'Tech Corp Inc.',
+      email: 'billing@techcorp.com',
+      phone: '+1 (555) 456-7890',
+      address: '100 Tech Plaza, San Francisco, CA 94105',
+      meterNumber: 'MTR-485732',
+      connectionType: 'Industrial',
+      status: 'active',
+      joinDate: '2023-11-05',
+      lastBillAmount: 4580.90,
+      lastPaymentDate: '2024-10-10',
+      averageMonthlyUsage: 8500,
+      outstandingBalance: 0,
+      paymentStatus: 'paid'
+    },
+    {
+      id: 5,
+      accountNumber: 'ELX-2024-001238',
+      name: 'Emily Davis',
+      email: 'emily.d@email.com',
+      phone: '+1 (555) 567-8901',
+      address: '321 Pine St, Seattle, WA 98101',
+      meterNumber: 'MTR-485733',
+      connectionType: 'Residential',
+      status: 'active',
+      joinDate: '2024-04-25',
+      lastBillAmount: 198.40,
+      lastPaymentDate: '2024-10-12',
+      averageMonthlyUsage: 380,
+      outstandingBalance: 0,
+      paymentStatus: 'paid'
+    }
+  ];
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400';
+      case 'suspended': return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400';
+      case 'inactive': return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
+      default: return 'bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400';
+    }
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid': return 'text-green-600 dark:text-green-400';
+      case 'pending': return 'text-yellow-600 dark:text-yellow-400';
+      case 'overdue': return 'text-red-600 dark:text-red-400';
+      default: return 'text-gray-600 dark:text-gray-400';
+    }
+  };
+
+  const getConnectionTypeColor = (type: string) => {
+    switch (type) {
+      case 'Residential': return 'from-blue-500 to-cyan-500';
+      case 'Commercial': return 'from-yellow-400 to-orange-500';
+      case 'Industrial': return 'from-purple-500 to-pink-500';
+      default: return 'from-gray-400 to-gray-600';
+    }
+  };
+
+  const filteredCustomers = customers.filter(customer => {
+    const matchesSearch = customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          customer.accountNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          customer.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || customer.status === filterStatus;
+    return matchesSearch && matchesFilter;
+  });
+
+  // Statistics
+  const totalCustomers = customers.length;
+  const activeCustomers = customers.filter(c => c.status === 'active').length;
+  const totalRevenue = customers.reduce((sum, c) => sum + c.lastBillAmount, 0);
+  const totalOutstanding = customers.reduce((sum, c) => sum + c.outstandingBalance, 0);
+
+  return (
+    <DashboardLayout userType="admin" userName="Admin User">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Customer Management
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Manage customer accounts, connections, and billing information
+              </p>
+            </div>
+            <button
+              onClick={() => setShowAddCustomer(true)}
+              className="mt-4 sm:mt-0 px-6 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Add Customer</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xs text-gray-600 dark:text-gray-400">Total</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalCustomers}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Total Customers</p>
+          </div>
+
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                <Activity className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xs text-green-600 dark:text-green-400">Active</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeCustomers}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Active Accounts</p>
+          </div>
+
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-white" />
+              </div>
+              <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">${totalRevenue.toFixed(2)}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Monthly Revenue</p>
+          </div>
+
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-rose-500 rounded-lg flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xs text-red-600 dark:text-red-400">Outstanding</span>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">${totalOutstanding.toFixed(2)}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Total Outstanding</p>
+          </div>
+        </div>
+
+        {/* Search and Filter */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500 dark:text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search customers by name, account, or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
+              />
+            </div>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-2 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <button className="px-4 py-2 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-all flex items-center space-x-2">
+              <Download className="w-5 h-5" />
+              <span>Export</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Customer Table */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase tracking-wider">
+                    Account Details
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase tracking-wider">
+                    Connection
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase tracking-wider">
+                    Usage
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase tracking-wider">
+                    Billing
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-700 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-white/10">
+                {filteredCustomers.map((customer) => (
+                  <tr key={customer.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                          <User className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {customer.name}
+                          </p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            {customer.email}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="text-sm text-gray-900 dark:text-white font-mono">
+                          {customer.accountNumber}
+                        </p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                          Meter: {customer.meterNumber}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r ${getConnectionTypeColor(customer.connectionType)} text-white`}>
+                        {customer.connectionType}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-1">
+                        <Zap className="w-4 h-4 text-yellow-500" />
+                        <span className="text-sm text-gray-900 dark:text-white">
+                          {customer.averageMonthlyUsage} kWh
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          ${customer.lastBillAmount}
+                        </p>
+                        <p className={`text-xs ${getPaymentStatusColor(customer.paymentStatus)}`}>
+                          {customer.paymentStatus === 'paid' ? 'Paid' :
+                           customer.paymentStatus === 'overdue' ? `Overdue: $${customer.outstandingBalance}` :
+                           'Pending'}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(customer.status)}`}>
+                        {customer.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setSelectedCustomer(customer.id)}
+                          className="p-1 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button className="p-1 text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button className="p-1 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Customer Detail Modal */}
+        {selectedCustomer && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Customer Details
+                </h2>
+                <button
+                  onClick={() => setSelectedCustomer(null)}
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+
+              {(() => {
+                const customer = customers.find(c => c.id === selectedCustomer);
+                if (!customer) return null;
+
+                return (
+                  <div className="space-y-6">
+                    {/* Customer Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Full Name</p>
+                          <p className="text-lg font-medium text-gray-900 dark:text-white">{customer.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Email</p>
+                          <p className="text-gray-900 dark:text-white">{customer.email}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Phone</p>
+                          <p className="text-gray-900 dark:text-white">{customer.phone}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Address</p>
+                          <p className="text-gray-900 dark:text-white">{customer.address}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Join Date</p>
+                          <p className="text-gray-900 dark:text-white">{customer.joinDate}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Account Status</p>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(customer.status)}`}>
+                            {customer.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Billing Information */}
+                    <div className="pt-6 border-t border-gray-200 dark:border-white/10">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                        Billing Information
+                      </h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Last Bill</p>
+                          <p className="text-lg font-medium text-gray-900 dark:text-white">
+                            ${customer.lastBillAmount}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Outstanding</p>
+                          <p className="text-lg font-medium text-gray-900 dark:text-white">
+                            ${customer.outstandingBalance}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Avg. Usage</p>
+                          <p className="text-lg font-medium text-gray-900 dark:text-white">
+                            {customer.averageMonthlyUsage} kWh
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">Last Payment</p>
+                          <p className="text-lg font-medium text-gray-900 dark:text-white">
+                            {customer.lastPaymentDate}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex space-x-4 pt-6 border-t border-gray-200 dark:border-white/10">
+                      <button className="flex-1 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all">
+                        Edit Customer
+                      </button>
+                      <button className="flex-1 px-4 py-2 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-all">
+                        View Bills
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+      </div>
+    </DashboardLayout>
+  );
+}

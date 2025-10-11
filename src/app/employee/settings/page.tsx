@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Settings,
@@ -37,6 +37,35 @@ import {
 export default function EmployeeSettings() {
   const [activeSection, setActiveSection] = useState('work');
   const [showPassword, setShowPassword] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState('dark');
+
+  // Initialize and handle theme changes
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      setCurrentTheme(savedTheme);
+      setSettings(prev => ({
+        ...prev,
+        device: { ...prev.device, theme: savedTheme as 'dark' | 'light' }
+      }));
+    }
+  }, []);
+
+  const handleThemeChange = (theme: 'light' | 'dark') => {
+    setCurrentTheme(theme);
+    localStorage.setItem('theme', theme);
+    setSettings({
+      ...settings,
+      device: { ...settings.device, theme }
+    });
+
+    // Apply theme to document
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
   const [settings, setSettings] = useState({
     work: {
@@ -106,7 +135,7 @@ export default function EmployeeSettings() {
     <DashboardLayout userType="employee" userName="Mike Johnson">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Settings</h1>
@@ -127,7 +156,7 @@ export default function EmployeeSettings() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Settings Menu</h2>
               <nav className="space-y-2">
                 {sections.map((section) => (
@@ -136,7 +165,7 @@ export default function EmployeeSettings() {
                     onClick={() => setActiveSection(section.id)}
                     className={`w-full px-4 py-3 rounded-lg text-left transition-all flex items-center justify-between group ${
                       activeSection === section.id
-                        ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-gray-900 dark:text-white border border-green-500/30'
+                        ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-white border border-green-500/30'
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-100 dark:hover:bg-white/10'
                     }`}
                   >
@@ -156,7 +185,7 @@ export default function EmployeeSettings() {
           {/* Settings Content */}
           <div className="lg:col-span-3">
             {activeSection === 'work' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Work Preferences</h2>
 
                 <div className="space-y-6">
@@ -164,7 +193,7 @@ export default function EmployeeSettings() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Task Management</h3>
                     <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
                         <div>
                           <p className="text-gray-900 dark:text-white">Auto-Accept Tasks</p>
                           <p className="text-gray-600 dark:text-gray-400 text-sm">Automatically accept assigned tasks</p>
@@ -183,7 +212,7 @@ export default function EmployeeSettings() {
                         </button>
                       </div>
 
-                      <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="p-4 bg-white dark:bg-white/5 rounded-lg">
                         <label className="text-gray-900 dark:text-white block mb-2">Max Daily Tasks</label>
                         <select
                           value={settings.work.maxDailyTasks}
@@ -201,7 +230,7 @@ export default function EmployeeSettings() {
                         </select>
                       </div>
 
-                      <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="p-4 bg-white dark:bg-white/5 rounded-lg">
                         <label className="text-gray-900 dark:text-white block mb-2">Task Priority</label>
                         <select
                           value={settings.work.taskPriority}
@@ -227,7 +256,7 @@ export default function EmployeeSettings() {
                       {zones.map((zone) => (
                         <label
                           key={zone}
-                          className="flex items-center space-x-2 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10"
+                          className="flex items-center space-x-2 p-3 bg-white dark:bg-white/5 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10"
                         >
                           <input
                             type="checkbox"
@@ -252,7 +281,7 @@ export default function EmployeeSettings() {
                   {/* Work Hours */}
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Working Hours</h3>
-                    <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                    <div className="p-4 bg-white dark:bg-white/5 rounded-lg">
                       <label className="text-gray-900 dark:text-white block mb-2">Shift Timing</label>
                       <input
                         type="text"
@@ -266,7 +295,7 @@ export default function EmployeeSettings() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 mt-4">
-                      <label className="flex items-center justify-between p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <label className="flex items-center justify-between p-3 bg-white dark:bg-white/5 rounded-lg">
                         <span className="text-gray-900 dark:text-white">Break Reminders</span>
                         <input
                           type="checkbox"
@@ -275,7 +304,7 @@ export default function EmployeeSettings() {
                           className="w-5 h-5 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded text-green-400"
                         />
                       </label>
-                      <label className="flex items-center justify-between p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <label className="flex items-center justify-between p-3 bg-white dark:bg-white/5 rounded-lg">
                         <span className="text-gray-900 dark:text-white">Overtime Alerts</span>
                         <input
                           type="checkbox"
@@ -291,7 +320,7 @@ export default function EmployeeSettings() {
             )}
 
             {activeSection === 'notifications' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Notification Preferences</h2>
 
                 <div className="space-y-6">
@@ -305,7 +334,7 @@ export default function EmployeeSettings() {
                         { key: 'pushNotifications', label: 'Push Notifications', icon: Bell },
                         { key: 'soundAlerts', label: 'Sound Alerts', icon: Volume2 }
                       ].map((item) => (
-                        <div key={item.key} className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                        <div key={item.key} className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
                           <div className="flex items-center space-x-3">
                             <item.icon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                             <span className="text-gray-900 dark:text-white">{item.label}</span>
@@ -341,7 +370,7 @@ export default function EmployeeSettings() {
                         { key: 'systemUpdates', label: 'System Updates' },
                         { key: 'performanceReports', label: 'Performance Reports' }
                       ].map((item) => (
-                        <label key={item.key} className="flex items-center space-x-3 p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg cursor-pointer">
+                        <label key={item.key} className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg cursor-pointer">
                           <input
                             type="checkbox"
                             checked={settings.notifications[item.key as keyof typeof settings.notifications]}
@@ -358,13 +387,13 @@ export default function EmployeeSettings() {
             )}
 
             {activeSection === 'device' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Device & App Settings</h2>
 
                 <div className="space-y-6">
                   {/* App Settings */}
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <Navigation className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <div>
@@ -386,7 +415,7 @@ export default function EmployeeSettings() {
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <Wifi className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <div>
@@ -408,7 +437,7 @@ export default function EmployeeSettings() {
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                    <div className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
                       <div className="flex items-center space-x-3">
                         <Battery className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <div>
@@ -430,7 +459,7 @@ export default function EmployeeSettings() {
                       </button>
                     </div>
 
-                    <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                    <div className="p-4 bg-white dark:bg-white/5 rounded-lg">
                       <label className="text-gray-900 dark:text-white block mb-2">Auto Sync Interval</label>
                       <select
                         value={settings.device.syncInterval}
@@ -447,32 +476,26 @@ export default function EmployeeSettings() {
                       </select>
                     </div>
 
-                    <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                    <div className="p-4 bg-white dark:bg-white/5 rounded-lg">
                       <label className="text-gray-900 dark:text-white block mb-2">Theme</label>
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => setSettings({
-                            ...settings,
-                            device: { ...settings.device, theme: 'dark' }
-                          })}
+                          onClick={() => handleThemeChange('dark')}
                           className={`flex-1 py-2 px-3 rounded-lg flex items-center justify-center space-x-2 ${
-                            settings.device.theme === 'dark'
-                              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-gray-900 dark:text-white'
-                              : 'bg-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-200 dark:hover:bg-white/20'
+                            currentTheme === 'dark'
+                              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+                              : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/20'
                           }`}
                         >
                           <Moon className="w-4 h-4" />
                           <span>Dark</span>
                         </button>
                         <button
-                          onClick={() => setSettings({
-                            ...settings,
-                            device: { ...settings.device, theme: 'light' }
-                          })}
+                          onClick={() => handleThemeChange('light')}
                           className={`flex-1 py-2 px-3 rounded-lg flex items-center justify-center space-x-2 ${
-                            settings.device.theme === 'light'
-                              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-gray-900 dark:text-white'
-                              : 'bg-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-200 dark:hover:bg-white/20'
+                            currentTheme === 'light'
+                              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+                              : 'bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/20'
                           }`}
                         >
                           <Sun className="w-4 h-4" />
@@ -486,7 +509,7 @@ export default function EmployeeSettings() {
             )}
 
             {activeSection === 'security' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Security Settings</h2>
 
                 <div className="space-y-6">
@@ -500,7 +523,7 @@ export default function EmployeeSettings() {
                           <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 dark:text-gray-400" />
                           <input
                             type={showPassword ? 'text' : 'password'}
-                            className="w-full pl-12 pr-12 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-green-400"
+                            className="w-full pl-12 pr-12 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-green-400"
                             placeholder="Enter current password"
                           />
                           <button
@@ -515,7 +538,7 @@ export default function EmployeeSettings() {
                         <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">New Password</label>
                         <input
                           type="password"
-                          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-green-400"
+                          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-green-400"
                           placeholder="Enter new password"
                         />
                       </div>
@@ -523,7 +546,7 @@ export default function EmployeeSettings() {
                         <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Confirm New Password</label>
                         <input
                           type="password"
-                          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-green-400"
+                          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-green-400"
                           placeholder="Confirm new password"
                         />
                       </div>
@@ -534,10 +557,10 @@ export default function EmployeeSettings() {
                   </div>
 
                   {/* Security Options */}
-                  <div className="border-t border-gray-200 dark:border-gray-200 dark:border-white/10 pt-6">
+                  <div className="border-t border-gray-200 dark:border-white/10 pt-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Security Options</h3>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
                         <div>
                           <p className="text-gray-900 dark:text-white">Biometric Login</p>
                           <p className="text-gray-600 dark:text-gray-400 text-sm">Use fingerprint or face ID</p>
@@ -556,7 +579,7 @@ export default function EmployeeSettings() {
                         </button>
                       </div>
 
-                      <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <div className="p-4 bg-white dark:bg-white/5 rounded-lg">
                         <label className="text-gray-900 dark:text-white block mb-2">Auto Logout</label>
                         <select
                           value={settings.security.autoLogout}
@@ -573,7 +596,7 @@ export default function EmployeeSettings() {
                         </select>
                       </div>
 
-                      <label className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <label className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
                         <span className="text-gray-900 dark:text-white">Location Sharing</span>
                         <input
                           type="checkbox"
@@ -583,7 +606,7 @@ export default function EmployeeSettings() {
                         />
                       </label>
 
-                      <label className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <label className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
                         <span className="text-gray-900 dark:text-white">Automatic Data Backup</span>
                         <input
                           type="checkbox"
@@ -599,7 +622,7 @@ export default function EmployeeSettings() {
             )}
 
             {activeSection === 'account' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Account Settings</h2>
 
                 <div className="space-y-6">
@@ -614,7 +637,7 @@ export default function EmployeeSettings() {
                   </div>
 
                   <div className="space-y-4">
-                    <button className="w-full p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
+                    <button className="w-full p-4 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
                       <span className="flex items-center space-x-3">
                         <Download className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <div>
@@ -625,7 +648,7 @@ export default function EmployeeSettings() {
                       <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform" />
                     </button>
 
-                    <button className="w-full p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
+                    <button className="w-full p-4 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
                       <span className="flex items-center space-x-3">
                         <Upload className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <div>
@@ -636,7 +659,7 @@ export default function EmployeeSettings() {
                       <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform" />
                     </button>
 
-                    <button className="w-full p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
+                    <button className="w-full p-4 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
                       <span className="flex items-center space-x-3">
                         <Languages className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <div>

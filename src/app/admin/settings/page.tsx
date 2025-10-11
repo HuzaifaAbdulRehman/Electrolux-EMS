@@ -114,7 +114,7 @@ export default function AdminSettings() {
     <DashboardLayout userType="admin" userName="Admin User">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">System Settings</h1>
@@ -153,7 +153,7 @@ export default function AdminSettings() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar Navigation */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Configuration</h2>
               <nav className="space-y-2">
                 {sections.map((section) => (
@@ -162,7 +162,7 @@ export default function AdminSettings() {
                     onClick={() => setActiveSection(section.id)}
                     className={`w-full px-4 py-3 rounded-lg text-left transition-all flex items-center justify-between group ${
                       activeSection === section.id
-                        ? 'bg-gradient-to-r from-red-500/20 to-pink-500/20 text-gray-900 dark:text-white border border-red-500/30'
+                        ? 'bg-gradient-to-r from-red-500/20 to-pink-500/20 text-white border border-red-500/30'
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-100 dark:hover:bg-white/10'
                     }`}
                   >
@@ -178,7 +178,7 @@ export default function AdminSettings() {
               </nav>
 
               {/* System Status */}
-              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/10">
                 <h3 className="text-white font-semibold mb-3">System Status</h3>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -201,7 +201,7 @@ export default function AdminSettings() {
           {/* Settings Content */}
           <div className="lg:col-span-3">
             {activeSection === 'general' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">General Settings</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -330,7 +330,7 @@ export default function AdminSettings() {
             )}
 
             {activeSection === 'billing' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Billing Configuration</h2>
 
                 <div className="space-y-6">
@@ -419,7 +419,7 @@ export default function AdminSettings() {
                   </div>
 
                   <div className="space-y-3">
-                    <label className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                    <label className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
                       <div>
                         <span className="text-gray-900 dark:text-white">Auto-Generate Bills</span>
                         <p className="text-gray-600 dark:text-gray-400 text-sm">Automatically create bills at cycle end</p>
@@ -432,7 +432,7 @@ export default function AdminSettings() {
                       />
                     </label>
 
-                    <label className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                    <label className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
                       <div>
                         <span className="text-gray-900 dark:text-white">Enable Auto-Pay</span>
                         <p className="text-gray-600 dark:text-gray-400 text-sm">Allow customers to set up automatic payments</p>
@@ -450,7 +450,7 @@ export default function AdminSettings() {
             )}
 
             {activeSection === 'security' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Security Settings</h2>
 
                 <div className="space-y-6">
@@ -548,7 +548,7 @@ export default function AdminSettings() {
                       { key: 'dataEncryption', label: 'Data Encryption', desc: 'Encrypt sensitive data at rest' },
                       { key: 'auditLogging', label: 'Audit Logging', desc: 'Log all system activities and changes' }
                     ].map((item) => (
-                      <label key={item.key} className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <label key={item.key} className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
                         <div>
                           <span className="text-gray-900 dark:text-white">{item.label}</span>
                           <p className="text-gray-600 dark:text-gray-400 text-sm">{item.desc}</p>
@@ -567,11 +567,11 @@ export default function AdminSettings() {
             )}
 
             {activeSection === 'system' && (
-              <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">System Configuration</h2>
 
                 <div className="space-y-6">
-                  <div className="p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                  <div className="p-4 bg-white dark:bg-white/5 rounded-lg">
                     <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">API Key</label>
                     <div className="relative">
                       <input
@@ -603,7 +603,7 @@ export default function AdminSettings() {
                       { key: 'errorTracking', label: 'Error Tracking', desc: 'Log and track application errors' },
                       { key: 'analyticsEnabled', label: 'Analytics', desc: 'Enable usage analytics' }
                     ].map((item) => (
-                      <label key={item.key} className="flex items-center justify-between p-4 bg-white dark:bg-white dark:bg-white/5 rounded-lg">
+                      <label key={item.key} className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
                         <div>
                           <span className="text-gray-900 dark:text-white">{item.label}</span>
                           <p className="text-gray-600 dark:text-gray-400 text-sm">{item.desc}</p>

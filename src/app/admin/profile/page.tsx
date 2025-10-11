@@ -163,7 +163,7 @@ export default function AdminProfile() {
         <div className="bg-gradient-to-r from-red-500/20 to-pink-500/20 backdrop-blur-xl rounded-2xl p-6 border border-red-500/30">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center space-x-6">
-              <div className="w-24 h-24 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center text-gray-900 dark:text-white text-3xl font-bold">
+              <div className="w-24 h-24 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
                 {profileData.fullName.split(' ').map(n => n[0]).join('')}
               </div>
               <div>
@@ -213,40 +213,40 @@ export default function AdminProfile() {
 
         {/* Admin Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Activity className="w-5 h-5 text-gray-900 dark:text-white" />
+                <Activity className="w-5 h-5 text-white" />
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Actions Today</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">24</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                <Monitor className="w-5 h-5 text-gray-900 dark:text-white" />
+                <Monitor className="w-5 h-5 text-white" />
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Active Sessions</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{adminInfo.sessionsActive}</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                <Clock className="w-5 h-5 text-gray-900 dark:text-white" />
+                <Clock className="w-5 h-5 text-white" />
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Last Login</p>
             <p className="text-lg font-bold text-gray-900 dark:text-white">{adminInfo.lastLogin}</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Shield className="w-5 h-5 text-gray-900 dark:text-white" />
+                <Shield className="w-5 h-5 text-white" />
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">2FA Status</p>
@@ -255,15 +255,15 @@ export default function AdminProfile() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-gray-200 dark:border-white/10 overflow-hidden">
-          <div className="flex border-b border-gray-200 dark:border-gray-200 dark:border-white/10 overflow-x-auto">
+        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
+          <div className="flex border-b border-gray-200 dark:border-white/10 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center space-x-2 px-6 py-4 transition-all whitespace-nowrap ${
                   activeTab === tab.id
-                    ? 'bg-gradient-to-r from-red-500 to-pink-500 text-gray-900 dark:text-white'
+                    ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-50 dark:hover:bg-white/5'
                 }`}
               >
@@ -287,7 +287,7 @@ export default function AdminProfile() {
                         value={profileData.fullName}
                         onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
                         disabled={!isEditing}
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50"
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50"
                       />
                     </div>
                   </div>
@@ -301,7 +301,7 @@ export default function AdminProfile() {
                         value={profileData.email}
                         onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                         disabled={!isEditing}
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50"
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50"
                       />
                     </div>
                   </div>
@@ -315,7 +315,7 @@ export default function AdminProfile() {
                         value={profileData.phone}
                         onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                         disabled={!isEditing}
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50"
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50"
                       />
                     </div>
                   </div>
@@ -329,7 +329,7 @@ export default function AdminProfile() {
                         value={profileData.position}
                         onChange={(e) => setProfileData({ ...profileData, position: e.target.value })}
                         disabled={!isEditing}
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50"
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50"
                       />
                     </div>
                   </div>
@@ -341,7 +341,7 @@ export default function AdminProfile() {
                       value={profileData.department}
                       onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
                       disabled={!isEditing}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50"
                     />
                   </div>
 
@@ -351,7 +351,7 @@ export default function AdminProfile() {
                       type="text"
                       value={profileData.employeeId}
                       disabled
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 opacity-50 cursor-not-allowed"
+                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 opacity-50 cursor-not-allowed"
                     />
                   </div>
 
@@ -363,7 +363,7 @@ export default function AdminProfile() {
                         type="text"
                         value={profileData.joinDate}
                         disabled
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 opacity-50 cursor-not-allowed"
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 opacity-50 cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -377,7 +377,7 @@ export default function AdminProfile() {
                         value={profileData.location}
                         onChange={(e) => setProfileData({ ...profileData, location: e.target.value })}
                         disabled={!isEditing}
-                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50"
+                        className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50"
                       />
                     </div>
                   </div>
@@ -390,7 +390,7 @@ export default function AdminProfile() {
                     onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
                     disabled={!isEditing}
                     rows={4}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50 resize-none"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-red-400 disabled:opacity-50 resize-none"
                   />
                 </div>
               </div>
@@ -400,7 +400,7 @@ export default function AdminProfile() {
             {activeTab === 'permissions' && (
               <div className="space-y-4">
                 {permissions.map((permission, index) => (
-                  <div key={index} className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+                  <div key={index} className="bg-white dark:bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-3">
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -408,7 +408,7 @@ export default function AdminProfile() {
                             ? 'bg-gradient-to-r from-green-500 to-emerald-500'
                             : 'bg-gray-500/20'
                         }`}>
-                          <Shield className="w-5 h-5 text-gray-900 dark:text-white" />
+                          <Shield className="w-5 h-5 text-white" />
                         </div>
                         <div>
                           <h3 className="text-white font-semibold">{permission.module}</h3>
@@ -429,7 +429,7 @@ export default function AdminProfile() {
                       {permission.access.map((access, i) => (
                         <span
                           key={i}
-                          className="px-3 py-1 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg text-sm border border-gray-200 dark:border-gray-200 dark:border-white/10"
+                          className="px-3 py-1 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg text-sm border border-gray-200 dark:border-white/10"
                         >
                           {access}
                         </span>
@@ -444,7 +444,7 @@ export default function AdminProfile() {
             {activeTab === 'activity' && (
               <div className="space-y-4">
                 {recentActivities.map((activity) => (
-                  <div key={activity.id} className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-colors">
+                  <div key={activity.id} className="bg-white dark:bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-3 flex-1">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${getStatusColor(activity.status)}`}>
@@ -490,7 +490,7 @@ export default function AdminProfile() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                        <Shield className="w-5 h-5 text-gray-900 dark:text-white" />
+                        <Shield className="w-5 h-5 text-white" />
                       </div>
                       <div>
                         <h3 className="text-white font-semibold">Two-Factor Authentication</h3>
@@ -505,7 +505,7 @@ export default function AdminProfile() {
                   <h3 className="text-white font-semibold mb-4">Active Sessions</h3>
                   <div className="space-y-3">
                     {accessLogs.map((log) => (
-                      <div key={log.id} className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+                      <div key={log.id} className="bg-white dark:bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-3">
                             {log.device.includes('Desktop') && <Monitor className="w-5 h-5 text-gray-600 dark:text-gray-400" />}

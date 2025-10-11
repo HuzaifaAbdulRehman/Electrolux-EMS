@@ -308,7 +308,7 @@ export default function BillingOverview() {
     <DashboardLayout userType="admin" userName="Sarah Johnson">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Billing Overview</h1>
@@ -335,10 +335,10 @@ export default function BillingOverview() {
 
         {/* Key Financial Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-gray-900 dark:text-white" />
+                <DollarSign className="w-5 h-5 text-white" />
               </div>
               <TrendingUp className="w-4 h-4 text-green-400" />
             </div>
@@ -347,10 +347,10 @@ export default function BillingOverview() {
             <p className="text-xs text-green-400 mt-1">+12.5% from last month</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-gray-900 dark:text-white" />
+                <CheckCircle className="w-5 h-5 text-white" />
               </div>
               <TrendingUp className="w-4 h-4 text-green-400" />
             </div>
@@ -359,10 +359,10 @@ export default function BillingOverview() {
             <p className="text-xs text-green-400 mt-1">+8.3% from last month</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
-                <Clock className="w-5 h-5 text-gray-900 dark:text-white" />
+                <Clock className="w-5 h-5 text-white" />
               </div>
               <TrendingDown className="w-4 h-4 text-yellow-400" />
             </div>
@@ -371,10 +371,10 @@ export default function BillingOverview() {
             <p className="text-xs text-yellow-400 mt-1">-3.2% from last month</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-rose-500 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-gray-900 dark:text-white" />
+                <AlertTriangle className="w-5 h-5 text-white" />
               </div>
               <TrendingUp className="w-4 h-4 text-red-400" />
             </div>
@@ -383,10 +383,10 @@ export default function BillingOverview() {
             <p className="text-xs text-red-400 mt-1">+5.7% from last month</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 text-gray-900 dark:text-white" />
+                <FileText className="w-5 h-5 text-white" />
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Avg. Bill Amount</p>
@@ -394,10 +394,10 @@ export default function BillingOverview() {
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Per customer</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Activity className="w-5 h-5 text-gray-900 dark:text-white" />
+                <Activity className="w-5 h-5 text-white" />
               </div>
               <TrendingUp className="w-4 h-4 text-green-400" />
             </div>
@@ -410,7 +410,7 @@ export default function BillingOverview() {
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Revenue Trend */}
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revenue Trend</h2>
@@ -424,7 +424,7 @@ export default function BillingOverview() {
           </div>
 
           {/* Revenue by Category */}
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revenue by Category</h2>
@@ -439,7 +439,7 @@ export default function BillingOverview() {
         </div>
 
         {/* Payment Methods Chart */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Payment Methods</h2>
@@ -453,8 +453,8 @@ export default function BillingOverview() {
         </div>
 
         {/* Recent Transactions */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10 overflow-hidden">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-gray-200 dark:border-white/10 overflow-hidden">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recent Transactions</h2>
@@ -467,7 +467,7 @@ export default function BillingOverview() {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 border-b border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <thead className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Customer</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Account</th>
@@ -479,7 +479,7 @@ export default function BillingOverview() {
               </thead>
               <tbody className="divide-y divide-white/10">
                 {recentTransactions.map((transaction) => (
-                  <tr key={transaction.id} className="hover:bg-white dark:bg-white dark:bg-white dark:bg-white/5 transition-colors">
+                  <tr key={transaction.id} className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
                       <p className="text-white font-medium">{transaction.customer}</p>
                     </td>
@@ -509,8 +509,8 @@ export default function BillingOverview() {
         </div>
 
         {/* Outstanding Bills */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10 overflow-hidden">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-gray-200 dark:border-white/10 overflow-hidden">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Outstanding Bills</h2>
@@ -526,7 +526,7 @@ export default function BillingOverview() {
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white dark:bg-white dark:bg-white dark:bg-white dark:bg-white/5 border-b border-gray-200 dark:border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <thead className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Customer</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Account</th>
@@ -539,7 +539,7 @@ export default function BillingOverview() {
               </thead>
               <tbody className="divide-y divide-white/10">
                 {outstandingBills.map((bill) => (
-                  <tr key={bill.id} className="hover:bg-white dark:bg-white dark:bg-white dark:bg-white/5 transition-colors">
+                  <tr key={bill.id} className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
                       <p className="text-white font-medium">{bill.customer}</p>
                     </td>
@@ -581,7 +581,7 @@ export default function BillingOverview() {
           <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-xl p-6 border border-green-500/20">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-gray-900 dark:text-white" />
+                <CheckCircle className="w-6 h-6 text-white" />
               </div>
               <TrendingUp className="w-5 h-5 text-green-400" />
             </div>
@@ -593,7 +593,7 @@ export default function BillingOverview() {
           <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-xl p-6 border border-blue-500/20">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-gray-900 dark:text-white" />
+                <DollarSign className="w-6 h-6 text-white" />
               </div>
               <TrendingUp className="w-5 h-5 text-blue-400" />
             </div>
@@ -605,7 +605,7 @@ export default function BillingOverview() {
           <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-xl p-6 border border-purple-500/20">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-gray-900 dark:text-white" />
+                <Users className="w-6 h-6 text-white" />
               </div>
               <Activity className="w-5 h-5 text-purple-400" />
             </div>

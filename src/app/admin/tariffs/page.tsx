@@ -20,6 +20,8 @@ import {
 
 export default function TariffManagement() {
   const [selectedCategory, setSelectedCategory] = useState('residential');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTariffs, setEditedTariffs] = useState<any>(null);
 
   const categories = [
     { id: 'residential', name: 'Residential', icon: Home, color: 'from-blue-500 to-cyan-500' },
@@ -93,6 +95,50 @@ export default function TariffManagement() {
 
   const currentTariff = tariffStructure[selectedCategory as keyof typeof tariffStructure] || tariffStructure.residential;
 
+  const handleEditToggle = () => {
+    if (!isEditing) {
+      // Enter edit mode - copy current tariff to editedTariffs
+      setEditedTariffs(JSON.parse(JSON.stringify(currentTariff)));
+    }
+    setIsEditing(!isEditing);
+  };
+
+  const handleSaveChanges = () => {
+    // Here you would save to database
+    console.log('Saving tariff changes:', editedTariffs);
+    // Update the tariffStructure with edited values
+    tariffStructure[selectedCategory as keyof typeof tariffStructure] = editedTariffs;
+    setIsEditing(false);
+    alert('Tariff rates updated successfully!');
+  };
+
+  const handleCancelEdit = () => {
+    setEditedTariffs(null);
+    setIsEditing(false);
+  };
+
+  const updateSlabRate = (index: number, value: string) => {
+    const newSlabs = [...editedTariffs.slabs];
+    newSlabs[index] = { ...newSlabs[index], rate: parseFloat(value) || 0 };
+    setEditedTariffs({ ...editedTariffs, slabs: newSlabs });
+  };
+
+  const updateFixedCharge = (value: string) => {
+    setEditedTariffs({ ...editedTariffs, fixedCharge: parseFloat(value) || 0 });
+  };
+
+  const updateTimeOfUseRate = (period: 'peak' | 'normal' | 'offPeak', value: string) => {
+    setEditedTariffs({
+      ...editedTariffs,
+      timeOfUse: {
+        ...editedTariffs.timeOfUse,
+        [period]: { ...editedTariffs.timeOfUse[period], rate: parseFloat(value) || 0 }
+      }
+    });
+  };
+
+  const displayTariff = isEditing ? editedTariffs : currentTariff;
+
   return (
     <DashboardLayout userType="admin" userName="Admin User">
       <div className="space-y-6">
@@ -103,10 +149,33 @@ export default function TariffManagement() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Tariff Management</h1>
               <p className="text-gray-600 dark:text-gray-400">Configure electricity rates and pricing structures</p>
             </div>
-            <button className="mt-4 sm:mt-0 px-6 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2">
-              <Save className="w-5 h-5" />
-              <span>Apply Changes</span>
-            </button>
+            <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="px-4 py-2 bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/20 transition-all flex items-center space-x-2"
+                  >
+                    <span>Cancel</span>
+                  </button>
+                  <button
+                    onClick={handleSaveChanges}
+                    className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-emerald-500/50 transition-all flex items-center space-x-2"
+                  >
+                    <Save className="w-5 h-5" />
+                    <span>Save Changes</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleEditToggle}
+                  className="px-6 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2"
+                >
+                  <Edit2 className="w-5 h-5" />
+                  <span>Edit Rates</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -138,14 +207,29 @@ export default function TariffManagement() {
           <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Basic Charges</h2>
-              <button className="p-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all">
-                <Edit2 className="w-4 h-4" />
-              </button>
+              {isEditing && (
+                <span className="text-xs text-yellow-400 px-2 py-1 bg-yellow-400/10 rounded-lg border border-yellow-400/20">
+                  Editing Mode
+                </span>
+              )}
             </div>
             <div className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-xl">
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Fixed Monthly Charge</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">${currentTariff.fixedCharge}</p>
+              <div className="flex-1">
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">Fixed Monthly Charge</p>
+                {isEditing ? (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">$</span>
+                    <input
+                      type="number"
+                      value={displayTariff.fixedCharge}
+                      onChange={(e) => updateFixedCharge(e.target.value)}
+                      step="0.01"
+                      className="w-32 px-3 py-2 text-xl font-bold bg-gray-50 dark:bg-white/10 border border-yellow-400/50 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">${displayTariff.fixedCharge}</p>
+                )}
               </div>
               <DollarSign className="w-10 h-10 text-yellow-400" />
             </div>
@@ -173,8 +257,10 @@ export default function TariffManagement() {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Slab Rates</h2>
             </div>
             <div className="space-y-3">
-              {currentTariff.slabs.map((slab, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-xl hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all">
+              {displayTariff.slabs.map((slab: any, index: number) => (
+                <div key={index} className={`flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-xl transition-all ${
+                  isEditing ? 'border-2 border-yellow-400/30' : 'hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10'
+                }`}>
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
                       <Zap className="w-5 h-5 text-white" />
@@ -185,7 +271,20 @@ export default function TariffManagement() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">${slab.rate}</p>
+                    {isEditing ? (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">$</span>
+                        <input
+                          type="number"
+                          value={slab.rate}
+                          onChange={(e) => updateSlabRate(index, e.target.value)}
+                          step="0.01"
+                          className="w-24 px-2 py-1 text-lg font-bold bg-gray-50 dark:bg-white/10 border border-yellow-400/50 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">${slab.rate}</p>
+                    )}
                     <p className="text-gray-600 dark:text-gray-400 text-sm">per kWh</p>
                   </div>
                 </div>
@@ -197,37 +296,85 @@ export default function TariffManagement() {
           <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Time of Use Rates</h2>
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-red-500/10 to-rose-500/10 rounded-xl border border-red-500/20">
+              <div className={`flex items-center justify-between p-4 bg-gradient-to-r from-red-500/10 to-rose-500/10 rounded-xl border ${
+                isEditing ? 'border-yellow-400/30 border-2' : 'border-red-500/20'
+              }`}>
                 <div className="flex items-center space-x-3">
                   <Sun className="w-6 h-6 text-red-400" />
                   <div>
                     <p className="text-white font-medium">Peak Hours</p>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{currentTariff.timeOfUse.peak.hours}</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">{displayTariff.timeOfUse.peak.hours}</p>
                   </div>
                 </div>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">${currentTariff.timeOfUse.peak.rate}/kWh</p>
+                {isEditing ? (
+                  <div className="flex items-center space-x-1">
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">$</span>
+                    <input
+                      type="number"
+                      value={displayTariff.timeOfUse.peak.rate}
+                      onChange={(e) => updateTimeOfUseRate('peak', e.target.value)}
+                      step="0.01"
+                      className="w-20 px-2 py-1 text-lg font-bold bg-gray-50 dark:bg-white/10 border border-yellow-400/50 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
+                    />
+                    <span className="text-sm text-gray-600 dark:text-gray-400">/kWh</span>
+                  </div>
+                ) : (
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">${displayTariff.timeOfUse.peak.rate}/kWh</p>
+                )}
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl border border-blue-500/20">
+              <div className={`flex items-center justify-between p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl border ${
+                isEditing ? 'border-yellow-400/30 border-2' : 'border-blue-500/20'
+              }`}>
                 <div className="flex items-center space-x-3">
                   <Zap className="w-6 h-6 text-blue-400" />
                   <div>
                     <p className="text-white font-medium">Normal Hours</p>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{currentTariff.timeOfUse.normal.hours}</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">{displayTariff.timeOfUse.normal.hours}</p>
                   </div>
                 </div>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">${currentTariff.timeOfUse.normal.rate}/kWh</p>
+                {isEditing ? (
+                  <div className="flex items-center space-x-1">
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">$</span>
+                    <input
+                      type="number"
+                      value={displayTariff.timeOfUse.normal.rate}
+                      onChange={(e) => updateTimeOfUseRate('normal', e.target.value)}
+                      step="0.01"
+                      className="w-20 px-2 py-1 text-lg font-bold bg-gray-50 dark:bg-white/10 border border-yellow-400/50 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
+                    />
+                    <span className="text-sm text-gray-600 dark:text-gray-400">/kWh</span>
+                  </div>
+                ) : (
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">${displayTariff.timeOfUse.normal.rate}/kWh</p>
+                )}
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/20">
+              <div className={`flex items-center justify-between p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border ${
+                isEditing ? 'border-yellow-400/30 border-2' : 'border-green-500/20'
+              }`}>
                 <div className="flex items-center space-x-3">
                   <Moon className="w-6 h-6 text-green-400" />
                   <div>
                     <p className="text-white font-medium">Off-Peak Hours</p>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">{currentTariff.timeOfUse.offPeak.hours}</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm">{displayTariff.timeOfUse.offPeak.hours}</p>
                   </div>
                 </div>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">${currentTariff.timeOfUse.offPeak.rate}/kWh</p>
+                {isEditing ? (
+                  <div className="flex items-center space-x-1">
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">$</span>
+                    <input
+                      type="number"
+                      value={displayTariff.timeOfUse.offPeak.rate}
+                      onChange={(e) => updateTimeOfUseRate('offPeak', e.target.value)}
+                      step="0.01"
+                      className="w-20 px-2 py-1 text-lg font-bold bg-gray-50 dark:bg-white/10 border border-yellow-400/50 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
+                    />
+                    <span className="text-sm text-gray-600 dark:text-gray-400">/kWh</span>
+                  </div>
+                ) : (
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">${displayTariff.timeOfUse.offPeak.rate}/kWh</p>
+                )}
               </div>
             </div>
           </div>

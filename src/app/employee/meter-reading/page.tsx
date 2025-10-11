@@ -49,11 +49,19 @@ export default function MeterReadingForm() {
   ];
 
   const handleCustomerSearch = () => {
+    // Require at least 3 characters to search
+    if (!searchQuery || searchQuery.trim().length < 3) {
+      setErrors({ search: 'Please enter at least 3 characters to search' });
+      setSelectedCustomer(null);
+      return;
+    }
+
     const customer = mockCustomers.find(c =>
-      c.accountNumber.includes(searchQuery) ||
-      c.meterNumber.includes(searchQuery) ||
-      c.name.toLowerCase().includes(searchQuery.toLowerCase())
+      c.accountNumber.includes(searchQuery.trim()) ||
+      c.meterNumber.includes(searchQuery.trim()) ||
+      c.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
     );
+
     setSelectedCustomer(customer || null);
     if (!customer) {
       setErrors({ search: 'No customer found with this information' });
@@ -264,15 +272,34 @@ export default function MeterReadingForm() {
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleCustomerSearch()}
-                    placeholder="Enter account number, meter number, or customer name"
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      // Clear any previous customer selection and errors when typing
+                      if (selectedCustomer) {
+                        setSelectedCustomer(null);
+                      }
+                      if (errors.search) {
+                        setErrors({});
+                      }
+                    }}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleCustomerSearch();
+                      }
+                    }}
+                    placeholder="Enter account number, meter number, or customer name (min 3 chars)"
                     className="w-full pl-10 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                   />
                 </div>
                 <button
                   onClick={handleCustomerSearch}
-                  className="px-4 py-2 text-sm bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all font-medium"
+                  disabled={!searchQuery || searchQuery.trim().length < 3}
+                  className={`px-4 py-2 text-sm bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg font-medium transition-all ${
+                    !searchQuery || searchQuery.trim().length < 3
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:shadow-lg hover:shadow-orange-500/50'
+                  }`}
                 >
                   Search
                 </button>

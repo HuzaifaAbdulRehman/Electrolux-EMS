@@ -57,6 +57,30 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
       // Default to dark mode
       applyTheme(true);
     }
+
+    // Listen for theme changes from other components (like settings page)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'theme' && e.newValue) {
+        const isDark = e.newValue === 'dark';
+        setIsDarkMode(isDark);
+        applyTheme(isDark);
+      }
+    };
+
+    // Custom event listener for same-tab changes
+    const handleThemeChange = (e: CustomEvent) => {
+      const isDark = e.detail === 'dark';
+      setIsDarkMode(isDark);
+      applyTheme(isDark);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('themeChange' as any, handleThemeChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('themeChange' as any, handleThemeChange);
+    };
   }, []);
 
   // Apply theme to the document
@@ -73,9 +97,13 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
   // Toggle dark mode
   const toggleDarkMode = () => {
     const newDarkMode = !isDarkMode;
+    const newTheme = newDarkMode ? 'dark' : 'light';
     setIsDarkMode(newDarkMode);
-    localStorage.setItem('theme', newDarkMode ? 'dark' : 'light');
+    localStorage.setItem('theme', newTheme);
     applyTheme(newDarkMode);
+
+    // Dispatch custom event to notify settings page and other components
+    window.dispatchEvent(new CustomEvent('themeChange', { detail: newTheme }));
   };
 
   // Define navigation items based on user type

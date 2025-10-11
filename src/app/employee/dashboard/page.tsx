@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Gauge,
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 
 export default function EmployeeDashboard() {
+  const router = useRouter();
   const employeeName = 'Mike Johnson';
   const employeeId = 'EMP-2024-0156';
   const department = 'Field Operations';
@@ -221,9 +223,13 @@ export default function EmployeeDashboard() {
               { icon: Gauge, label: 'New Reading', href: '/employee/meter-reading' },
               { icon: ClipboardCheck, label: 'Work Orders', href: '/employee/work-orders' },
               { icon: Users, label: 'Customers', href: '/employee/customers' },
-              { icon: Calendar, label: 'Schedule', href: '/employee/schedule' }
+              { icon: Calendar, label: 'Bill Generation', href: '/employee/bill-generation' }
             ].map((action, index) => (
-              <button key={index} className="group relative">
+              <button
+                key={index}
+                onClick={() => router.push(action.href)}
+                className="group relative"
+              >
                 <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl opacity-0 group-hover:opacity-20 transition-opacity blur-xl"></div>
                 <div className="relative flex flex-col items-center p-4 bg-white dark:bg-white/5 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
                   <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mb-3">

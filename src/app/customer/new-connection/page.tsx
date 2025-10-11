@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Zap,
@@ -25,7 +26,11 @@ import {
 } from 'lucide-react';
 
 export default function NewConnection() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [applicationResponse, setApplicationResponse] = useState<any>(null);
   const [formData, setFormData] = useState({
     // Personal Information
     applicantName: '',
@@ -63,6 +68,71 @@ export default function NewConnection() {
   });
 
   const totalSteps = 4;
+
+  const handleSaveDraft = () => {
+    // TODO: Implement save draft functionality
+    console.log('Saving draft...', formData);
+  };
+
+  const handleSubmitApplication = async () => {
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/connection/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setApplicationResponse(data);
+        setShowSuccessModal(true);
+
+        // Update connection status - user now has a pending/active connection
+        localStorage.setItem('hasActiveConnection', 'true');
+        window.dispatchEvent(new CustomEvent('connectionStatusChange', { detail: true }));
+
+        // Clear form data
+        setFormData({
+          applicantName: '',
+          fatherName: '',
+          email: '',
+          phone: '',
+          alternatePhone: '',
+          idType: '',
+          idNumber: '',
+          propertyType: '',
+          connectionType: '',
+          loadRequired: '',
+          propertyAddress: '',
+          city: '',
+          state: '',
+          pincode: '',
+          landmark: '',
+          preferredDate: '',
+          purposeOfConnection: '',
+          existingConnection: false,
+          existingAccountNumber: '',
+          identityProof: null,
+          addressProof: null,
+          propertyProof: null,
+          termsAccepted: false,
+          declarationAccepted: false
+        });
+      } else {
+        alert(data.error || 'Failed to submit application. Please try again.');
+      }
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert('An error occurred while submitting your application. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const propertyTypes = [
     { value: 'residential', label: 'Residential' },
@@ -667,7 +737,10 @@ export default function NewConnection() {
             </button>
 
             <div className="flex items-center space-x-3">
-              <button className="px-6 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 text-white rounded-lg hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all font-semibold flex items-center space-x-2">
+              <button 
+                onClick={handleSaveDraft}
+                className="px-6 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 text-white rounded-lg hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all font-semibold flex items-center space-x-2"
+              >
                 <Save className="w-5 h-5" />
                 <span>Save Draft</span>
               </button>
@@ -687,16 +760,25 @@ export default function NewConnection() {
                 </button>
               ) : (
                 <button
-                  onClick={handleSubmit}
-                  disabled={!isStepComplete(currentStep)}
+                  onClick={handleSubmitApplication}
+                  disabled={!isStepComplete(currentStep) || isSubmitting}
                   className={`px-8 py-3 rounded-lg font-semibold flex items-center space-x-2 transition-all ${
-                    isStepComplete(currentStep)
+                    isStepComplete(currentStep) && !isSubmitting
                       ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-lg hover:shadow-green-500/50'
                       : 'bg-white/5 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  <Send className="w-5 h-5" />
-                  <span>Submit Application</span>
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5" />
+                      <span>Submit Application</span>
+                    </>
+                  )}
                 </button>
               )}
             </div>
@@ -725,6 +807,110 @@ export default function NewConnection() {
             </div>
           </div>
         </div>
+
+        {/* Success Modal */}
+        {showSuccessModal && applicationResponse && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in duration-300">
+              {/* Success Header */}
+              <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl border-b border-gray-200 dark:border-white/10 p-8 text-center">
+                <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                  <CheckCircle className="w-10 h-10 text-white" />
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Application Submitted Successfully!</h2>
+                <p className="text-gray-600 dark:text-gray-400">Your connection request has been received and is being processed</p>
+              </div>
+
+              {/* Application Details */}
+              <div className="p-8 space-y-6">
+                {/* Application Number */}
+                <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-xl p-6 border border-blue-500/30 text-center">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">Your Application Number</p>
+                  <p className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
+                    {applicationResponse.applicationNumber}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">Please save this number for future reference</p>
+                </div>
+
+                {/* Connection Details */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <DollarSign className="w-5 h-5 text-yellow-400" />
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Estimated Charges</p>
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{applicationResponse.estimatedCharges}</p>
+                  </div>
+
+                  <div className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <Calendar className="w-5 h-5 text-blue-400" />
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Processing Time</p>
+                    </div>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{applicationResponse.estimatedDays} days</p>
+                  </div>
+                </div>
+
+                {/* Next Steps */}
+                <div className="bg-white dark:bg-white/5 rounded-xl p-6 border border-gray-200 dark:border-white/10">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <Info className="w-5 h-5 mr-2 text-blue-400" />
+                    What Happens Next?
+                  </h3>
+                  <ul className="space-y-3">
+                    {applicationResponse.nextSteps?.map((step: string, index: number) => (
+                      <li key={index} className="flex items-start space-x-3">
+                        <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <span className="text-white text-xs font-bold">{index + 1}</span>
+                        </div>
+                        <p className="text-gray-700 dark:text-gray-300 text-sm">{step}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Important Notice */}
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+                  <div className="flex items-start space-x-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-yellow-300 font-semibold text-sm mb-1">Important</p>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">
+                        Please keep your phone accessible. Our team will contact you within 24-48 hours to schedule the site inspection.
+                        You will also receive a confirmation email shortly.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowSuccessModal(false);
+                      setCurrentStep(1);
+                      router.push('/customer/dashboard');
+                    }}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/50 transition-all font-semibold flex items-center justify-center gap-2"
+                  >
+                    <Home className="w-5 h-5" />
+                    <span>Go to Dashboard</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowSuccessModal(false);
+                      setCurrentStep(1);
+                    }}
+                    className="flex-1 px-6 py-3 bg-white dark:bg-white/10 border-2 border-gray-300 dark:border-white/20 text-gray-900 dark:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-white/20 transition-all font-semibold flex items-center justify-center gap-2"
+                  >
+                    <Zap className="w-5 h-5" />
+                    <span>New Application</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

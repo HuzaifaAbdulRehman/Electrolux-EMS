@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Calculator,
@@ -14,9 +15,20 @@ import {
 } from 'lucide-react';
 
 export default function BillCalculator() {
+  const router = useRouter();
   const [units, setUnits] = useState('');
   const [connectionType, setConnectionType] = useState('residential');
   const [calculated, setCalculated] = useState(false);
+
+  const handleDownload = () => {
+    // TODO: Implement download functionality
+    console.log('Downloading calculation...');
+  };
+
+  const handleSave = () => {
+    // TODO: Implement save functionality
+    console.log('Saving calculation...');
+  };
 
   // Tariff Rates (per kWh)
   const tariffRates: any = {
@@ -275,11 +287,17 @@ export default function BillCalculator() {
 
                 {/* Action Buttons */}
                 <div className="flex space-x-3">
-                  <button className="flex-1 px-3 py-2 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-all flex items-center justify-center space-x-2 text-sm">
+                  <button 
+                    onClick={handleDownload}
+                    className="flex-1 px-3 py-2 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-all flex items-center justify-center space-x-2 text-sm"
+                  >
                     <Download className="w-4 h-4" />
                     <span>Download</span>
                   </button>
-                  <button className="flex-1 px-3 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all flex items-center justify-center space-x-2 text-sm">
+                  <button 
+                    onClick={handleSave}
+                    className="flex-1 px-3 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all flex items-center justify-center space-x-2 text-sm"
+                  >
                     <FileText className="w-4 h-4" />
                     <span>Save</span>
                   </button>

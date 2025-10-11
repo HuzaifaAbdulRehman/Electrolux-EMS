@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   User,
@@ -29,11 +30,17 @@ import {
 } from 'lucide-react';
 
 export default function CustomerSettings() {
+  const router = useRouter();
   const [activeSection, setActiveSection] = useState('profile');
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+
+  const handleSavePreferences = () => {
+    // TODO: Implement save preferences functionality
+    console.log('Saving preferences...');
+  };
 
   const [profileData, setProfileData] = useState({
     firstName: 'John',
@@ -304,7 +311,10 @@ export default function CustomerSettings() {
                     ))}
                   </div>
 
-                  <button className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all">
+                  <button 
+                    onClick={handleSavePreferences}
+                    className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+                  >
                     Save Preferences
                   </button>
                 </div>
@@ -454,7 +464,10 @@ export default function CustomerSettings() {
                     </div>
                   </div>
 
-                  <button className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all">
+                  <button 
+                    onClick={handleSavePreferences}
+                    className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+                  >
                     Save Preferences
                   </button>
                 </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   MessageSquare,
@@ -25,11 +26,17 @@ import {
 } from 'lucide-react';
 
 export default function ComplaintsFeedback() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('complaints');
   const [showNewComplaint, setShowNewComplaint] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+
+  const handleSendMessage = () => {
+    // TODO: Implement send message functionality
+    console.log('Sending message...');
+  };
 
   // Form state for new complaint
   const [formData, setFormData] = useState({
@@ -342,7 +349,10 @@ export default function ComplaintsFeedback() {
                               placeholder="Add a comment..."
                               className="flex-1 px-4 py-2 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
                             />
-                            <button className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all">
+                            <button 
+                              onClick={handleSendMessage}
+                              className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+                            >
                               <Send className="w-5 h-5" />
                             </button>
                           </div>

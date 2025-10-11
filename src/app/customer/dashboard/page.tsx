@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Zap,
@@ -39,7 +40,12 @@ ChartJS.register(
 );
 
 export default function CustomerDashboard() {
+  const router = useRouter();
   const customerName = 'Huzaifa';
+
+  const handlePayNow = () => {
+    router.push('/customer/payment');
+  };
 
   // Summary Cards Data
   const summaryCards = [
@@ -114,7 +120,10 @@ export default function CustomerDashboard() {
               </p>
             </div>
             <div className="mt-3 sm:mt-0">
-              <button className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all text-sm">
+              <button 
+                onClick={handlePayNow}
+                className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all text-sm"
+              >
                 Pay Now
               </button>
             </div>

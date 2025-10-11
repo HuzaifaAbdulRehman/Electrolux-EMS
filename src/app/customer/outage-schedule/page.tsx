@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Zap,
@@ -16,8 +17,13 @@ import {
 } from 'lucide-react';
 
 export default function OutageSchedule() {
+  const router = useRouter();
   const [selectedArea, setSelectedArea] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const handleEnableAlerts = () => {
+    router.push('/customer/settings');
+  };
 
   // Outage schedule data
   const outageSchedule = [
@@ -126,7 +132,10 @@ export default function OutageSchedule() {
                 Stay informed about planned and unplanned power outages in your area
               </p>
             </div>
-            <button className="mt-4 sm:mt-0 px-6 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2">
+            <button 
+              onClick={handleEnableAlerts}
+              className="mt-4 sm:mt-0 px-6 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2"
+            >
               <Bell className="w-5 h-5" />
               <span>Enable Alerts</span>
             </button>

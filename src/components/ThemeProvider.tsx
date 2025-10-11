@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     // Check for saved theme preference or default to dark
     const savedTheme = localStorage.getItem('theme');
@@ -14,7 +16,14 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     } else {
       document.documentElement.classList.remove('dark');
     }
+    
+    setMounted(true);
   }, []);
+
+  // Prevent flash by not rendering until theme is applied
+  if (!mounted) {
+    return null;
+  }
 
   return <>{children}</>;
 }

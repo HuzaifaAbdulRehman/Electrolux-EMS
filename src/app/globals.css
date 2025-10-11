@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+
+
+/* Prevent theme flash by setting default background */
+html {
+  background-color: #0f172a; /* Default dark background */
+  transition: background-color 0.2s ease;
+}
+
+html.light {
+  background-color: #ffffff;
+}
+
+body {
+  background-color: inherit;
+  transition: background-color 0.2s ease;
+}
+
 /* Custom scrollbar styles */
 ::-webkit-scrollbar {
   width: 8px;

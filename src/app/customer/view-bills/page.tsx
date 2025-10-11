@@ -6,7 +6,6 @@ import DashboardLayout from '@/components/DashboardLayout';
 import {
   FileText,
   Download,
-  Eye,
   Printer,
   Send,
   X,
@@ -533,15 +532,17 @@ export default function ViewBills() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => router.push('/customer/bill-view')}
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                          title="View Professional Bill"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => router.push(`/customer/bill-view?id=${bill.id}`)}
+                        className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-medium rounded-lg hover:from-blue-600 hover:to-blue-700 hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-200 flex items-center gap-2 group"
+                        aria-label="View and print bill"
+                      >
+                        <FileText className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        <span>View</span>
+                        <span className="text-blue-200 dark:text-blue-300">/</span>
+                        <Printer className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        <span>Print</span>
+                      </button>
                     </td>
                   </tr>
                 ))}

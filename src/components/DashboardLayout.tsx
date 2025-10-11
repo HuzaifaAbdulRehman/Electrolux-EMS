@@ -31,7 +31,8 @@ import {
   Clock,
   Calculator,
   ZapOff,
-  Database
+  Database,
+  Plus
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -45,7 +46,31 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [hasActiveConnection, setHasActiveConnection] = useState(false);
   const pathname = usePathname();
+
+  // Check if user has active connection
+  useEffect(() => {
+    if (userType === 'customer') {
+      // Check localStorage for connection status
+      const connectionStatus = localStorage.getItem('hasActiveConnection');
+      if (connectionStatus === 'true') {
+        setHasActiveConnection(true);
+      }
+
+      // Listen for connection status changes
+      const handleConnectionChange = (e: CustomEvent) => {
+        setHasActiveConnection(e.detail);
+        localStorage.setItem('hasActiveConnection', e.detail.toString());
+      };
+
+      window.addEventListener('connectionStatusChange' as any, handleConnectionChange);
+
+      return () => {
+        window.removeEventListener('connectionStatusChange' as any, handleConnectionChange);
+      };
+    }
+  }, [userType]);
 
   // Initialize theme on component mount
   useEffect(() => {
@@ -113,6 +138,7 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
       case 'customer':
         return [
           { icon: Home, label: 'Dashboard', href: '/customer/dashboard' },
+          { icon: Plus, label: 'New Connection', href: '/customer/new-connection', highlight: !hasActiveConnection },
           { icon: FileText, label: 'View Bills', href: '/customer/view-bills' },
           { icon: Calculator, label: 'Bill Calculator', href: '/customer/bill-calculator' },
           { icon: BarChart3, label: 'Analytics', href: '/customer/analytics' },
@@ -542,9 +568,11 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
       }`}>
         <div className="p-4">
           <nav className="space-y-2">
-            {navItems.map((item) => {
+            {navItems.map((item: any) => {
               const isActive = pathname === item.href;
               const Icon = item.icon;
+              const isHighlight = item.highlight;
+
               return (
                 <Link
                   key={item.href}
@@ -554,15 +582,22 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
                       ? isDarkMode
                         ? 'bg-gradient-to-r from-yellow-400/20 to-orange-500/20 text-white border border-yellow-400/50'
                         : 'bg-gradient-to-r from-yellow-400/30 to-orange-500/30 text-gray-900 border border-yellow-400/60'
+                      : isHighlight
+                      ? isDarkMode
+                        ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 text-green-400 border border-green-500/30 hover:from-green-500/20 hover:to-emerald-500/20'
+                        : 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-700 border border-green-500/40 hover:from-green-500/30 hover:to-emerald-500/30'
                       : isDarkMode
                       ? 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
                       : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
-                  <span>{item.label}</span>
+                  <Icon className={`h-5 w-5 ${isHighlight && !isActive ? 'animate-pulse' : ''}`} />
+                  <span className={isHighlight && !isActive ? 'font-semibold' : ''}>{item.label}</span>
                   {isActive && (
                     <div className="ml-auto w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
+                  )}
+                  {isHighlight && !isActive && (
+                    <span className="ml-auto text-xs px-2 py-0.5 bg-green-500 text-white rounded-full">New</span>
                   )}
                 </Link>
               );

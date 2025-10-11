@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   FileText,
   Download,
-  Eye,
   Printer,
   DollarSign,
   TrendingUp,
@@ -43,9 +43,28 @@ ChartJS.register(
 );
 
 export default function BillHistory() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedBill, setSelectedBill] = useState<any>(null);
+
+  const handleViewBill = (billId: string) => {
+    router.push(`/customer/bill-view?id=${billId}`);
+  };
+
+  const handleDownloadAll = () => {
+    // TODO: Implement bulk download functionality
+    console.log('Download all bills');
+  };
+
+  const handleDownloadPDF = (billId: string) => {
+    // TODO: Implement individual PDF download
+    console.log('Download PDF for bill:', billId);
+  };
+
+  const handlePrintBill = (billId: string) => {
+    router.push(`/customer/bill-view?id=${billId}&print=true`);
+  };
 
   const billHistory = [
     {
@@ -216,7 +235,10 @@ export default function BillHistory() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Bill History</h1>
               <p className="text-gray-600 dark:text-gray-400">View and download your past electricity bills</p>
             </div>
-            <button className="mt-4 sm:mt-0 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2">
+            <button 
+              onClick={handleDownloadAll}
+              className="mt-4 sm:mt-0 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2"
+            >
               <Download className="w-5 h-5" />
               <span>Download All</span>
             </button>
@@ -463,10 +485,18 @@ export default function BillHistory() {
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => setSelectedBill(bill)}
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 rounded-lg transition-all"
-                          title="View Details"
+                          className="px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-all border border-blue-200 dark:border-blue-500/30"
+                          aria-label="View bill details"
                         >
-                          <Eye className="w-4 h-4" />
+                          View
+                        </button>
+                        <button
+                          onClick={() => handlePrintBill(bill.id.toString())}
+                          className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-lg transition-all"
+                          title="Print Bill"
+                          aria-label="Print bill"
+                        >
+                          <Printer className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -609,14 +639,35 @@ export default function BillHistory() {
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex items-center space-x-3">
-                  <button className="flex-1 px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl hover:shadow-lg hover:shadow-orange-500/50 transition-all font-semibold flex items-center justify-center space-x-2">
-                    <Download className="w-5 h-5" />
-                    <span>Download PDF</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* View Full Bill Button */}
+                  <button
+                    onClick={() => handleViewBill(selectedBill.id.toString())}
+                    className="px-5 py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-200 font-semibold flex items-center justify-center gap-2.5 group"
+                    aria-label="View full bill details"
+                  >
+                    <FileText className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    <span>View Bill</span>
                   </button>
-                  <button className="flex-1 px-6 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/20 transition-all font-semibold flex items-center justify-center space-x-2">
-                    <Printer className="w-5 h-5" />
-                    <span>Print Bill</span>
+
+                  {/* Download PDF Button */}
+                  <button
+                    onClick={() => handleDownloadPDF(selectedBill.id)}
+                    className="px-5 py-3.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl hover:from-yellow-500 hover:to-orange-600 hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-200 font-semibold flex items-center justify-center gap-2.5 group"
+                    aria-label="Download bill as PDF"
+                  >
+                    <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+                    <span>Download</span>
+                  </button>
+
+                  {/* Print Bill Button */}
+                  <button
+                    onClick={() => handlePrintBill(selectedBill.id)}
+                    className="px-5 py-3.5 bg-white dark:bg-white/10 border-2 border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/20 hover:border-gray-400 dark:hover:border-white/30 hover:shadow-md transition-all duration-200 font-semibold flex items-center justify-center gap-2.5 group"
+                    aria-label="Print bill"
+                  >
+                    <Printer className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    <span>Print</span>
                   </button>
                 </div>
               </div>

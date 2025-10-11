@@ -52,28 +52,26 @@ export default function CustomerProfile() {
     category: 'Domestic',
     phase: 'Single Phase',
     status: 'Active',
-    creditScore: 850,
+    paymentHealth: 'Excellent', // Replaced credit score with realistic metric
     accountAge: '4 years 7 months'
   };
 
-  // Usage statistics
+  // Usage statistics - Only realistic database-calculable metrics
   const usageStats = {
     totalConsumption: '24,580 kWh',
     averageMonthly: '410 kWh',
     peakMonth: 'July 2024',
     lowestMonth: 'March 2024',
     totalPayments: '$12,450',
-    onTimePayments: '98%',
-    savedAmount: '$1,250',
-    co2Reduced: '2.4 tons'
+    onTimePayments: '98%'
+    // Removed: savedAmount, co2Reduced (not calculable from billing data)
   };
 
-  // Achievements
+  // Achievements - Only database-calculable achievements
   const achievements = [
-    { icon: Award, title: 'Green Consumer', description: '10% reduction in usage', color: 'from-green-500 to-emerald-500' },
-    { icon: CreditCard, title: 'Prompt Payer', description: '12 months on-time', color: 'from-blue-500 to-cyan-500' },
-    { icon: TrendingUp, title: 'Energy Saver', description: 'Below avg consumption', color: 'from-yellow-400 to-orange-500' },
+    { icon: CreditCard, title: 'Prompt Payer', description: '98% on-time payments', color: 'from-blue-500 to-cyan-500' },
     { icon: Shield, title: 'Loyal Customer', description: '4+ years with us', color: 'from-purple-500 to-pink-500' }
+    // Removed: Green Consumer, Energy Saver (require comparison data not in billing system)
   ];
 
   // Recent activities
@@ -140,27 +138,17 @@ export default function CustomerProfile() {
           </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Quick Stats - Only realistic database-calculable metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Credit Score</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{accountInfo.creditScore}</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Payment Health</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{accountInfo.paymentHealth}</p>
+                {/* MySQL: CASE WHEN on_time_rate >= 95 THEN 'Excellent' WHEN on_time_rate >= 85 THEN 'Good' ELSE 'Fair' END */}
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                <Award className="w-5 h-5 text-white" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Total Saved</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{usageStats.savedAmount}</p>
-              </div>
-              <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-white" />
+                <Shield className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
@@ -169,20 +157,10 @@ export default function CustomerProfile() {
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">On-time Payments</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{usageStats.onTimePayments}</p>
+                {/* MySQL: (COUNT(CASE WHEN paid_date <= due_date THEN 1 END) / COUNT(*) * 100) */}
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-white" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">CO₂ Reduced</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{usageStats.co2Reduced}</p>
-              </div>
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>

@@ -2,7 +2,24 @@
   "permissions": {
     "allow": [
       "Bash(npm run dev:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(git checkout:*)",
+      "Bash(npm run build)",
+      "Bash(for:*)",
+      "Bash(do if [ -f \"$file\" ])",
+      "Bash(then echo \"$file\")",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(timeout 120 npm run build)",
+      "Bash(pkill:*)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(taskkill:*)",
+      "Bash(if exist .next rmdir /s /q .next)",
+      "Bash(if exist node_modules.cache rmdir /s /q node_modules.cache)",
+      "Bash(npm install)",
+      "Bash(if exist node_modulestailwindcss echo \"tailwindcss found\")",
+      "Bash(test:*)",
+      "Bash(dir /b)"
     ],
     "deny": [],
     "ask": []

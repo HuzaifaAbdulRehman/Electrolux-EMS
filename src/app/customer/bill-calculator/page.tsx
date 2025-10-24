@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 
 import { useRouter } from 'next/navigation';
@@ -13,7 +13,8 @@ import {
   Info,
   FileText,
   Download,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 
 export default function BillCalculator() {
@@ -21,8 +22,11 @@ export default function BillCalculator() {
 
   const router = useRouter();
   const [units, setUnits] = useState('');
-  const [connectionType, setConnectionType] = useState('residential');
+  const [connectionType, setConnectionType] = useState('Residential');
   const [calculated, setCalculated] = useState(false);
+  const [tariffRates, setTariffRates] = useState<any>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const handleDownload = () => {
     // TODO: Implement download functionality
@@ -34,35 +38,125 @@ export default function BillCalculator() {
     console.log('Saving calculation...');
   };
 
-  // Tariff Rates (per kWh)
-  const tariffRates: any = {
-    residential: {
-      name: 'Residential',
-      slabs: [
-        { min: 0, max: 100, rate: 0.35, label: '0-100 units' },
-        { min: 100, max: 200, rate: 0.45, label: '101-200 units' },
-        { min: 200, max: 300, rate: 0.55, label: '201-300 units' },
-        { min: 300, max: Infinity, rate: 0.65, label: '301+ units' }
-      ],
-      fixedCharge: 50
-    },
-    commercial: {
-      name: 'Commercial',
-      slabs: [
-        { min: 0, max: 200, rate: 0.60, label: '0-200 units' },
-        { min: 200, max: 500, rate: 0.70, label: '201-500 units' },
-        { min: 500, max: Infinity, rate: 0.80, label: '501+ units' }
-      ],
-      fixedCharge: 150
-    },
-    industrial: {
-      name: 'Industrial',
-      slabs: [
-        { min: 0, max: 1000, rate: 0.50, label: '0-1000 units' },
-        { min: 1000, max: Infinity, rate: 0.55, label: '1001+ units' }
-      ],
-      fixedCharge: 500
+  // Fetch tariffs from API
+  useEffect(() => {
+    fetchTariffs();
+  }, []);
+
+  // Set initial connection type when tariffs are loaded
+  useEffect(() => {
+    if (Object.keys(tariffRates).length > 0 && !tariffRates[connectionType]) {
+      setConnectionType(Object.keys(tariffRates)[0]);
     }
+  }, [tariffRates]);
+
+  const fetchTariffs = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch('/api/tariffs');
+      if (!response.ok) throw new Error('Failed to fetch tariffs');
+
+      const result = await response.json();
+      if (result.success && result.data.length > 0) {
+        const tariffsMap: any = {};
+
+        result.data.forEach((tariff: any) => {
+          const slabs = [];
+
+          // Build slabs from database fields
+          if (tariff.slab1End) {
+            slabs.push({
+              min: tariff.slab1Start,
+              max: tariff.slab1End,
+              rate: parseFloat(tariff.slab1Rate),
+              label: `${tariff.slab1Start}-${tariff.slab1End} units`
+            });
+          }
+          if (tariff.slab2End) {
+            slabs.push({
+              min: tariff.slab2Start,
+              max: tariff.slab2End,
+              rate: parseFloat(tariff.slab2Rate),
+              label: `${tariff.slab2Start}-${tariff.slab2End} units`
+            });
+          }
+          if (tariff.slab3End) {
+            slabs.push({
+              min: tariff.slab3Start,
+              max: tariff.slab3End,
+              rate: parseFloat(tariff.slab3Rate),
+              label: `${tariff.slab3Start}-${tariff.slab3End} units`
+            });
+          }
+          if (tariff.slab4End) {
+            slabs.push({
+              min: tariff.slab4Start,
+              max: tariff.slab4End,
+              rate: parseFloat(tariff.slab4Rate),
+              label: `${tariff.slab4Start}-${tariff.slab4End} units`
+            });
+          }
+          // Slab 5 can have null end (unlimited)
+          if (tariff.slab5Rate) {
+            slabs.push({
+              min: tariff.slab5Start,
+              max: tariff.slab5End ? tariff.slab5End : Infinity,
+              rate: parseFloat(tariff.slab5Rate),
+              label: tariff.slab5End ? `${tariff.slab5Start}-${tariff.slab5End} units` : `${tariff.slab5Start}+ units`
+            });
+          }
+
+          tariffsMap[tariff.category] = {
+            name: tariff.category,
+            slabs,
+            fixedCharge: parseFloat(tariff.fixedCharge),
+            electricityDutyPercent: parseFloat(tariff.electricityDutyPercent || 0),
+            gstPercent: parseFloat(tariff.gstPercent || 18)
+          };
+        });
+
+        setTariffRates(tariffsMap);
+      } else {
+        throw new Error('No tariff data available');
+      }
+    } catch (err: any) {
+      console.error('Error fetching tariffs:', err);
+      setError(err.message || 'Failed to load tariffs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Single calculation function - fixes the slab calculation bug
+  const calculateCharges = (units: number, tariff: any) => {
+    let energyCharge = 0;
+    let consumedUnits = 0;
+
+    if (tariff.slabs) {
+      for (const slab of tariff.slabs) {
+        if (consumedUnits >= units) break;
+
+        const slabStart = slab.min;
+        const slabEnd = slab.max === Infinity ? units : slab.max;
+
+        // FIXED: Calculate actual units in this slab, accounting for gaps in slab boundaries
+        const unitsInSlab = Math.max(0, Math.min(units - consumedUnits, slabEnd - Math.max(slabStart, consumedUnits)));
+
+        if (unitsInSlab > 0) {
+          energyCharge += unitsInSlab * slab.rate;
+          consumedUnits += unitsInSlab;
+        }
+      }
+    }
+
+    const fixedCharge = tariff.fixedCharge || 0;
+    const subtotal = energyCharge + fixedCharge;
+    const electricityDuty = subtotal * (tariff.electricityDutyPercent / 100);
+    const gst = subtotal * (tariff.gstPercent / 100);
+    const totalAmount = subtotal + electricityDuty + gst;
+
+    return { energyCharge, fixedCharge, subtotal, electricityDuty, gst, totalAmount };
   };
 
   const calculateBill = () => {
@@ -72,54 +166,69 @@ export default function BillCalculator() {
       return;
     }
 
-    const selectedTariff = tariffRates[connectionType];
-    let energyCharge = 0;
-    let remainingUnits = unitsConsumed;
-
-    // Calculate slab-wise energy charge
-    for (const slab of selectedTariff.slabs) {
-      if (remainingUnits <= 0) break;
-
-      const slabUnits = Math.min(
-        remainingUnits,
-        slab.max === Infinity ? remainingUnits : slab.max - slab.min
-      );
-
-      energyCharge += slabUnits * slab.rate;
-      remainingUnits -= slabUnits;
-    }
-
     setCalculated(true);
   };
 
   const resetCalculator = () => {
     setUnits('');
-    setConnectionType('residential');
+    setConnectionType(Object.keys(tariffRates)[0] || 'Residential');
     setCalculated(false);
   };
 
-  // Calculate all charges
+  // Loading state
+  if (loading) {
+    return (
+      <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-yellow-500 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400">Loading tariff rates...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Info className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Failed to Load Tariffs</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+            <button
+              onClick={fetchTariffs}
+              className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg transition-all"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Calculate all charges using the single calculation function
   const unitsConsumed = parseFloat(units) || 0;
   const selectedTariff = tariffRates[connectionType];
 
-  let energyCharge = 0;
-  let remainingUnits = unitsConsumed;
-
-  for (const slab of selectedTariff.slabs) {
-    if (remainingUnits <= 0) break;
-    const slabUnits = Math.min(
-      remainingUnits,
-      slab.max === Infinity ? remainingUnits : slab.max - slab.min
+  if (!selectedTariff) {
+    return (
+      <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-600 dark:text-gray-400">No tariff data available for selected connection type</p>
+          </div>
+        </div>
+      </DashboardLayout>
     );
-    energyCharge += slabUnits * slab.rate;
-    remainingUnits -= slabUnits;
   }
 
-  const fixedCharge = selectedTariff.fixedCharge;
-  const subtotal = energyCharge + fixedCharge;
-  const electricityDuty = subtotal * 0.05; // 5% duty
-  const gst = subtotal * 0.18; // 18% GST
-  const totalAmount = subtotal + electricityDuty + gst;
+  const { energyCharge, fixedCharge, subtotal, electricityDuty, gst, totalAmount } = calculateCharges(unitsConsumed, selectedTariff);
 
   return (
     <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
@@ -169,9 +278,11 @@ export default function BillCalculator() {
                   onChange={(e) => setConnectionType(e.target.value)}
                   className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 text-base font-medium"
                 >
-                  <option value="residential" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Residential</option>
-                  <option value="commercial" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Commercial</option>
-                  <option value="industrial" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Industrial</option>
+                  {Object.keys(tariffRates).map((category) => (
+                    <option key={category} value={category} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">
+                      {category}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -253,12 +364,12 @@ export default function BillCalculator() {
                   </div>
 
                   <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-white/10">
-                    <span className="text-gray-600 dark:text-gray-400">Electricity Duty (5%)</span>
+                    <span className="text-gray-600 dark:text-gray-400">Electricity Duty ({selectedTariff.electricityDutyPercent}%)</span>
                     <span className="text-gray-900 dark:text-white font-semibold">${electricityDuty.toFixed(2)}</span>
                   </div>
 
                   <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-white/10">
-                    <span className="text-gray-600 dark:text-gray-400">GST (18%)</span>
+                    <span className="text-gray-600 dark:text-gray-400">GST ({selectedTariff.gstPercent}%)</span>
                     <span className="text-gray-900 dark:text-white font-semibold">${gst.toFixed(2)}</span>
                   </div>
 
@@ -291,14 +402,14 @@ export default function BillCalculator() {
 
                 {/* Action Buttons */}
                 <div className="flex space-x-3">
-                  <button 
+                  <button
                     onClick={handleDownload}
                     className="flex-1 px-3 py-2 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-all flex items-center justify-center space-x-2 text-sm"
                   >
                     <Download className="w-4 h-4" />
                     <span>Download</span>
                   </button>
-                  <button 
+                  <button
                     onClick={handleSave}
                     className="flex-1 px-3 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all flex items-center justify-center space-x-2 text-sm"
                   >

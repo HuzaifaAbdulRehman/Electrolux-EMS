@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 import DashboardLayout from '@/components/DashboardLayout';
 import { safeNumber, formatCurrency, safeDate, formatUnits } from '@/lib/utils/dataHandlers';
@@ -22,18 +23,28 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  Zap
+  Zap,
+  X
 } from 'lucide-react';
 
 export default function OnlinePayment() {
   const { data: session } = useSession();
+  const router = useRouter();
 
+  // State management
   const [selectedMethod, setSelectedMethod] = useState('card');
-  const [paymentAmount, setPaymentAmount] = useState('245.50');
+  const [paymentAmount, setPaymentAmount] = useState('');
   const [customAmount, setCustomAmount] = useState(false);
   const [showCardDetails, setShowCardDetails] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentStep, setPaymentStep] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Data from API
+  const [currentBill, setCurrentBill] = useState<any>(null);
+  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [paymentResult, setPaymentResult] = useState<any>(null);
 
   const [cardDetails, setCardDetails] = useState({
     cardNumber: '',
@@ -44,55 +55,43 @@ export default function OnlinePayment() {
     saveCard: false
   });
 
-  // Current bill details
-  const currentBill = {
-    billNumber: 'BILL-202410-001234',
-    amount: 245.50,
-    dueDate: '2024-10-15',
-    units: 460,
-    status: 'pending',
-    lateFee: 0
+  // Fetch current bill and recent transactions on mount
+  useEffect(() => {
+    fetchBillAndTransactions();
+  }, []);
+
+  const fetchBillAndTransactions = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch current unpaid bill
+      const billResponse = await fetch('/api/bills?status=issued&limit=1');
+      const billResult = await billResponse.json();
+
+      if (billResult.success && billResult.data.length > 0) {
+        const bill = billResult.data[0];
+        setCurrentBill(bill);
+        setPaymentAmount(safeNumber(bill.totalAmount, 0).toString());
+      } else {
+        setError('No pending bills found');
+      }
+
+      // Fetch recent payments
+      const paymentsResponse = await fetch('/api/payments?limit=5');
+      const paymentsResult = await paymentsResponse.json();
+
+      if (paymentsResult.success) {
+        setRecentTransactions(paymentsResult.data);
+      }
+
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setError('Failed to load payment information');
+    } finally {
+      setLoading(false);
+    }
   };
-
-  // Saved payment methods
-  const savedCards = [
-    {
-      id: 1,
-      type: 'visa',
-      last4: '4242',
-      name: 'Huzaifa',
-      expiry: '12/25',
-      isDefault: true
-    },
-    {
-      id: 2,
-      type: 'mastercard',
-      last4: '8888',
-      name: 'Huzaifa',
-      expiry: '06/24',
-      isDefault: false
-    }
-  ];
-
-  // Recent transactions
-  const recentTransactions = [
-    {
-      id: 1,
-      date: '2024-10-05',
-      amount: 220.00,
-      method: 'Credit Card',
-      reference: 'TXN-20241005-001',
-      status: 'success'
-    },
-    {
-      id: 2,
-      date: '2024-09-05',
-      amount: 195.50,
-      method: 'Bank Transfer',
-      reference: 'TXN-20240905-001',
-      status: 'success'
-    }
-  ];
 
   const paymentMethods = [
     {
@@ -163,13 +162,97 @@ export default function OnlinePayment() {
     }
   };
 
-  const handlePayment = () => {
-    setProcessingPayment(true);
-    setTimeout(() => {
-      setProcessingPayment(false);
+  const handlePayment = async () => {
+    try {
+      // Validation
+      const amount = parseFloat(paymentAmount);
+      const billAmount = safeNumber(currentBill?.totalAmount, 0);
+
+      if (!currentBill) {
+        setError('No bill selected');
+        return;
+      }
+
+      if (isNaN(amount) || amount < 1) {
+        setError('Payment amount must be at least Rs. 1');
+        return;
+      }
+
+      if (amount > billAmount) {
+        setError(`Payment amount cannot exceed bill amount (${formatCurrency(billAmount, 'Rs.')})`);
+        return;
+      }
+
+      setProcessingPayment(true);
+      setError(null);
+
+      // Call payment API
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          billId: currentBill.id,
+          paymentMethod: selectedMethod,
+          amount: amount,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Payment failed');
+      }
+
+      // Payment successful
+      setPaymentResult(result.data);
       setPaymentStep(3); // Success step
-    }, 3000);
+
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      setError(err.message || 'Payment processing failed. Please try again.');
+    } finally {
+      setProcessingPayment(false);
+    }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading payment information...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Error state - no bill found
+  if (error && !currentBill) {
+    return (
+      <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
+        <div className="h-full flex items-center justify-center">
+          <div className="text-center max-w-md">
+            <AlertCircle className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No Pending Bills</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              You don't have any outstanding bills at the moment. All your bills are paid!
+            </p>
+            <button
+              onClick={() => router.push('/customer/view-bills')}
+              className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+            >
+              View Bill History
+            </button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
@@ -189,6 +272,19 @@ export default function OnlinePayment() {
             </div>
           </div>
         </div>
+
+        {/* Error Alert */}
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 mb-4 flex items-start space-x-3">
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-red-400 font-semibold">{error}</p>
+            </div>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Main Content - Scrollable */}
         <div className="flex-1 min-h-0 overflow-y-auto">
@@ -242,7 +338,7 @@ export default function OnlinePayment() {
                     {/* Bill Number - Prominent Display */}
                     <div className="p-4 bg-gradient-to-r from-yellow-400/10 to-orange-500/10 rounded-xl border border-yellow-400/30">
                       <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Bill Number</p>
-                      <p className="text-lg font-bold text-gray-900 dark:text-white">{currentBill.billNumber}</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{currentBill?.billNumber || 'N/A'}</p>
                     </div>
 
                     {/* Amount & Due Date - Equal Emphasis */}
@@ -252,14 +348,14 @@ export default function OnlinePayment() {
                           <DollarSign className="w-4 h-4 text-green-400 mr-1" />
                           <p className="text-xs text-gray-600 dark:text-gray-400">Amount Due</p>
                         </div>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(currentBill.amount, 'Rs.')}</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{formatCurrency(safeNumber(currentBill?.totalAmount, 0), 'Rs.')}</p>
                       </div>
                       <div className="p-4 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-xl border border-blue-500/20">
                         <div className="flex items-center mb-2">
                           <Clock className="w-4 h-4 text-blue-400 mr-1" />
                           <p className="text-xs text-gray-600 dark:text-gray-400">Due Date</p>
                         </div>
-                        <p className="text-lg font-semibold text-gray-900 dark:text-white">{safeDate(currentBill.dueDate)}</p>
+                        <p className="text-lg font-semibold text-gray-900 dark:text-white">{safeDate(currentBill?.dueDate)}</p>
                       </div>
                     </div>
 
@@ -270,14 +366,14 @@ export default function OnlinePayment() {
                           <Zap className="w-4 h-4 mr-2 text-purple-400" />
                           Units Consumed
                         </span>
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatUnits(currentBill.units)}</span>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatUnits(safeNumber(currentBill?.unitsConsumed, 0))}</span>
                       </div>
                       <div className="flex items-center justify-between pt-2">
                         <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
-                          <AlertCircle className="w-4 h-4 mr-2 text-orange-400" />
-                          Late Fee
+                          <Clock className="w-4 h-4 mr-2 text-blue-400" />
+                          Billing Month
                         </span>
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(currentBill.lateFee, 'Rs.')}</span>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{currentBill?.billingMonth ? new Date(currentBill.billingMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A'}</span>
                       </div>
                     </div>
                   </div>
@@ -381,26 +477,6 @@ export default function OnlinePayment() {
                   {selectedMethod === 'card' && (
                     <div className="space-y-4">
                       <h3 className="text-white font-semibold">Card Details</h3>
-
-                      {/* Saved Cards */}
-                      {savedCards.length > 0 && (
-                        <div className="space-y-3 mb-4">
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Use saved card</p>
-                          {savedCards.map((card) => (
-                            <label key={card.id} className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10">
-                              <input type="radio" name="savedCard" className="w-4 h-4" />
-                              <CreditCard className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                              <div className="flex-1">
-                                <p className="text-gray-900 dark:text-white">•••• {card.last4}</p>
-                                <p className="text-gray-600 dark:text-gray-400 text-xs">{card.type} - Expires {card.expiry}</p>
-                              </div>
-                              {card.isDefault && (
-                                <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">Default</span>
-                              )}
-                            </label>
-                          ))}
-                        </div>
-                      )}
 
                       <div className="space-y-4">
                         <div>
@@ -530,15 +606,19 @@ export default function OnlinePayment() {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Transaction ID</span>
-                      <span className="text-white font-semibold">TXN-{Date.now()}</span>
+                      <span className="text-gray-900 dark:text-white font-semibold">{paymentResult?.transactionId || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Receipt Number</span>
+                      <span className="text-gray-900 dark:text-white font-semibold">{paymentResult?.receiptNumber || 'N/A'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Amount Paid</span>
-                      <span className="text-white font-semibold">{formatCurrency(parseFloat(paymentAmount), 'Rs.')}</span>
+                      <span className="text-gray-900 dark:text-white font-semibold">{formatCurrency(parseFloat(paymentAmount), 'Rs.')}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Payment Method</span>
-                      <span className="text-gray-900 dark:text-white">Credit Card</span>
+                      <span className="text-gray-900 dark:text-white capitalize">{selectedMethod.replace('_', ' ')}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Date & Time</span>
@@ -548,14 +628,18 @@ export default function OnlinePayment() {
                 </div>
 
                 <div className="flex space-x-4">
-                  <button className="flex-1 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all flex items-center justify-center space-x-2">
-                    <Download className="w-5 h-5" />
-                    <span>Download Receipt</span>
+                  <button
+                    onClick={() => router.push('/customer/view-bills')}
+                    className="flex-1 py-3 bg-white dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/20 transition-all flex items-center justify-center space-x-2"
+                  >
+                    <FileText className="w-5 h-5" />
+                    <span>View Bills</span>
                   </button>
                   <button
                     onClick={() => {
                       setPaymentStep(1);
-                      setPaymentAmount('245.50');
+                      setPaymentResult(null);
+                      fetchBillAndTransactions();
                     }}
                     className="flex-1 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl hover:shadow-lg hover:shadow-orange-500/50 transition-all font-semibold"
                   >
@@ -574,19 +658,19 @@ export default function OnlinePayment() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Bill Amount</span>
-                  <span className="text-gray-900 dark:text-white">{formatCurrency(currentBill.amount, 'Rs.')}</span>
+                  <span className="text-gray-900 dark:text-white">{formatCurrency(safeNumber(currentBill?.totalAmount, 0), 'Rs.')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Late Fee</span>
-                  <span className="text-gray-900 dark:text-white">{formatCurrency(currentBill.lateFee, 'Rs.')}</span>
+                  <span className="text-gray-900 dark:text-white">{formatCurrency(0, 'Rs.')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Processing Fee</span>
                   <span className="text-gray-900 dark:text-white">{formatCurrency(0, 'Rs.')}</span>
                 </div>
                 <div className="border-t border-gray-200 dark:border-white/10 pt-3 flex justify-between">
-                  <span className="text-white font-semibold">Total Amount</span>
-                  <span className="text-2xl font-bold text-green-400">{formatCurrency(parseFloat(paymentAmount), 'Rs.')}</span>
+                  <span className="text-gray-900 dark:text-white font-semibold">Total Amount</span>
+                  <span className="text-2xl font-bold text-green-400">{formatCurrency(parseFloat(paymentAmount || '0'), 'Rs.')}</span>
                 </div>
               </div>
             </div>
@@ -620,18 +704,22 @@ export default function OnlinePayment() {
             <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Recent Transactions</h3>
               <div className="space-y-3">
-                {recentTransactions.map((transaction) => (
-                  <div key={transaction.id} className="p-3 bg-white dark:bg-white/5 rounded-lg">
-                    <div className="flex justify-between mb-1">
-                      <span className="text-white font-medium">{formatCurrency(transaction.amount, 'Rs.')}</span>
-                      <span className="text-green-400 text-xs">Success</span>
+                {recentTransactions.length > 0 ? (
+                  recentTransactions.map((transaction) => (
+                    <div key={transaction.id} className="p-3 bg-white dark:bg-white/5 rounded-lg">
+                      <div className="flex justify-between mb-1">
+                        <span className="text-gray-900 dark:text-white font-medium">{formatCurrency(safeNumber(transaction.paymentAmount, 0), 'Rs.')}</span>
+                        <span className="text-green-400 text-xs capitalize">{transaction.status || 'Success'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400 text-xs">{safeDate(transaction.paymentDate)}</span>
+                        <span className="text-gray-600 dark:text-gray-400 text-xs capitalize">{transaction.paymentMethod || 'N/A'}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600 dark:text-gray-400 text-xs">{safeDate(transaction.date)}</span>
-                      <span className="text-gray-600 dark:text-gray-400 text-xs">{transaction.method}</span>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-gray-600 dark:text-gray-400 text-sm text-center py-4">No recent transactions</p>
+                )}
               </div>
             </div>
           </div>

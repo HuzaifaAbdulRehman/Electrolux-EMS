@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 
 import DashboardLayout from '@/components/DashboardLayout';
+import { safeNumber, formatCurrency, safeDate, formatUnits } from '@/lib/utils/dataHandlers';
 import {
   TrendingUp,
   TrendingDown,
@@ -85,21 +86,41 @@ export default function UsageAnalytics() {
     );
   }
 
-  // Extract data from API response or use defaults
-  const currentMonthUsage = analyticsData?.currentMonthUsage || 0;
-  const lastMonthUsage = analyticsData?.lastMonthUsage || 0;
-  const avgDailyUsage = analyticsData?.avgDailyUsage || 0;
-  const estimatedBill = analyticsData?.estimatedBill || 0;
-  const monthlyChange = lastMonthUsage > 0 ? ((currentMonthUsage - lastMonthUsage) / lastMonthUsage * 100).toFixed(1) : '0';
+  // Extract real data from dashboard API response
+  const consumptionHistory = analyticsData?.data?.consumptionHistory || [];
+  const recentBills = analyticsData?.data?.recentBills || [];
+  const currentBill = analyticsData?.data?.currentBill || null;
 
-  // Monthly Usage Trend - Use real data from database
-  const monthlyUsage = analyticsData?.monthlyUsage || [];
+  // Calculate metrics from real data
+  const currentMonthUsage = consumptionHistory.length > 0
+    ? safeNumber(consumptionHistory[0]?.unitsConsumed, 0)
+    : 0;
+
+  const lastMonthUsage = consumptionHistory.length > 1
+    ? safeNumber(consumptionHistory[1]?.unitsConsumed, 0)
+    : 0;
+
+  const avgConsumption = analyticsData?.data?.avgConsumption || 0;
+  const avgDailyUsage = avgConsumption > 0 ? Math.round(avgConsumption / 30) : 0;
+
+  const estimatedBill = currentBill
+    ? safeNumber(currentBill.totalAmount, 0)
+    : 0;
+
+  const monthlyChange = lastMonthUsage > 0
+    ? ((currentMonthUsage - lastMonthUsage) / lastMonthUsage * 100).toFixed(1)
+    : '0';
+
+  // Monthly Usage Trend - Use real consumptionHistory from database
   const monthlyUsageTrendData = {
-    labels: monthlyUsage.map((item: any) => item.month) || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    labels: consumptionHistory.map((item: any) => {
+      const date = new Date(item.billingPeriod);
+      return date.toLocaleDateString('en-US', { month: 'short' });
+    }).reverse().slice(0, 6),
     datasets: [
       {
         label: 'Monthly Usage (kWh)',
-        data: monthlyUsage.map((item: any) => item.units) || [0],
+        data: consumptionHistory.map((item: any) => safeNumber(item.unitsConsumed, 0)).reverse().slice(0, 6),
         borderColor: 'rgb(251, 146, 60)',
         backgroundColor: 'rgba(251, 146, 60, 0.1)',
         tension: 0.4,
@@ -191,10 +212,10 @@ export default function UsageAnalytics() {
   };
 
   const savingsTips = [
-    { icon: ThermometerSun, tip: 'Set AC to 24°C to save up to 15% on cooling costs', savings: '$30/month', priority: 'high' },
-    { icon: Lightbulb, tip: 'Switch to LED bulbs for 75% less energy consumption', savings: '$15/month', priority: 'medium' },
-    { icon: Clock, tip: 'Run appliances during off-peak hours (10 PM - 6 AM)', savings: '$25/month', priority: 'high' },
-    { icon: Wind, tip: 'Use ceiling fans to reduce AC usage by 40%', savings: '$20/month', priority: 'medium' }
+    { icon: ThermometerSun, tip: 'Set AC to 24°C to save up to 15% on cooling costs', savings: 'Rs. 300/month', priority: 'high' },
+    { icon: Lightbulb, tip: 'Switch to LED bulbs for 75% less energy consumption', savings: 'Rs. 150/month', priority: 'medium' },
+    { icon: Clock, tip: 'Run appliances during off-peak hours (10 PM - 6 AM)', savings: 'Rs. 250/month', priority: 'high' },
+    { icon: Wind, tip: 'Use ceiling fans to reduce AC usage by 40%', savings: 'Rs. 200/month', priority: 'medium' }
   ];
 
   const lineChartOptions = {
@@ -307,7 +328,7 @@ export default function UsageAnalytics() {
                   </span>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400">This Month Usage</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{currentMonthUsage} kWh</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{formatUnits(currentMonthUsage)}</p>
               </div>
 
               <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
@@ -318,7 +339,7 @@ export default function UsageAnalytics() {
                   <span className="text-xs text-gray-400">Daily</span>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Avg. Daily Usage</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{avgDailyUsage} kWh</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{formatUnits(avgDailyUsage)}</p>
               </div>
 
               <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
@@ -329,7 +350,7 @@ export default function UsageAnalytics() {
                   <span className="text-xs text-green-400">Est.</span>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Current Bill</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">${estimatedBill}</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">{formatCurrency(estimatedBill, 'Rs.')}</p>
               </div>
             </div>
 
@@ -350,17 +371,21 @@ export default function UsageAnalytics() {
               <div className="mt-4 grid grid-cols-3 gap-3">
                 <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
                   <p className="text-xs text-gray-600 dark:text-gray-400">Highest</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">{currentMonthUsage} kWh</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">June 2024</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">
+                    {formatUnits(Math.max(...consumptionHistory.map((item: any) => safeNumber(item.unitsConsumed, 0))))}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">Last 6 months</p>
                 </div>
                 <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center">
                   <p className="text-xs text-gray-600 dark:text-gray-400">Lowest</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">380 kWh</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">January 2024</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">
+                    {formatUnits(consumptionHistory.length > 0 ? Math.min(...consumptionHistory.map((item: any) => safeNumber(item.unitsConsumed, 0))) : 0)}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">Last 6 months</p>
                 </div>
                 <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3 text-center">
                   <p className="text-xs text-gray-600 dark:text-gray-400">Average</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-white">413 kWh</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-white">{formatUnits(avgConsumption)}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-500">6 months</p>
                 </div>
               </div>
@@ -394,14 +419,14 @@ export default function UsageAnalytics() {
                         padding: 12,
                         callbacks: {
                           label: function(context: any) {
-                            return `${context.dataset.label}: $${context.parsed.y}`;
+                            return `${context.dataset.label}: Rs. ${context.parsed.y}`;
                           },
                           footer: function(items: any) {
                             let sum = 0;
                             items.forEach((item: any) => {
                               sum += item.parsed.y;
                             });
-                            return `Total: $${sum}`;
+                            return `Total: Rs. ${sum}`;
                           }
                         }
                       }
@@ -413,7 +438,7 @@ export default function UsageAnalytics() {
                         ticks: {
                           color: 'rgba(156, 163, 175, 0.6)',
                           callback: function(value: any) {
-                            return '$' + value;
+                            return 'Rs. ' + value;
                           }
                         }
                       },
@@ -442,7 +467,7 @@ export default function UsageAnalytics() {
                       Your usage {parseFloat(monthlyChange) > 0 ? 'increased' : 'decreased'} by {Math.abs(parseFloat(monthlyChange))}% compared to last month.
                     </p>
                     <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
-                      Current: {currentMonthUsage} kWh | Last: {lastMonthUsage} kWh
+                      Current: {formatUnits(currentMonthUsage)} | Last: {formatUnits(lastMonthUsage)}
                     </p>
                   </div>
                 </div>
@@ -457,10 +482,10 @@ export default function UsageAnalytics() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Save Energy</h3>
                     <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                      Reducing consumption by 10% can save approximately ${(estimatedBill * 0.1).toFixed(2)}/month.
+                      Reducing consumption by 10% can save approximately {formatCurrency(estimatedBill * 0.1, 'Rs.')}/month.
                     </p>
                     <p className="text-xs text-green-600 dark:text-green-400 font-semibold">
-                      Target: {Math.round(currentMonthUsage * 0.9)} kWh next month
+                      Target: {formatUnits(Math.round(currentMonthUsage * 0.9))} next month
                     </p>
                   </div>
                 </div>
@@ -493,8 +518,8 @@ export default function UsageAnalytics() {
               </div>
               <div className="mt-5 text-center p-4 bg-white dark:bg-white/5 rounded-xl border border-green-200 dark:border-white/10">
                 <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Total Savings Potential</p>
-                <p className="text-4xl font-bold text-green-600 dark:text-green-400">$90/month</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">or $1,080/year if you implement all tips</p>
+                <p className="text-4xl font-bold text-green-600 dark:text-green-400">Rs. 900/month</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">or Rs. 10,800/year if you implement all tips</p>
               </div>
             </div>
 

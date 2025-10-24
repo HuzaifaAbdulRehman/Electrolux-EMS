@@ -27,8 +27,12 @@ export async function GET(request: NextRequest) {
         assignedDate: workOrders.assignedDate,
         dueDate: workOrders.dueDate,
         completionDate: workOrders.completionDate,
+        completionNotes: workOrders.completionNotes,
         customerName: customers.fullName,
         customerAccount: customers.accountNumber,
+        customerPhone: customers.phone,
+        customerAddress: customers.address,
+        customerCity: customers.city,
         employeeName: employees.employeeName,
       })
       .from(workOrders)

@@ -76,6 +76,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
         { name: 'Payment', href: '/customer/payment', icon: DollarSign },
         { name: 'Analytics', href: '/customer/analytics', icon: BarChart3 },
         { name: 'New Connection', href: '/customer/new-connection', icon: Plus },
+        { name: 'Request Reading', href: '/customer/request-reading', icon: Gauge },
         { name: 'Services', href: '/customer/services', icon: Activity },
         { name: 'Complaints', href: '/customer/complaints', icon: MessageSquare },
         { name: 'Outage Schedule', href: '/customer/outage-schedule', icon: ZapOff },

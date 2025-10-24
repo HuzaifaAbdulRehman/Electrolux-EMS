@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { customers, bills, payments, employees, workOrders, meterReadings, connectionApplications } from '@/lib/drizzle/schema';
+import { customers, bills, payments, employees, workOrders, meterReadings, connectionApplications, notifications } from '@/lib/drizzle/schema';
 import { eq, sql, desc, and, gte, lte } from 'drizzle-orm';
-import { subDays, startOfMonth, endOfMonth, format } from 'date-fns';
+import { subDays, startOfMonth, endOfMonth, format, addDays, parseISO, differenceInDays } from 'date-fns';
 
 export async function GET(request: NextRequest) {
   try {
@@ -297,6 +297,7 @@ export async function GET(request: NextRequest) {
       // Get current bill (most recent pending bill)
       const [currentBill] = await db
         .select({
+          id: bills.id,
           billNumber: bills.billNumber,
           totalAmount: bills.totalAmount,
           dueDate: bills.dueDate,
@@ -310,6 +311,55 @@ export async function GET(request: NextRequest) {
         )
         .orderBy(desc(bills.issueDate))
         .limit(1);
+
+      // Auto-generate notifications for due date reminders and overdue bills
+      if (currentBill && currentBill.dueDate) {
+        const today = new Date();
+        const dueDate = parseISO(currentBill.dueDate.toString());
+        const daysUntilDue = differenceInDays(dueDate, today);
+
+        const userId = session.user.id;
+
+        // Check if notification already exists for this bill (to avoid duplicates)
+        const existingNotif = await db
+          .select()
+          .from(notifications)
+          .where(
+            and(
+              eq(notifications.userId, userId),
+              sql`${notifications.message} LIKE ${`%${currentBill.billNumber}%`}`
+            )
+          )
+          .limit(1);
+
+        // Due date reminder (3 days before due date)
+        if (daysUntilDue <= 3 && daysUntilDue > 0 && existingNotif.length === 0) {
+          await db.insert(notifications).values({
+            userId,
+            notificationType: 'reminder',
+            title: 'Bill Payment Reminder',
+            message: `Your bill ${currentBill.billNumber} of Rs. ${currentBill.totalAmount} is due in ${daysUntilDue} day${daysUntilDue > 1 ? 's' : ''}. Please pay before ${format(dueDate, 'dd MMM yyyy')}.`,
+            priority: 'medium',
+            actionUrl: '/customer/payment',
+            actionText: 'Pay Now',
+            isRead: 0,
+          } as any);
+        }
+
+        // Overdue bill alert (past due date)
+        if (daysUntilDue < 0 && existingNotif.length === 0) {
+          await db.insert(notifications).values({
+            userId,
+            notificationType: 'alert',
+            title: 'Overdue Bill Alert',
+            message: `Your bill ${currentBill.billNumber} of Rs. ${currentBill.totalAmount} is ${Math.abs(daysUntilDue)} day${Math.abs(daysUntilDue) > 1 ? 's' : ''} overdue. Please pay immediately to avoid late fees.`,
+            priority: 'high',
+            actionUrl: '/customer/payment',
+            actionText: 'Pay Now',
+            isRead: 0,
+          } as any);
+        }
+      }
 
       return NextResponse.json({
         success: true,

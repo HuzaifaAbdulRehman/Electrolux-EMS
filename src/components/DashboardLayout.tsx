@@ -52,6 +52,8 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [hasActiveConnection, setHasActiveConnection] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const pathname = usePathname();
 
   // Use session data if available
@@ -110,6 +112,21 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
 
   const navigationItems = getNavigationItems();
 
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('/api/notifications?filter=unread&limit=5');
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setNotifications(result.data);
+        setUnreadCount(result.data.length);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
   useEffect(() => {
     const isDark = localStorage.getItem('theme') === 'dark';
     setIsDarkMode(isDark);
@@ -127,6 +144,11 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
 
     checkConnectionStatus();
 
+    // Fetch notifications on mount
+    if (status === 'authenticated') {
+      fetchNotifications();
+    }
+
     // Listen for connection status changes
     const handleConnectionChange = (e: CustomEvent) => {
       setHasActiveConnection(e.detail.status === 'active');
@@ -137,7 +159,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
     return () => {
       window.removeEventListener('connectionStatusChange' as any, handleConnectionChange);
     };
-  }, []);
+  }, [status]);
 
   const toggleTheme = () => {
     const newTheme = !isDarkMode;
@@ -167,19 +189,14 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
     }
   };
 
-  // Sample notifications
-  const notifications = [
-    { id: 1, title: 'Bill Generated', message: 'Your monthly bill is ready', time: '2 hours ago', type: 'info' as const },
-    { id: 2, title: 'Payment Received', message: 'Payment of $150 received', time: '1 day ago', type: 'success' as const },
-    { id: 3, title: 'High Usage Alert', message: 'Your usage is 20% higher than last month', time: '3 days ago', type: 'warning' as const },
-  ];
-
-  const getNotificationIcon = (type: 'info' | 'success' | 'warning' | 'error') => {
+  const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'success': return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'warning': return <AlertCircle className="h-5 w-5 text-yellow-500" />;
-      case 'error': return <AlertCircle className="h-5 w-5 text-red-500" />;
-      default: return <Info className="h-5 w-5 text-blue-500" />;
+      case 'billing': return <FileText className="h-5 w-5 text-green-500" />;
+      case 'payment': return <DollarSign className="h-5 w-5 text-blue-500" />;
+      case 'work_order': return <ClipboardList className="h-5 w-5 text-purple-500" />;
+      case 'alert': return <AlertCircle className="h-5 w-5 text-red-500" />;
+      case 'reminder': return <Clock className="h-5 w-5 text-yellow-500" />;
+      default: return <Info className="h-5 w-5 text-gray-500" />;
     }
   };
 
@@ -352,7 +369,9 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
                   className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <Bell className="h-5 w-5" />
-                  <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+                  {unreadCount > 0 && (
+                    <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+                  )}
                 </button>
 
                 {isNotificationOpen && (
@@ -361,23 +380,31 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
                       <h3 className="font-semibold">Notifications</h3>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
-                      {notifications.map((notification) => (
-                        <div key={notification.id} className="p-4 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                          <div className="flex items-start space-x-3">
-                            {getNotificationIcon(notification.type)}
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{notification.title}</p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{notification.message}</p>
-                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {notification.time}
-                              </p>
+                      {notifications.length > 0 ? (
+                        notifications.map((notification) => (
+                          <div key={notification.id} className="p-4 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                            <div className="flex items-start space-x-3">
+                              {getNotificationIcon(notification.type)}
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{notification.title}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{notification.message}</p>
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 flex items-center">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {notification.time}
+                                </p>
+                              </div>
                             </div>
                           </div>
+                        ))
+                      ) : (
+                        <div className="p-8 text-center">
+                          <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
+                          <p className="text-sm text-gray-500 dark:text-gray-400">All caught up!</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">No new notifications</p>
                         </div>
-                      ))}
+                      )}
                     </div>
-                    <div className="p-3 text-center">
+                    <div className="p-3 text-center border-t dark:border-gray-700">
                       <Link href={`/${userType}/notifications`} className="text-sm text-yellow-500 hover:text-yellow-600">
                         View all notifications
                       </Link>

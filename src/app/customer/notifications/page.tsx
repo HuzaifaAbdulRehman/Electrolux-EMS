@@ -20,7 +20,6 @@ import {
   MessageSquare,
   Settings,
   Trash2,
-  Archive,
   Clock,
   ChevronRight,
   Mail,
@@ -292,21 +291,6 @@ export default function Notifications() {
                   </button>
                 ))}
               </div>
-
-              {/* Quick Actions */}
-              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/10">
-                <h3 className="text-white font-semibold mb-3">Quick Actions</h3>
-                <div className="space-y-2">
-                  <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center space-x-3">
-                    <Archive className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    <span className="text-gray-700 dark:text-gray-300 text-sm">Archive All</span>
-                  </button>
-                  <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center space-x-3">
-                    <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                    <span className="text-gray-700 dark:text-gray-300 text-sm">Clear Old</span>
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -373,22 +357,22 @@ export default function Notifications() {
                         </div>
 
                         <div className="flex items-center space-x-2">
-                          {notification.actionUrl && (
-                            <button
-                              onClick={() => handleNotificationAction(notification.actionUrl)}
-                              className="px-3 py-1 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all text-sm flex items-center space-x-1"
-                            >
-                              <span>{notification.actionText}</span>
-                              <ChevronRight className="w-3 h-3" />
-                            </button>
-                          )}
                           {!notification.read && (
                             <button
                               onClick={() => handleMarkAsRead(notification.id)}
-                              className="p-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-900 dark:hover:text-white transition-colors"
+                              className="p-1 text-gray-600 dark:text-gray-400 hover:text-green-500 transition-colors"
                               title="Mark as read"
                             >
                               <Check className="w-4 h-4" />
+                            </button>
+                          )}
+                          {notification.actionUrl && notification.actionUrl !== '#' && (
+                            <button
+                              onClick={() => handleNotificationAction(notification.actionUrl)}
+                              className="p-1 text-gray-600 dark:text-gray-400 hover:text-yellow-500 transition-colors"
+                              title={notification.actionText || 'View details'}
+                            >
+                              <ChevronRight className="w-4 h-4" />
                             </button>
                           )}
                           <button

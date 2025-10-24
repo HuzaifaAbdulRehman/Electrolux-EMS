@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   User,
@@ -25,35 +26,96 @@ import {
   Key,
   Bell,
   Hash,
-  DollarSign
+  DollarSign,
+  Loader2
 } from 'lucide-react';
 
 export default function CustomerProfile() {
+  const { data: session } = useSession();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
+  const [loading, setLoading] = useState(true);
+  const [customerData, setCustomerData] = useState<any>(null);
 
   const [profileData, setProfileData] = useState({
-    fullName: 'Huzaifa',
-    email: 'john.doe@example.com',
-    phone: '(555) 123-4567',
-    address: '123 Main Street, Apt 4B, North Zone, City 12345',
-    secondaryEmail: 'johndoe.backup@example.com',
-    emergencyContact: '(555) 987-6543',
-    dateOfBirth: '1985-06-15'
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+    secondaryEmail: '',
+    emergencyContact: '',
+    dateOfBirth: ''
   });
 
-  // Account information
+  useEffect(() => {
+    fetchCustomerData();
+  }, [session]);
+
+  const fetchCustomerData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch customer profile data
+      const response = await fetch('/api/customers/profile');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile data');
+      }
+
+      const result = await response.json();
+
+      if (result.data) {
+        setCustomerData(result.data);
+        setProfileData({
+          fullName: result.data.fullName || session?.user?.name || '',
+          email: result.data.email || session?.user?.email || '',
+          phone: result.data.phone || '',
+          address: result.data.address || '',
+          city: result.data.city || '',
+          state: result.data.state || '',
+          pincode: result.data.pincode || '',
+          secondaryEmail: result.data.secondaryEmail || '',
+          emergencyContact: result.data.emergencyContact || '',
+          dateOfBirth: result.data.dateOfBirth || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching customer data:', error);
+      // Fallback to session data
+      setProfileData({
+        fullName: session?.user?.name || 'Customer',
+        email: session?.user?.email || 'customer@example.com',
+        phone: '',
+        address: '',
+        city: '',
+        state: '',
+        pincode: '',
+        secondaryEmail: '',
+        emergencyContact: '',
+        dateOfBirth: ''
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Account information from real data
   const accountInfo = {
-    accountNumber: 'ELX-2024-001234',
-    meterNumber: 'MTR-485729',
-    connectionType: 'Residential',
+    accountNumber: customerData?.accountNumber || 'Loading...',
+    meterNumber: customerData?.meterNumber || 'Loading...',
+    connectionType: customerData?.connectionType || 'Residential',
     loadSanction: '5 kW',
-    connectionDate: '2020-03-15',
-    category: 'Domestic',
+    connectionDate: customerData?.connectionDate || new Date().toISOString().split('T')[0],
+    category: customerData?.connectionType || 'Domestic',
     phase: 'Single Phase',
-    status: 'Active',
-    paymentHealth: 'Excellent', // Replaced credit score with realistic metric
-    accountAge: '4 years 7 months'
+    status: customerData?.status || 'Active',
+    paymentHealth: customerData?.paymentStatus === 'paid' ? 'Excellent' : 'Good',
+    accountAge: customerData?.connectionDate
+      ? `${Math.floor((new Date().getTime() - new Date(customerData.connectionDate).getTime()) / (365 * 24 * 60 * 60 * 1000))} years`
+      : 'N/A'
   };
 
   // Usage statistics - Only realistic database-calculable metrics
@@ -87,8 +149,18 @@ export default function CustomerProfile() {
     // Save logic here
   };
 
+  if (loading) {
+    return (
+      <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-yellow-400" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
-    <DashboardLayout userType="customer" userName="Huzaifa">
+    <DashboardLayout userType="customer" userName={profileData.fullName || session?.user?.name || 'Customer'}>
       <div className="space-y-6">
         {/* Header */}
         <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">

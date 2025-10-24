@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
+
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   CreditCard,
@@ -23,6 +25,8 @@ import {
 } from 'lucide-react';
 
 export default function OnlinePayment() {
+  const { data: session } = useSession();
+
   const [selectedMethod, setSelectedMethod] = useState('card');
   const [paymentAmount, setPaymentAmount] = useState('245.50');
   const [customAmount, setCustomAmount] = useState(false);
@@ -167,7 +171,7 @@ export default function OnlinePayment() {
   };
 
   return (
-    <DashboardLayout userType="customer" userName="Huzaifa">
+    <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
       <div className="h-full flex flex-col overflow-hidden">
         {/* Compact Header */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10 mb-4 flex-shrink-0">

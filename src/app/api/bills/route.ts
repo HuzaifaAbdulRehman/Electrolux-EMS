@@ -74,12 +74,12 @@ export async function GET(request: NextRequest) {
     const result = await query;
 
     // Get total count
-    const countQuery = db
+    let countQuery = db
       .select({ count: sql<number>`count(*)` })
       .from(bills);
 
     if (conditions.length > 0) {
-      countQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
+      countQuery = countQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
     }
 
     const [{ count }] = await countQuery;

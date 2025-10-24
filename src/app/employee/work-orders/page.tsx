@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
+
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   ClipboardList,
@@ -43,6 +45,8 @@ interface WorkOrder {
 }
 
 export default function WorkOrders() {
+  const { data: session } = useSession();
+
   const [activeTab, setActiveTab] = useState('assigned');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState('all');
@@ -185,7 +189,7 @@ export default function WorkOrders() {
   };
 
   return (
-    <DashboardLayout userType="employee" userName="John Smith">
+    <DashboardLayout userType="employee" userName={session?.user?.name || 'Employee'}>
       <div className="space-y-6">
         {/* Header */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">

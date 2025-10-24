@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
+
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
@@ -26,6 +28,8 @@ import {
 } from 'lucide-react';
 
 export default function NewConnection() {
+  const { data: session } = useSession();
+
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -195,7 +199,7 @@ export default function NewConnection() {
   };
 
   return (
-    <DashboardLayout userType="customer" userName="Huzaifa">
+    <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-2xl p-6 border border-blue-500/20">

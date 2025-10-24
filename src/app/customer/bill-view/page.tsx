@@ -18,7 +18,7 @@ export default function BillView() {
     dueDate: '2024-10-25',
     status: 'PENDING',
     customer: {
-      name: 'John Doe',
+      name: 'Customer Name',
       accountNumber: 'ELX-2024-001234',
       meterNumber: 'MTR-485729',
       address: '123 Main Street, Apt 4B, Downtown Area, City 12345',

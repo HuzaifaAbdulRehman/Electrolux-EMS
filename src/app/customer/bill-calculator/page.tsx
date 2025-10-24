@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
+
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
@@ -15,6 +17,8 @@ import {
 } from 'lucide-react';
 
 export default function BillCalculator() {
+  const { data: session } = useSession();
+
   const router = useRouter();
   const [units, setUnits] = useState('');
   const [connectionType, setConnectionType] = useState('residential');
@@ -118,7 +122,7 @@ export default function BillCalculator() {
   const totalAmount = subtotal + electricityDuty + gst;
 
   return (
-    <DashboardLayout userType="customer" userName="Huzaifa">
+    <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
       <div className="h-full flex flex-col overflow-hidden">
         {/* Compact Header */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10 mb-4 flex-shrink-0">

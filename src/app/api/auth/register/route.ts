@@ -16,7 +16,7 @@ const registrationSchema = z.object({
   city: z.string().min(2, 'City is required'),
   state: z.string().min(2, 'State is required'),
   pincode: z.string().regex(/^\d{6}$/, 'Pincode must be 6 digits'),
-  connectionType: z.enum(['residential', 'commercial', 'industrial']),
+  connectionType: z.enum(['Residential', 'Commercial', 'Industrial', 'Agricultural']).optional().default('Residential'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -73,9 +73,11 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(data.password, saltRounds);
 
     // Start transaction (if supported by your MySQL setup)
+    let newUser: any = null;
+
     try {
       // Create user account
-      const [newUser] = await db.insert(users).values({
+      await db.insert(users).values({
         email: data.email,
         password: hashedPassword,
         userType: 'customer',
@@ -84,14 +86,17 @@ export async function POST(request: NextRequest) {
         isActive: 1,
       });
 
+      // Get the newly created user ID
+      [newUser] = await db.select().from(users).where(eq(users.email, data.email)).limit(1);
+
       // Generate unique account and meter numbers
       const timestamp = Date.now();
       const accountNumber = `ELX-${new Date().getFullYear()}-${String(timestamp).slice(-6)}`;
       const meterNumber = `MTR-${String(timestamp).slice(-8)}`;
 
       // Create customer record
-      const [newCustomer] = await db.insert(customers).values({
-        userId: newUser.insertId,
+      const customerData: any = {
+        userId: newUser.id,
         accountNumber,
         meterNumber,
         fullName: data.fullName,
@@ -101,14 +106,16 @@ export async function POST(request: NextRequest) {
         city: data.city,
         state: data.state,
         pincode: data.pincode,
-        connectionType: data.connectionType,
+        connectionType: data.connectionType || 'Residential',
         status: 'active',
         connectionDate: new Date().toISOString().split('T')[0],
         lastBillAmount: '0',
         outstandingBalance: '0',
         averageMonthlyUsage: '0',
         paymentStatus: 'paid',
-      });
+      };
+
+      await db.insert(customers).values(customerData);
 
       // Return success response (without sensitive data)
       return NextResponse.json({
@@ -127,9 +134,9 @@ export async function POST(request: NextRequest) {
       console.error('Database error during registration:', dbError);
 
       // Attempt to delete the user if it was created
-      if (newUser?.insertId) {
+      if (newUser?.id) {
         try {
-          await db.delete(users).where(eq(users.id, newUser.insertId));
+          await db.delete(users).where(eq(users.id, newUser.id));
         } catch (cleanupError) {
           console.error('Failed to cleanup user after registration failure:', cleanupError);
         }

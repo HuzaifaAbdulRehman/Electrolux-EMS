@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
+
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
@@ -26,6 +28,8 @@ import {
 } from 'lucide-react';
 
 export default function ComplaintsFeedback() {
+  const { data: session } = useSession();
+
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('complaints');
   const [showNewComplaint, setShowNewComplaint] = useState(false);
@@ -138,7 +142,7 @@ export default function ComplaintsFeedback() {
   };
 
   return (
-    <DashboardLayout userType="customer" userName="Huzaifa">
+    <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
       <div className="space-y-6">
         {/* Header */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">

@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       const customerRecord = await db
         .select({ id: customers.id })
         .from(customers)
-        .where(eq(customers.userId, session.user.id))
+        .where(eq(customers.userId, parseInt(session.user.id)))
         .limit(1);
 
       if (!customerRecord.length) {
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
       const customerRecord = await db
         .select({ id: customers.id })
         .from(customers)
-        .where(eq(customers.userId, session.user.id))
+        .where(eq(customers.userId, parseInt(session.user.id)))
         .limit(1);
 
       if (!customerRecord.length) {

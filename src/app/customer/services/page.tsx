@@ -1,26 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   MessageSquare,
-  Plus,
   AlertTriangle,
   Wrench,
-  FileQuestion,
   Zap,
   Clock,
   CheckCircle,
   AlertCircle,
-  Send,
   Search,
   Calendar,
   User,
   ChevronRight,
-  MessageCircle,
   Activity
 } from 'lucide-react';
 
@@ -29,100 +25,49 @@ export default function ServiceRequests() {
 
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('requests');
-  const [showNewRequest, setShowNewRequest] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [workOrders, setWorkOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const handleConfigureAlerts = () => {
-    router.push('/customer/settings');
+    alert('⚡ Feature Coming Soon!\n\nOutage alert configuration will be available in a future update. For now, you can manage general notification preferences in Settings.');
   };
 
-  const [newRequest, setNewRequest] = useState({
-    type: '',
-    category: '',
-    subject: '',
-    description: '',
-    priority: 'medium',
-    attachment: false
-  });
+  // Fetch work orders from API
+  useEffect(() => {
+    fetchWorkOrders();
+  }, []);
 
-  // Mock service requests data
-  const serviceRequests = [
-    {
-      id: 'SR-2024-001',
-      type: 'complaint',
-      category: 'Billing Issue',
-      subject: 'Incorrect bill amount for October',
-      description: 'My bill shows 600 kWh but my meter reading is only 460 kWh',
-      status: 'in-progress',
-      priority: 'high',
-      createdDate: '2024-10-08',
-      assignedTo: 'Billing Department',
-      lastUpdate: '2 hours ago',
-      responses: [
-        {
-          from: 'Support Team',
-          message: 'We are investigating your meter reading discrepancy.',
-          time: '2 hours ago'
-        }
-      ]
-    },
-    {
-      id: 'SR-2024-002',
-      type: 'service',
-      category: 'Meter Problem',
-      subject: 'Meter display not working',
-      description: 'The digital display on my meter is blank',
-      status: 'pending',
-      priority: 'medium',
-      createdDate: '2024-10-07',
-      assignedTo: 'Technical Team',
-      lastUpdate: '1 day ago',
-      responses: []
-    },
-    {
-      id: 'SR-2024-003',
-      type: 'inquiry',
-      category: 'Connection',
-      subject: 'New connection for second property',
-      description: 'I need a new electricity connection for my rental property',
-      status: 'resolved',
-      priority: 'low',
-      createdDate: '2024-10-05',
-      assignedTo: 'Customer Service',
-      lastUpdate: '3 days ago',
-      resolution: 'Application form sent via email. Please submit with required documents.',
-      responses: [
-        {
-          from: 'Customer Service',
-          message: 'Thank you for your inquiry. We have sent the application form to your email.',
-          time: '3 days ago'
-        }
-      ]
-    },
-    {
-      id: 'SR-2024-004',
-      type: 'complaint',
-      category: 'Power Quality',
-      subject: 'Frequent voltage fluctuations',
-      description: 'Experiencing voltage fluctuations multiple times daily',
-      status: 'assigned',
-      priority: 'high',
-      createdDate: '2024-10-06',
-      assignedTo: 'Field Team',
-      lastUpdate: '5 hours ago',
-      responses: [
-        {
-          from: 'Technical Team',
-          message: 'Field team scheduled to visit tomorrow between 10 AM - 12 PM.',
-          time: '5 hours ago'
-        }
-      ]
+  const fetchWorkOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch('/api/work-orders');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch work orders');
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        setWorkOrders(result.data || []);
+      } else {
+        throw new Error(result.error || 'Failed to fetch work orders');
+      }
+    } catch (err: any) {
+      console.error('Error fetching work orders:', err);
+      setError(err.message || 'Failed to load work orders');
+      setWorkOrders([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  // Outage notifications
+  // Outage notifications (placeholder data for demonstration)
   const outageNotifications = [
     {
       id: 1,
@@ -157,19 +102,13 @@ export default function ServiceRequests() {
     }
   ];
 
-  const requestCategories = {
-    complaint: ['Billing Issue', 'Meter Problem', 'Power Quality', 'Service Issue', 'Other'],
-    service: ['New Connection', 'Disconnection', 'Load Change', 'Meter Relocation', 'Name Change'],
-    inquiry: ['Tariff Information', 'Payment Options', 'Energy Saving Tips', 'General Query']
-  };
-
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'resolved': return 'bg-green-500/20 text-green-400 border-green-500/50';
-      case 'in-progress': return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
+      case 'completed': return 'bg-green-500/20 text-green-400 border-green-500/50';
+      case 'in_progress': return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
       case 'assigned': return 'bg-purple-500/20 text-purple-400 border-purple-500/50';
       case 'pending': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
-      case 'closed': return 'bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/50';
+      case 'cancelled': return 'bg-red-500/20 text-red-400 border-red-500/50';
       default: return 'bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/50';
     }
   };
@@ -189,26 +128,13 @@ export default function ServiceRequests() {
       : 'bg-red-500/20 text-red-400 border-red-500/50';
   };
 
-  const filteredRequests = serviceRequests.filter(request => {
-    const matchesSearch = request.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         request.id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || request.status === filterStatus;
+  // Transform work orders to match expected format and filter
+  const filteredRequests = workOrders.filter(workOrder => {
+    const matchesSearch = (workOrder.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (workOrder.id || '').toString().toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || workOrder.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
-
-  const handleSubmitRequest = () => {
-    console.log('Submitting request:', newRequest);
-    setShowNewRequest(false);
-    // Reset form
-    setNewRequest({
-      type: '',
-      category: '',
-      subject: '',
-      description: '',
-      priority: 'medium',
-      attachment: false
-    });
-  };
 
   return (
     <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
@@ -220,21 +146,14 @@ export default function ServiceRequests() {
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Service Center</h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">Manage service requests, complaints, and view outage notifications</p>
             </div>
-            <div className="mt-3 sm:mt-0 flex items-center space-x-2">
+            <div className="mt-3 sm:mt-0">
               <a
                 href="/customer/new-connection"
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition-all flex items-center space-x-2 font-medium text-sm"
+                className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2 font-medium text-sm"
               >
                 <Zap className="w-4 h-4" />
                 <span>New Connection</span>
               </a>
-              <button
-                onClick={() => setShowNewRequest(true)}
-                className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2 font-medium text-sm"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Service Request</span>
-              </button>
             </div>
           </div>
         </div>
@@ -275,7 +194,7 @@ export default function ServiceRequests() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-gray-600 dark:text-gray-400 text-xs">Total Requests</p>
-                        <p className="text-xl font-bold text-gray-900 dark:text-white">{serviceRequests.length}</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">{workOrders.length}</p>
                       </div>
                       <MessageSquare className="w-6 h-6 text-blue-400" />
                     </div>
@@ -285,7 +204,7 @@ export default function ServiceRequests() {
                       <div>
                         <p className="text-gray-600 dark:text-gray-400 text-xs">In Progress</p>
                         <p className="text-xl font-bold text-gray-900 dark:text-white">
-                          {serviceRequests.filter(r => r.status === 'in-progress').length}
+                          {workOrders.filter(w => w.status === 'in_progress').length}
                         </p>
                       </div>
                       <Clock className="w-6 h-6 text-yellow-400" />
@@ -294,9 +213,9 @@ export default function ServiceRequests() {
                   <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-gray-600 dark:text-gray-400 text-xs">Resolved</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">Completed</p>
                         <p className="text-xl font-bold text-gray-900 dark:text-white">
-                          {serviceRequests.filter(r => r.status === 'resolved').length}
+                          {workOrders.filter(w => w.status === 'completed').length}
                         </p>
                       </div>
                       <CheckCircle className="w-6 h-6 text-green-400" />
@@ -305,8 +224,10 @@ export default function ServiceRequests() {
                   <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-gray-600 dark:text-gray-400 text-xs">Avg. Response</p>
-                        <p className="text-xl font-bold text-gray-900 dark:text-white">4 hrs</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">Assigned</p>
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">
+                          {workOrders.filter(w => w.status === 'assigned').length}
+                        </p>
                       </div>
                       <Activity className="w-6 h-6 text-purple-400" />
                     </div>
@@ -332,41 +253,68 @@ export default function ServiceRequests() {
                       className="px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 font-medium"
                     >
                       <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">All Status</option>
-                      <option value="pending" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Pending</option>
                       <option value="assigned" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Assigned</option>
-                      <option value="in-progress" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">In Progress</option>
-                      <option value="resolved" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Resolved</option>
+                      <option value="in_progress" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">In Progress</option>
+                      <option value="completed" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Completed</option>
                     </select>
                   </div>
                 </div>
 
                 {/* Service Requests List */}
                 <div className="space-y-3">
-                  {filteredRequests.map((request) => (
-                    <div key={request.id} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
+                  {loading && (
+                    <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-12 border border-gray-200 dark:border-white/10 text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+                      <p className="text-gray-600 dark:text-gray-400">Loading work orders...</p>
+                    </div>
+                  )}
+
+                  {error && !loading && (
+                    <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6 text-center">
+                      <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
+                      <p className="text-red-400 font-semibold">{error}</p>
+                      <button
+                        onClick={fetchWorkOrders}
+                        className="mt-4 px-4 py-2 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 hover:bg-red-500/30 transition-all"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  )}
+
+                  {!loading && !error && filteredRequests.length === 0 && (
+                    <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-12 border border-gray-200 dark:border-white/10 text-center">
+                      <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                      <h3 className="text-gray-900 dark:text-white text-lg font-semibold mb-2">No work orders found</h3>
+                      <p className="text-gray-600 dark:text-gray-400">You don't have any service requests yet.</p>
+                    </div>
+                  )}
+
+                  {!loading && !error && filteredRequests.map((workOrder) => (
+                    <div key={workOrder.id} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:border-gray-300 dark:border-white/20 transition-all">
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-start space-x-3">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                            request.type === 'complaint' ? 'bg-red-500/20' :
-                            request.type === 'service' ? 'bg-blue-500/20' : 'bg-green-500/20'
+                            workOrder.workType === 'repair' ? 'bg-red-500/20' :
+                            workOrder.workType === 'maintenance' ? 'bg-blue-500/20' :
+                            workOrder.workType === 'inspection' ? 'bg-green-500/20' : 'bg-purple-500/20'
                           }`}>
-                            {request.type === 'complaint' ? <AlertTriangle className="w-5 h-5 text-red-400" /> :
-                             request.type === 'service' ? <Wrench className="w-5 h-5 text-blue-400" /> :
-                             <FileQuestion className="w-5 h-5 text-green-400" />}
+                            {workOrder.workType === 'repair' ? <AlertTriangle className="w-5 h-5 text-red-400" /> :
+                             <Wrench className="w-5 h-5 text-blue-400" />}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center space-x-2 mb-1">
-                              <h3 className="text-base font-semibold text-gray-900 dark:text-white">{request.subject}</h3>
-                              <span className={`text-xs ${getPriorityColor(request.priority)}`}>
-                                {request.priority.toUpperCase()}
+                              <h3 className="text-base font-semibold text-gray-900 dark:text-white">{workOrder.title}</h3>
+                              <span className={`text-xs ${getPriorityColor(workOrder.priority)}`}>
+                                {(workOrder.priority || 'medium').toUpperCase()}
                               </span>
                             </div>
-                            <p className="text-gray-600 dark:text-gray-400 text-xs mb-2">{request.id} • {request.category}</p>
-                            <p className="text-gray-700 dark:text-gray-300 text-sm">{request.description}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-xs mb-2">WO-{workOrder.id} • {workOrder.workType || 'General'}</p>
+                            <p className="text-gray-700 dark:text-gray-300 text-sm">{workOrder.description || 'No description provided'}</p>
                           </div>
                         </div>
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(request.status)}`}>
-                          {request.status.replace('-', ' ')}
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(workOrder.status)}`}>
+                          {(workOrder.status || 'assigned').replace('_', ' ')}
                         </span>
                       </div>
 
@@ -374,19 +322,21 @@ export default function ServiceRequests() {
                         <div className="flex items-center space-x-3 text-xs text-gray-600 dark:text-gray-400">
                           <span className="flex items-center space-x-1">
                             <Calendar className="w-3 h-3" />
-                            <span>{request.createdDate}</span>
+                            <span>{workOrder.assignedDate || 'N/A'}</span>
                           </span>
                           <span className="flex items-center space-x-1">
                             <User className="w-3 h-3" />
-                            <span>{request.assignedTo}</span>
+                            <span>{workOrder.employeeName || 'Not assigned'}</span>
                           </span>
-                          <span className="flex items-center space-x-1">
-                            <Clock className="w-3 h-3" />
-                            <span>Updated {request.lastUpdate}</span>
-                          </span>
+                          {workOrder.dueDate && (
+                            <span className="flex items-center space-x-1">
+                              <Clock className="w-3 h-3" />
+                              <span>Due: {workOrder.dueDate}</span>
+                            </span>
+                          )}
                         </div>
                         <button
-                          onClick={() => setSelectedRequest(request)}
+                          onClick={() => setSelectedRequest(workOrder)}
                           className="px-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all flex items-center space-x-1"
                         >
                           <span>View Details</span>
@@ -394,10 +344,12 @@ export default function ServiceRequests() {
                         </button>
                       </div>
 
-                      {request.responses.length > 0 && (
-                        <div className="mt-3 p-2 bg-white dark:bg-white/5 rounded-lg border-l-4 border-blue-500">
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Latest Response:</p>
-                          <p className="text-xs text-gray-700 dark:text-gray-300">{request.responses[0].message}</p>
+                      {workOrder.completionDate && (
+                        <div className="mt-3 p-2 bg-green-500/10 rounded-lg border-l-4 border-green-500">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Completed: {workOrder.completionDate}</p>
+                          {workOrder.completionNotes && (
+                            <p className="text-xs text-gray-700 dark:text-gray-300">{workOrder.completionNotes}</p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -492,118 +444,12 @@ export default function ServiceRequests() {
           </div>
         </div>
 
-        {/* New Request Modal */}
-        {showNewRequest && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-8 border border-gray-200 dark:border-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Create New Request</h2>
-
-              <form className="space-y-4">
-                <div>
-                  <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Request Type *</label>
-                  <select
-                    value={newRequest.type}
-                    onChange={(e) => setNewRequest({ ...newRequest, type: e.target.value, category: '' })}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors font-medium"
-                  >
-                    <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Select Type</option>
-                    <option value="complaint" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Complaint</option>
-                    <option value="service" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Service Request</option>
-                    <option value="inquiry" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">General Inquiry</option>
-                  </select>
-                </div>
-
-                {newRequest.type && (
-                  <div>
-                    <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Category *</label>
-                    <select
-                      value={newRequest.category}
-                      onChange={(e) => setNewRequest({ ...newRequest, category: e.target.value })}
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors font-medium"
-                    >
-                      <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Select Category</option>
-                      {requestCategories[newRequest.type as keyof typeof requestCategories]?.map((cat) => (
-                        <option key={cat} value={cat} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">{cat}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div>
-                  <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Subject *</label>
-                  <input
-                    type="text"
-                    value={newRequest.subject}
-                    onChange={(e) => setNewRequest({ ...newRequest, subject: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-                    placeholder="Brief description of your request"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Description *</label>
-                  <textarea
-                    value={newRequest.description}
-                    onChange={(e) => setNewRequest({ ...newRequest, description: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
-                    rows={4}
-                    placeholder="Provide detailed information about your request..."
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Priority</label>
-                  <select
-                    value={newRequest.priority}
-                    onChange={(e) => setNewRequest({ ...newRequest, priority: e.target.value })}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors font-medium"
-                  >
-                    <option value="low" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Low</option>
-                    <option value="medium" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Medium</option>
-                    <option value="high" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">High</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={newRequest.attachment}
-                      onChange={(e) => setNewRequest({ ...newRequest, attachment: e.target.checked })}
-                      className="w-5 h-5 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded text-yellow-400"
-                    />
-                    <span className="text-gray-700 dark:text-gray-300">I have documents to attach</span>
-                  </label>
-                </div>
-
-                <div className="flex space-x-4 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowNewRequest(false)}
-                    className="flex-1 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all font-semibold"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSubmitRequest}
-                    className="flex-1 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all font-semibold flex items-center justify-center space-x-2"
-                  >
-                    <Send className="w-5 h-5" />
-                    <span>Submit Request</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Request Details Modal */}
+        {/* Work Order Details Modal */}
         {selectedRequest && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-slate-900/90 backdrop-blur-xl rounded-2xl p-8 border border-gray-200 dark:border-white/10 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Request Details</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Work Order Details</h2>
                 <button
                   onClick={() => setSelectedRequest(null)}
                   className="p-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all"
@@ -613,76 +459,58 @@ export default function ServiceRequests() {
               </div>
 
               <div className="space-y-6">
-                {/* Request Info */}
+                {/* Work Order Info */}
                 <div className="bg-white dark:bg-white dark:bg-white/5 rounded-xl p-6 border border-gray-200 dark:border-white/10">
                   <div className="flex items-start justify-between mb-4">
                     <div>
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{selectedRequest.subject}</h3>
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{selectedRequest.title}</h3>
                       <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
-                        <span>{selectedRequest.id}</span>
+                        <span>WO-{selectedRequest.id}</span>
                         <span>•</span>
-                        <span>{selectedRequest.category}</span>
+                        <span>{selectedRequest.workType || 'General'}</span>
                         <span>•</span>
                         <span className={getPriorityColor(selectedRequest.priority)}>
-                          {selectedRequest.priority.toUpperCase()} Priority
+                          {(selectedRequest.priority || 'medium').toUpperCase()} Priority
                         </span>
                       </div>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(selectedRequest.status)}`}>
-                      {selectedRequest.status.replace('-', ' ')}
+                      {(selectedRequest.status || 'assigned').replace('_', ' ')}
                     </span>
                   </div>
 
-                  <p className="text-gray-700 dark:text-gray-300 mb-4">{selectedRequest.description}</p>
+                  <p className="text-gray-700 dark:text-gray-300 mb-4">{selectedRequest.description || 'No description provided'}</p>
 
                   <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-white/10">
                     <div>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">Created Date</p>
-                      <p className="text-gray-900 dark:text-white">{selectedRequest.createdDate}</p>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Assigned Date</p>
+                      <p className="text-gray-900 dark:text-white">{selectedRequest.assignedDate || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Due Date</p>
+                      <p className="text-gray-900 dark:text-white">{selectedRequest.dueDate || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-gray-600 dark:text-gray-400 text-sm">Assigned To</p>
-                      <p className="text-gray-900 dark:text-white">{selectedRequest.assignedTo}</p>
+                      <p className="text-gray-900 dark:text-white">{selectedRequest.employeeName || 'Not assigned'}</p>
                     </div>
+                    {selectedRequest.completionDate && (
+                      <div>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">Completed Date</p>
+                        <p className="text-gray-900 dark:text-white">{selectedRequest.completionDate}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Response Thread */}
-                {selectedRequest.responses.length > 0 && (
-                  <div className="bg-white dark:bg-white dark:bg-white/5 rounded-xl p-6 border border-gray-200 dark:border-white/10">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Response Thread</h3>
-                    <div className="space-y-3">
-                      {selectedRequest.responses.map((response: any, index: number) => (
-                        <div key={index} className="flex items-start space-x-3">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-                            <MessageCircle className="w-4 h-4 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <span className="text-white font-medium">{response.from}</span>
-                              <span className="text-gray-500 text-xs">{response.time}</span>
-                            </div>
-                            <p className="text-gray-700 dark:text-gray-300 text-sm">{response.message}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Add Response */}
-                {selectedRequest.status !== 'resolved' && (
-                  <div className="bg-white dark:bg-white dark:bg-white/5 rounded-xl p-6 border border-gray-200 dark:border-white/10">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add Response</h3>
-                    <textarea
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
-                      rows={3}
-                      placeholder="Type your message..."
-                    />
-                    <button className="mt-3 px-6 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2">
-                      <Send className="w-4 h-4" />
-                      <span>Send Message</span>
-                    </button>
+                {/* Completion Notes */}
+                {selectedRequest.completionNotes && (
+                  <div className="bg-green-500/10 rounded-xl p-6 border border-green-500/20">
+                    <h3 className="text-lg font-semibold text-green-400 mb-3 flex items-center">
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      Completion Notes
+                    </h3>
+                    <p className="text-gray-700 dark:text-gray-300">{selectedRequest.completionNotes}</p>
                   </div>
                 )}
               </div>

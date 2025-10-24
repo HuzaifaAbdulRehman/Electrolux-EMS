@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { safeNumber, formatCurrency, safeDate, formatUnits } from '@/lib/utils/dataHandlers';
 import {
   User,
   Mail,
@@ -27,7 +28,8 @@ import {
   Bell,
   Hash,
   DollarSign,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-react';
 
 export default function CustomerProfile() {
@@ -35,7 +37,13 @@ export default function CustomerProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [customerData, setCustomerData] = useState<any>(null);
+  const [usageData, setUsageData] = useState<any>(null);
+  const [recentPayments, setRecentPayments] = useState<any[]>([]);
+  const [recentBills, setRecentBills] = useState<any[]>([]);
 
   const [profileData, setProfileData] = useState({
     fullName: '',
@@ -59,31 +67,52 @@ export default function CustomerProfile() {
       setLoading(true);
 
       // Fetch customer profile data
-      const response = await fetch('/api/customers/profile');
-
-      if (!response.ok) {
+      const profileResponse = await fetch('/api/customers/profile');
+      if (!profileResponse.ok) {
         throw new Error('Failed to fetch profile data');
       }
+      const profileResult = await profileResponse.json();
 
-      const result = await response.json();
-
-      if (result.data) {
-        setCustomerData(result.data);
+      if (profileResult.data) {
+        setCustomerData(profileResult.data);
         setProfileData({
-          fullName: result.data.fullName || session?.user?.name || '',
-          email: result.data.email || session?.user?.email || '',
-          phone: result.data.phone || '',
-          address: result.data.address || '',
-          city: result.data.city || '',
-          state: result.data.state || '',
-          pincode: result.data.pincode || '',
-          secondaryEmail: result.data.secondaryEmail || '',
-          emergencyContact: result.data.emergencyContact || '',
-          dateOfBirth: result.data.dateOfBirth || ''
+          fullName: profileResult.data.fullName || session?.user?.name || '',
+          email: profileResult.data.email || session?.user?.email || '',
+          phone: profileResult.data.phone || '',
+          address: profileResult.data.address || '',
+          city: profileResult.data.city || '',
+          state: profileResult.data.state || '',
+          pincode: profileResult.data.pincode || '',
+          secondaryEmail: profileResult.data.secondaryEmail || '',
+          emergencyContact: profileResult.data.emergencyContact || '',
+          dateOfBirth: profileResult.data.dateOfBirth || ''
         });
       }
+
+      // Fetch dashboard data for usage statistics
+      const dashboardResponse = await fetch('/api/dashboard');
+      if (dashboardResponse.ok) {
+        const dashboardResult = await dashboardResponse.json();
+        setUsageData(dashboardResult.data);
+      }
+
+      // Fetch recent payments
+      const paymentsResponse = await fetch('/api/payments?limit=5');
+      if (paymentsResponse.ok) {
+        const paymentsResult = await paymentsResponse.json();
+        setRecentPayments(paymentsResult.data || []);
+      }
+
+      // Fetch recent bills
+      const billsResponse = await fetch('/api/bills?limit=3');
+      if (billsResponse.ok) {
+        const billsResult = await billsResponse.json();
+        setRecentBills(billsResult.data || []);
+      }
+
     } catch (error) {
       console.error('Error fetching customer data:', error);
+      setError('Failed to load profile data');
       // Fallback to session data
       setProfileData({
         fullName: session?.user?.name || 'Customer',
@@ -118,16 +147,63 @@ export default function CustomerProfile() {
       : 'N/A'
   };
 
-  // Usage statistics - Only realistic database-calculable metrics
-  const usageStats = {
-    totalConsumption: '24,580 kWh',
-    averageMonthly: '410 kWh',
-    peakMonth: 'July 2024',
-    lowestMonth: 'March 2024',
-    totalPayments: '$12,450',
-    onTimePayments: '98%'
-    // Removed: savedAmount, co2Reduced (not calculable from billing data)
+  // Usage statistics - Calculated from real database data
+  const calculateUsageStats = () => {
+    const consumptionHistory = usageData?.consumptionHistory || [];
+    const totalBills = recentBills.length;
+    const paidBills = recentBills.filter((b: any) => b.status === 'paid').length;
+
+    // Calculate total consumption
+    const totalConsumption = consumptionHistory.reduce((sum: number, item: any) =>
+      sum + safeNumber(item.unitsConsumed, 0), 0
+    );
+
+    // Calculate average monthly
+    const averageMonthly = consumptionHistory.length > 0
+      ? Math.round(totalConsumption / consumptionHistory.length)
+      : safeNumber(usageData?.avgConsumption, 0);
+
+    // Find peak and lowest months
+    let peakMonth = { month: 'N/A', units: 0 };
+    let lowestMonth = { month: 'N/A', units: Infinity };
+
+    consumptionHistory.forEach((item: any) => {
+      const units = safeNumber(item.unitsConsumed, 0);
+      if (units > peakMonth.units) {
+        peakMonth = {
+          month: new Date(item.billingPeriod).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          units
+        };
+      }
+      if (units < lowestMonth.units && units > 0) {
+        lowestMonth = {
+          month: new Date(item.billingPeriod).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          units
+        };
+      }
+    });
+
+    // Calculate total payments
+    const totalPayments = recentPayments.reduce((sum: number, payment: any) =>
+      sum + safeNumber(payment.paymentAmount, 0), 0
+    );
+
+    // Calculate on-time payment percentage
+    const onTimePayments = totalBills > 0
+      ? Math.round((paidBills / totalBills) * 100)
+      : 100;
+
+    return {
+      totalConsumption: formatUnits(totalConsumption),
+      averageMonthly: formatUnits(averageMonthly),
+      peakMonth: peakMonth.month,
+      lowestMonth: lowestMonth.month !== 'N/A' && lowestMonth.units !== Infinity ? lowestMonth.month : 'N/A',
+      totalPayments: formatCurrency(totalPayments, 'Rs.'),
+      onTimePayments: `${onTimePayments}%`
+    };
   };
+
+  const usageStats = calculateUsageStats();
 
   // Achievements - Only database-calculable achievements
   const achievements = [
@@ -136,17 +212,98 @@ export default function CustomerProfile() {
     // Removed: Green Consumer, Energy Saver (require comparison data not in billing system)
   ];
 
-  // Recent activities
-  const recentActivities = [
-    { date: '2024-10-10', activity: 'Bill payment completed', amount: '$245.50', status: 'success' },
-    { date: '2024-10-08', activity: 'Meter reading submitted', amount: '460 kWh', status: 'info' },
-    { date: '2024-10-05', activity: 'Service request resolved', amount: 'SR-2024-001', status: 'success' },
-    { date: '2024-09-15', activity: 'Profile updated', amount: 'Email changed', status: 'info' }
-  ];
+  // Recent activities - Compiled from real data
+  const compileRecentActivities = () => {
+    const activities: any[] = [];
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // Save logic here
+    // Add recent payments
+    recentPayments.slice(0, 3).forEach((payment: any) => {
+      activities.push({
+        date: payment.paymentDate,
+        activity: 'Bill payment completed',
+        amount: formatCurrency(safeNumber(payment.paymentAmount, 0), 'Rs.'),
+        status: 'success',
+        icon: CreditCard
+      });
+    });
+
+    // Add recent bills
+    recentBills.slice(0, 2).forEach((bill: any) => {
+      activities.push({
+        date: bill.issueDate,
+        activity: 'Bill generated',
+        amount: formatUnits(safeNumber(bill.unitsConsumed, 0)),
+        status: 'info',
+        icon: FileText
+      });
+    });
+
+    // Sort by date (most recent first)
+    return activities.sort((a, b) =>
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    ).slice(0, 5);
+  };
+
+  const recentActivities = compileRecentActivities();
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      setSuccess(null);
+
+      // Validation
+      if (!profileData.fullName || profileData.fullName.trim() === '') {
+        setError('Full name is required');
+        return;
+      }
+
+      if (!profileData.email || !/^\S+@\S+\.\S+$/.test(profileData.email)) {
+        setError('Valid email is required');
+        return;
+      }
+
+      if (profileData.phone && !/^\d{10,11}$/.test(profileData.phone.replace(/\D/g, ''))) {
+        setError('Phone number must be 10-11 digits');
+        return;
+      }
+
+      if (profileData.pincode && !/^\d{5,6}$/.test(profileData.pincode)) {
+        setError('Pincode must be 5-6 digits');
+        return;
+      }
+
+      // Call API to update profile
+      const response = await fetch('/api/customers/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update profile');
+      }
+
+      // Success
+      setSuccess('Profile updated successfully!');
+      setIsEditing(false);
+
+      // Refresh customer data
+      await fetchCustomerData();
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
+
+    } catch (err: any) {
+      console.error('Error saving profile:', err);
+      setError(err.message || 'Failed to update profile. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -162,6 +319,32 @@ export default function CustomerProfile() {
   return (
     <DashboardLayout userType="customer" userName={profileData.fullName || session?.user?.name || 'Customer'}>
       <div className="space-y-6">
+        {/* Error Alert */}
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 flex items-start space-x-3">
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-red-400 font-semibold">{error}</p>
+            </div>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Success Alert */}
+        {success && (
+          <div className="bg-green-500/20 border border-green-500/50 rounded-xl p-4 flex items-start space-x-3">
+            <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-green-400 font-semibold">{success}</p>
+            </div>
+            <button onClick={() => setSuccess(null)} className="text-green-400 hover:text-green-300">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
@@ -188,13 +371,19 @@ export default function CustomerProfile() {
             <div className="mt-4 lg:mt-0">
               <button
                 onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+                disabled={saving}
                 className={`px-6 py-3 rounded-lg font-semibold transition-all flex items-center space-x-2 ${
                   isEditing
-                    ? 'bg-green-500/20 text-green-400 border border-green-500/50 hover:bg-green-500/30'
+                    ? 'bg-green-500/20 text-green-400 border border-green-500/50 hover:bg-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed'
                     : 'bg-white/10 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-300 dark:border-white/20 hover:bg-gray-200 dark:hover:bg-gray-200 dark:hover:bg-white/20'
                 }`}
               >
-                {isEditing ? (
+                {saving ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : isEditing ? (
                   <>
                     <Save className="w-5 h-5" />
                     <span>Save Changes</span>

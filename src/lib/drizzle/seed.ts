@@ -92,7 +92,7 @@ async function seed() {
         hireDate: format(faker.date.past({ years: 3 }), 'yyyy-MM-dd'),
       });
     }
-    await db.insert(employees).values(employeeRecords);
+    await db.insert(employees).values(employeeRecords as any);
     console.log('✅ Seeded 10 employees\n');
 
     // 3. SEED CUSTOMERS
@@ -125,7 +125,7 @@ async function seed() {
         paymentStatus: 'paid' as const,
       });
     }
-    await db.insert(customers).values(customerRecords);
+    await db.insert(customers).values(customerRecords as any);
     console.log('✅ Seeded 50 customers\n');
 
     // 4. SEED TARIFFS (4 categories)
@@ -196,7 +196,7 @@ async function seed() {
         validUntil: null,
       },
     ];
-    await db.insert(tariffs).values(tariffData);
+    await db.insert(tariffs).values(tariffData as any);
     console.log('✅ Seeded 4 tariff categories\n');
 
     // 5. SEED METER READINGS & BILLS (6 months for 50 customers = 300 records each)
@@ -255,7 +255,7 @@ async function seed() {
           employeeId: faker.number.int({ min: 1, max: 10 }), // Random employee
           photoPath: null,
           notes: null,
-        });
+        } as any);
 
         // Calculate bill amount using tariff slabs
         let baseAmount = 0;
@@ -301,7 +301,7 @@ async function seed() {
           totalAmount: totalAmount.toFixed(2),
           status: monthOffset === 0 ? 'issued' : 'paid', // Latest month unpaid, others paid
           paymentDate: monthOffset === 0 ? null : format(addDays(readingDate, faker.number.int({ min: 5, max: 15 })), 'yyyy-MM-dd'),
-        });
+        } as any);
 
         // Insert payment (80% of bills are paid, skip latest month)
         if (monthOffset > 0 && Math.random() > 0.2) {
@@ -316,7 +316,7 @@ async function seed() {
             receiptNumber: generateReceiptNumber(paymentCounter),
             status: 'completed',
             notes: null,
-          });
+          } as any);
           paymentCounter++;
         }
 
@@ -353,7 +353,7 @@ async function seed() {
         completionNotes: status === 'completed' ? faker.lorem.sentence() : null,
       });
     }
-    await db.insert(workOrders).values(workOrderRecords);
+    await db.insert(workOrders).values(workOrderRecords as any);
     console.log('✅ Seeded 20 work orders\n');
 
     // 7. SEED CONNECTION APPLICATIONS (10 applications)
@@ -393,7 +393,7 @@ async function seed() {
         rejectionReason: null,
       });
     }
-    await db.insert(connectionApplications).values(connectionAppRecords);
+    await db.insert(connectionApplications).values(connectionAppRecords as any);
     console.log('✅ Seeded 10 connection applications\n');
 
     // 8. SEED NOTIFICATIONS (50 recent notifications)
@@ -444,7 +444,7 @@ async function seed() {
         readAt: Math.random() > 0.5 ? faker.date.recent({ days: 7 }) : null,
       });
     }
-    await db.insert(notifications).values(notificationRecords);
+    await db.insert(notifications).values(notificationRecords as any);
     console.log('✅ Seeded 50 notifications\n');
 
     console.log('🎉 Database seeding completed successfully!\n');

@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
         createdAt: customers.createdAt,
         updatedAt: customers.updatedAt,
       })
-      .from(customers);
+      .from(customers)
+      .$dynamic();
 
     // Apply filters
     const conditions = [];
@@ -106,7 +107,8 @@ export async function GET(request: NextRequest) {
     // Get total count for pagination
     let countQuery = db
       .select({ count: sql`count(*)` })
-      .from(customers);
+      .from(customers)
+      .$dynamic();
 
     if (conditions.length > 0) {
       countQuery = countQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
@@ -196,7 +198,7 @@ export async function POST(request: NextRequest) {
       connectionType: body.connectionType,
       status: body.status || 'active',
       connectionDate: body.connectionDate || new Date().toISOString().split('T')[0],
-    });
+    } as any);
 
     return NextResponse.json({
       success: true,

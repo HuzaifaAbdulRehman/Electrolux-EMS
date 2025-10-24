@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
       })
       .from(meterReadings)
       .leftJoin(customers, eq(meterReadings.customerId, customers.id))
-      .leftJoin(employees, eq(meterReadings.employeeId, employees.id));
+      .leftJoin(employees, eq(meterReadings.employeeId, employees.id))
+      .$dynamic();
 
     const conditions = [];
 
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
     const result = await query;
 
     // Get total count
-    let countQuery = db.select({ count: sql<number>`count(*)` }).from(meterReadings);
+    let countQuery = db.select({ count: sql<number>`count(*)` }).from(meterReadings).$dynamic();
     if (conditions.length > 0) {
       countQuery = countQuery.where(conditions[0] as any);
     }
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
       accessibility: accessibility || 'accessible',
       employeeId: session.user.employeeId,
       notes,
-    });
+    } as any);
 
     // Update customer's average monthly usage
     const avgUsage = await db

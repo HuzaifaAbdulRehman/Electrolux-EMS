@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
         .where(
           and(
             eq(payments.status, 'completed'),
-            gte(payments.paymentDate, format(startDate, 'yyyy-MM-dd')),
-            lte(payments.paymentDate, format(endDate, 'yyyy-MM-dd'))
+            gte(payments.paymentDate, format(startDate, 'yyyy-MM-dd') as any),
+            lte(payments.paymentDate, format(endDate, 'yyyy-MM-dd') as any)
           )
         );
 
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
         .where(
           and(
             eq(payments.status, 'completed'),
-            gte(payments.paymentDate, format(subDays(new Date(), 180), 'yyyy-MM-dd'))
+            gte(payments.paymentDate, format(subDays(new Date(), 180), 'yyyy-MM-dd') as any)
           )
         )
         .groupBy(sql`DATE_FORMAT(${payments.paymentDate}, '%Y-%m')`)
@@ -180,7 +180,7 @@ export async function GET(request: NextRequest) {
         .where(
           and(
             eq(meterReadings.employeeId, employeeId!),
-            eq(meterReadings.readingDate, format(new Date(), 'yyyy-MM-dd'))
+            eq(meterReadings.readingDate, format(new Date(), 'yyyy-MM-dd') as any)
           )
         );
 
@@ -305,7 +305,7 @@ export async function GET(request: NextRequest) {
         .where(
           and(
             eq(bills.customerId, customerId!),
-            eq(bills.status, 'pending')
+            eq(bills.status, 'issued')
           )
         )
         .orderBy(desc(bills.issueDate))

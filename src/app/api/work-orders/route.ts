@@ -33,7 +33,8 @@ export async function GET(request: NextRequest) {
       })
       .from(workOrders)
       .leftJoin(customers, eq(workOrders.customerId, customers.id))
-      .leftJoin(employees, eq(workOrders.employeeId, employees.id));
+      .leftJoin(employees, eq(workOrders.employeeId, employees.id))
+      .$dynamic();
 
     const conditions = [];
 
@@ -93,7 +94,7 @@ export async function POST(request: NextRequest) {
       status: 'assigned',
       assignedDate: new Date().toISOString().split('T')[0],
       dueDate,
-    });
+    } as any);
 
     return NextResponse.json({
       success: true,

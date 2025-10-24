@@ -30,7 +30,7 @@ export default function RequestReading() {
     contactPhone: '+1234567890',
     alternatePhone: '',
     accessInstructions: '',
-    urgency: 'normal'
+    urgency: 'medium'
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -107,7 +107,7 @@ export default function RequestReading() {
 
   const urgencyLevels = [
     { value: 'low', label: 'Low Priority', color: 'from-green-500 to-emerald-500', description: 'Within 7 days' },
-    { value: 'normal', label: 'Normal Priority', color: 'from-blue-500 to-cyan-500', description: 'Within 3-5 days' },
+    { value: 'medium', label: 'Normal Priority', color: 'from-blue-500 to-cyan-500', description: 'Within 3-5 days' },
     { value: 'high', label: 'High Priority', color: 'from-yellow-400 to-orange-500', description: 'Within 1-2 days' },
     { value: 'urgent', label: 'Urgent', color: 'from-red-500 to-pink-500', description: 'Within 24 hours' }
   ];
@@ -407,7 +407,7 @@ export default function RequestReading() {
                       value={formData.contactPhone}
                       onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
                       className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-purple-400 transition-colors"
-                      placeholder="+1 (555) 000-0000"
+                      placeholder="03123456789"
                     />
                   </div>
                 </div>
@@ -424,7 +424,7 @@ export default function RequestReading() {
                       value={formData.alternatePhone}
                       onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
                       className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-purple-400 transition-colors"
-                      placeholder="+1 (555) 000-0000"
+                      placeholder="03123456789"
                     />
                   </div>
                 </div>

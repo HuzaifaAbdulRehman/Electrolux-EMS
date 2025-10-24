@@ -122,9 +122,9 @@ export async function POST(request: NextRequest) {
     } as any);
 
     // Create notification for user
-    if (session.user.userId) {
+    if (session.user.id) {
       await db.insert(notifications).values({
-        userId: session.user.userId,
+        userId: session.user.id,
         notificationType: 'connection',
         title: 'Connection Application Submitted',
         message: `Your connection application ${applicationNumber} has been received. Our team will contact you within 24-48 hours.`,

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
 
     // Get user ID
-    const userId = session.user.id;
+    const userId = parseInt(session.user.id);
 
     // Build query
     let query = db
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       // Filter by notification type
       query = query.where(and(
         eq(notifications.userId, userId),
-        eq(notifications.notificationType, filter)
+        eq(notifications.notificationType, filter as any)
       ));
     }
 
@@ -92,7 +92,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { id, markAllRead } = body;
 
-    const userId = session.user.id;
+    const userId = parseInt(session.user.id);
 
     if (markAllRead) {
       // Mark all notifications as read
@@ -122,7 +122,7 @@ export async function PATCH(request: NextRequest) {
         readAt: new Date()
       })
       .where(and(
-        eq(notifications.id, id),
+        eq(notifications.id, parseInt(id)),
         eq(notifications.userId, userId)
       ));
 
@@ -151,7 +151,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Notification ID is required' }, { status: 400 });
     }
 
-    const userId = session.user.id;
+    const userId = parseInt(session.user.id);
 
     // Delete notification (only if it belongs to the user)
     await db

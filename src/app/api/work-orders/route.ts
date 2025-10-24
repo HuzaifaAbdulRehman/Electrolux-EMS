@@ -74,44 +74,60 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
+      console.error('[Work Orders POST] No session found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
     const { customerId, employeeId, workType, title, description, priority, dueDate } = body;
 
-    // Customers can only create complaint_resolution work orders for themselves
+    console.log('[Work Orders POST] Request from:', session.user.userType, 'workType:', workType, 'customerId:', session.user.customerId);
+
+    // Customers can create complaint_resolution and meter_reading work orders
     if (session.user.userType === 'customer') {
-      if (workType !== 'complaint_resolution') {
-        return NextResponse.json({ error: 'Customers can only submit complaints' }, { status: 403 });
+      if (workType !== 'complaint_resolution' && workType !== 'meter_reading') {
+        console.error('[Work Orders POST] Invalid work type for customer:', workType);
+        return NextResponse.json({ error: 'Customers can only submit complaints or meter reading requests' }, { status: 403 });
       }
 
-      if (!title || !description) {
-        return NextResponse.json({ error: 'Title and description are required' }, { status: 400 });
+      if (!title) {
+        return NextResponse.json({ error: 'Title is required' }, { status: 400 });
       }
 
-      // Auto-calculate due date (7 days from now for complaints)
+      // Auto-calculate due date based on work type
       const calculatedDueDate = new Date();
-      calculatedDueDate.setDate(calculatedDueDate.getDate() + 7);
+      if (workType === 'complaint_resolution') {
+        calculatedDueDate.setDate(calculatedDueDate.getDate() + 7); // 7 days for complaints
+      } else if (workType === 'meter_reading') {
+        calculatedDueDate.setDate(calculatedDueDate.getDate() + 3); // 3 days for meter readings
+      }
 
-      const [workOrder] = await db.insert(workOrders).values({
+      const workOrderData = {
         employeeId: null, // Will be assigned by admin/employee later
         customerId: session.user.customerId,
-        workType: 'complaint_resolution',
+        workType: workType,
         title,
-        description,
+        description: description || '',
         priority: priority || 'medium',
         status: 'assigned', // 'assigned' status means "awaiting assignment to employee"
         assignedDate: new Date().toISOString().split('T')[0],
-        dueDate: calculatedDueDate.toISOString().split('T')[0],
-      } as any);
+        dueDate: dueDate || calculatedDueDate.toISOString().split('T')[0],
+      };
 
-      // Create notification for admin/employees about new complaint
+      console.log('[Work Orders POST] Inserting work order:', workOrderData);
+
+      const [workOrder] = await db.insert(workOrders).values(workOrderData as any);
+
+      // Create notification for admin/employees about new request
       // (Optional: could notify specific admin users)
+
+      const message = workType === 'complaint_resolution'
+        ? 'Complaint submitted successfully'
+        : 'Meter reading request submitted successfully';
 
       return NextResponse.json({
         success: true,
-        message: 'Complaint submitted successfully',
+        message,
         data: {
           workOrderId: workOrder.insertId,
         },
@@ -142,9 +158,13 @@ export async function POST(request: NextRequest) {
         workOrderId: workOrder.insertId,
       },
     }, { status: 201 });
-  } catch (error) {
-    console.error('Error creating work order:', error);
-    return NextResponse.json({ error: 'Failed to create work order' }, { status: 500 });
+  } catch (error: any) {
+    console.error('[Work Orders POST] Error creating work order:', error);
+    console.error('[Work Orders POST] Error stack:', error.stack);
+    return NextResponse.json({
+      error: 'Failed to create work order',
+      details: error.message
+    }, { status: 500 });
   }
 }
 

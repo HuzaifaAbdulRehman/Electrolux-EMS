@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 
 import DashboardLayout from '@/components/DashboardLayout';
@@ -47,22 +47,59 @@ export default function UsageAnalytics() {
 
   const [selectedPeriod, setSelectedPeriod] = useState('6months');
   const [compareMode, setCompareMode] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
 
-  // Mock analytics data
-  // Real data from MySQL database (SELECT from bills, customers tables)
-  const currentMonthUsage = 485;
-  const lastMonthUsage = 460;
-  const avgDailyUsage = 16.2;
-  const estimatedBill = 245.50;
-  const monthlyChange = ((currentMonthUsage - lastMonthUsage) / lastMonthUsage * 100).toFixed(1);
+  // Fetch real analytics data from database
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/dashboard');
+        const data = await response.json();
+        setAnalyticsData(data);
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+        // Fallback to basic data
+        setAnalyticsData({
+          currentMonthUsage: 0,
+          lastMonthUsage: 0,
+          avgDailyUsage: 0,
+          estimatedBill: 0,
+          monthlyUsage: []
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnalytics();
+  }, []);
 
-  // Monthly Usage Trend (Real data from database - SELECT month, units FROM bills)
+  if (loading) {
+    return (
+      <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-600 dark:text-gray-400">Loading analytics...</div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Extract data from API response or use defaults
+  const currentMonthUsage = analyticsData?.currentMonthUsage || 0;
+  const lastMonthUsage = analyticsData?.lastMonthUsage || 0;
+  const avgDailyUsage = analyticsData?.avgDailyUsage || 0;
+  const estimatedBill = analyticsData?.estimatedBill || 0;
+  const monthlyChange = lastMonthUsage > 0 ? ((currentMonthUsage - lastMonthUsage) / lastMonthUsage * 100).toFixed(1) : '0';
+
+  // Monthly Usage Trend - Use real data from database
+  const monthlyUsage = analyticsData?.monthlyUsage || [];
   const monthlyUsageTrendData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    labels: monthlyUsage.map((item: any) => item.month) || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
     datasets: [
       {
         label: 'Monthly Usage (kWh)',
-        data: [380, 390, 410, 420, 395, 485],
+        data: monthlyUsage.map((item: any) => item.units) || [0],
         borderColor: 'rgb(251, 146, 60)',
         backgroundColor: 'rgba(251, 146, 60, 0.1)',
         tension: 0.4,

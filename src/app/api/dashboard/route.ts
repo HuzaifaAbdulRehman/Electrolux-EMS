@@ -318,7 +318,7 @@ export async function GET(request: NextRequest) {
         const dueDate = parseISO(currentBill.dueDate.toString());
         const daysUntilDue = differenceInDays(dueDate, today);
 
-        const userId = session.user.id;
+        const userId = parseInt(session.user.id);
 
         // Check if notification already exists for this bill (to avoid duplicates)
         const existingNotif = await db

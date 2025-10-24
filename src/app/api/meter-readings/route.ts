@@ -81,18 +81,25 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
+      console.error('[Meter Readings POST] No session found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('[Meter Readings POST] Request from:', session.user.userType, 'employeeId:', session.user.employeeId);
+
     // Only employees can record meter readings
     if (session.user.userType !== 'employee') {
+      console.error('[Meter Readings POST] User is not an employee');
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const body = await request.json();
     const { customerId, currentReading, meterCondition, accessibility, notes } = body;
 
+    console.log('[Meter Readings POST] Request data:', { customerId, currentReading, meterCondition, accessibility });
+
     if (!customerId || !currentReading) {
+      console.error('[Meter Readings POST] Missing required fields');
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -147,12 +154,14 @@ export async function POST(request: NextRequest) {
       .from(meterReadings)
       .where(eq(meterReadings.customerId, customerId));
 
-    await db
-      .update(customers)
-      .set({
-        averageMonthlyUsage: avgUsage[0].avg.toFixed(2),
-      })
-      .where(eq(customers.id, customerId));
+    if (avgUsage[0]?.avg != null) {
+      await db
+        .update(customers)
+        .set({
+          averageMonthlyUsage: Number(avgUsage[0].avg).toFixed(2),
+        })
+        .where(eq(customers.id, customerId));
+    }
 
     return NextResponse.json({
       success: true,
@@ -162,8 +171,12 @@ export async function POST(request: NextRequest) {
         unitsConsumed,
       },
     }, { status: 201 });
-  } catch (error) {
-    console.error('Error recording meter reading:', error);
-    return NextResponse.json({ error: 'Failed to record meter reading' }, { status: 500 });
+  } catch (error: any) {
+    console.error('[Meter Readings POST] Error recording meter reading:', error);
+    console.error('[Meter Readings POST] Error stack:', error.stack);
+    return NextResponse.json({
+      error: 'Failed to record meter reading',
+      details: error.message
+    }, { status: 500 });
   }
 }

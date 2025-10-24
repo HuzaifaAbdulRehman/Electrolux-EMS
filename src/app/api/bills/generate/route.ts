@@ -1,10 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { db } from '@/lib/drizzle/db';
+import { bills, meterReadings, customers } from '@/lib/drizzle/schema';
+import { eq, and, desc, sql } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      console.error('[Bills Generate POST] No session found');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Only employees can generate bills
+    if (session.user.userType !== 'employee') {
+      console.error('[Bills Generate POST] User is not an employee');
+      return NextResponse.json({ error: 'Forbidden - Only employees can generate bills' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { customerId, billingMonth } = body;
+
+    console.log('[Bills Generate POST] Request data:', { customerId, billingMonth });
 
     // Validate inputs
     if (!customerId || !billingMonth) {
@@ -14,60 +32,136 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call the stored procedure to generate bill
-    const result = await query(
-      'CALL generate_monthly_bill(?, ?)',
-      [customerId, billingMonth]
-    );
+    // Check if customer exists
+    const [customer] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, customerId))
+      .limit(1);
 
-    // Get the generated bill details
-    const [billData] = await query(
-      `SELECT
-        id, bill_number, billing_month, issue_date, due_date,
-        units_consumed, base_amount, fixed_charges, electricity_duty,
-        gst_amount, total_amount, status
-      FROM bills
-      WHERE customer_id = ?
-      AND billing_month = ?
-      ORDER BY created_at DESC
-      LIMIT 1`,
-      [customerId, billingMonth]
-    ) as any[];
-
-    if (!billData) {
-      return NextResponse.json(
-        { error: 'Bill generation failed' },
-        { status: 500 }
-      );
+    if (!customer) {
+      return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Bill generated successfully',
-      bill: billData
-    });
+    // Check if bill already exists for this month
+    const [existingBill] = await db
+      .select()
+      .from(bills)
+      .where(
+        and(
+          eq(bills.customerId, customerId),
+          eq(bills.billingMonth, billingMonth)
+        )
+      )
+      .limit(1);
 
-  } catch (error: any) {
-    console.error('Bill generation error:', error);
-
-    // Handle specific error cases
-    if (error.message?.includes('No meter reading found')) {
-      return NextResponse.json(
-        { error: 'No meter reading found for this billing month. Please record meter reading first.' },
-        { status: 400 }
-      );
-    }
-
-    if (error.message?.includes('Bill already exists')) {
+    if (existingBill) {
       return NextResponse.json(
         { error: 'Bill already exists for this billing month' },
         { status: 400 }
       );
     }
 
-    return NextResponse.json(
-      { error: 'Failed to generate bill. Please try again.' },
-      { status: 500 }
-    );
+    // Get the most recent meter reading for this month
+    const billingMonthStart = new Date(billingMonth);
+    const billingMonthEnd = new Date(billingMonthStart);
+    billingMonthEnd.setMonth(billingMonthEnd.getMonth() + 1);
+
+    const [latestReading] = await db
+      .select()
+      .from(meterReadings)
+      .where(
+        and(
+          eq(meterReadings.customerId, customerId),
+          sql`${meterReadings.readingDate} >= ${billingMonth}`,
+          sql`${meterReadings.readingDate} < ${billingMonthEnd.toISOString().split('T')[0]}`
+        )
+      )
+      .orderBy(desc(meterReadings.readingDate))
+      .limit(1);
+
+    if (!latestReading) {
+      return NextResponse.json(
+        { error: 'No meter reading found for this billing month. Please record meter reading first.' },
+        { status: 400 }
+      );
+    }
+
+    // Calculate bill amounts based on Pakistani electricity tariff (simplified)
+    const unitsConsumed = parseFloat(latestReading.unitsConsumed);
+    const tariffRate = 5.50; // PKR per kWh (simplified - real system has slabs)
+    const fixedCharges = 100.00; // PKR
+
+    const baseAmount = unitsConsumed * tariffRate;
+    const electricityDuty = baseAmount * 0.16; // 16% electricity duty
+    const gstAmount = (baseAmount + fixedCharges + electricityDuty) * 0.18; // 18% GST
+    const totalAmount = baseAmount + fixedCharges + electricityDuty + gstAmount;
+
+    // Generate bill number: BILL-YYYY-XXXXXXXX
+    const billNumber = `BILL-${new Date().getFullYear()}-${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}`;
+
+    // Calculate dates
+    const issueDate = new Date().toISOString().split('T')[0];
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 15); // 15 days from issue
+    const dueDateStr = dueDate.toISOString().split('T')[0];
+
+    console.log('[Bills Generate POST] Calculated bill:', {
+      billNumber,
+      unitsConsumed,
+      baseAmount,
+      totalAmount
+    });
+
+    // Insert bill
+    const [newBill] = await db.insert(bills).values({
+      customerId,
+      billNumber,
+      billingMonth,
+      issueDate,
+      dueDate: dueDateStr,
+      unitsConsumed: unitsConsumed.toFixed(2),
+      meterReadingId: latestReading.id,
+      baseAmount: baseAmount.toFixed(2),
+      fixedCharges: fixedCharges.toFixed(2),
+      electricityDuty: electricityDuty.toFixed(2),
+      gstAmount: gstAmount.toFixed(2),
+      totalAmount: totalAmount.toFixed(2),
+      status: 'generated',
+    } as any);
+
+    // Update customer's outstanding balance and last bill amount
+    const newOutstandingBalance = parseFloat(customer.outstandingBalance || '0') + totalAmount;
+    await db
+      .update(customers)
+      .set({
+        outstandingBalance: newOutstandingBalance.toFixed(2),
+        lastBillAmount: totalAmount.toFixed(2),
+      })
+      .where(eq(customers.id, customerId));
+
+    console.log('[Bills Generate POST] Bill generated successfully:', newBill.insertId);
+
+    // Fetch the created bill
+    const [createdBill] = await db
+      .select()
+      .from(bills)
+      .where(eq(bills.id, newBill.insertId))
+      .limit(1);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Bill generated successfully',
+      bill: createdBill
+    }, { status: 201 });
+
+  } catch (error: any) {
+    console.error('[Bills Generate POST] Error:', error);
+    console.error('[Bills Generate POST] Error stack:', error.stack);
+
+    return NextResponse.json({
+      error: 'Failed to generate bill',
+      details: error.message
+    }, { status: 500 });
   }
 }

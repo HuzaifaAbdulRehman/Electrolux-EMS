@@ -70,8 +70,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
     if (userType === 'customer') {
       return [
         { name: 'Dashboard', href: '/customer/dashboard', icon: Home },
-        { name: 'My Bills', href: '/customer/bills', icon: FileText },
-        { name: 'View & Print Bills', href: '/customer/view-bills', icon: FileText },
+        { name: 'My Bills', href: '/customer/view-bills', icon: FileText },
         { name: 'Payment', href: '/customer/payment', icon: DollarSign },
         { name: 'Analytics', href: '/customer/analytics', icon: BarChart3 },
         { name: 'New Connection', href: '/customer/new-connection', icon: Plus },

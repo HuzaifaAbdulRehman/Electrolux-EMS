@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
+    const billId = searchParams.get('id');
     const customerId = searchParams.get('customerId');
     const status = searchParams.get('status');
     const fromDate = searchParams.get('fromDate');
@@ -25,8 +26,13 @@ export async function GET(request: NextRequest) {
 
     const conditions = [];
 
+    // Filter by bill ID if provided
+    if (billId) {
+      conditions.push(eq(bills.id, parseInt(billId)));
+    }
+
     // Filter based on user type
-    if (session.user.userType === 'customer') {
+    if (session.user.userType === 'customer' && !billId) {
       conditions.push(eq(bills.customerId, session.user.customerId!));
     } else if (customerId) {
       conditions.push(eq(bills.customerId, parseInt(customerId)));

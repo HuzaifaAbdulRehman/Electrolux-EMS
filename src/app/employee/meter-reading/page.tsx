@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Gauge,
@@ -8,17 +9,45 @@ import {
   User,
   MapPin,
   Calendar,
-  Camera,
   Save,
   AlertCircle,
   CheckCircle,
   FileText,
-  Zap
+  Zap,
+  Loader2,
+  Phone,
+  Building
 } from 'lucide-react';
 
+interface Customer {
+  id: number;
+  accountNumber: string;
+  meterNumber: string;
+  fullName: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  connectionType: string;
+  averageMonthlyUsage: string;
+}
+
+interface MeterReading {
+  readingId: number;
+  unitsConsumed: number;
+  previousReading: number;
+  currentReading: number;
+}
+
 export default function MeterReadingForm() {
+  const { data: session } = useSession();
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [searching, setSearching] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [lastReading, setLastReading] = useState<number | null>(null);
+  const [lastReadingDate, setLastReadingDate] = useState<string | null>(null);
+
   const [readingData, setReadingData] = useState({
     currentReading: '',
     readingDate: new Date().toISOString().split('T')[0],
@@ -26,51 +55,91 @@ export default function MeterReadingForm() {
     meterCondition: 'good',
     accessibility: 'accessible',
     notes: '',
-    photoUploaded: false
   });
-  const [autoGenerateBill, setAutoGenerateBill] = useState(true); // NEW: Auto-generate bill option
+
+  const [autoGenerateBill, setAutoGenerateBill] = useState(true);
   const [errors, setErrors] = useState<any>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [generatingBill, setGeneratingBill] = useState(false);
   const [billGenerated, setBillGenerated] = useState<any>(null);
+  const [savedReading, setSavedReading] = useState<MeterReading | null>(null);
 
-  // Mock customer data
-  const mockCustomers = [
-    {
-      id: 1,
-      accountNumber: 'ELX-2024-001234',
-      name: 'Huzaifa',
-      address: '123 Main Street, Apt 4B',
-      meterNumber: 'MTR-485729',
-      lastReading: 12485,
-      lastReadingDate: '2024-09-10',
-      avgConsumption: 450
-    }
-  ];
-
-  const handleCustomerSearch = () => {
-    // Require at least 3 characters to search
+  // Real customer search with API
+  const handleCustomerSearch = async () => {
+    // Validate search query
     if (!searchQuery || searchQuery.trim().length < 3) {
       setErrors({ search: 'Please enter at least 3 characters to search' });
       setSelectedCustomer(null);
       return;
     }
 
-    const customer = mockCustomers.find(c =>
-      c.accountNumber.includes(searchQuery.trim()) ||
-      c.meterNumber.includes(searchQuery.trim()) ||
-      c.name.toLowerCase().includes(searchQuery.trim().toLowerCase())
-    );
-
-    setSelectedCustomer(customer || null);
-    if (!customer) {
-      setErrors({ search: 'No customer found with this information' });
-    } else {
+    try {
+      setSearching(true);
       setErrors({});
+
+      const response = await fetch(`/api/customers?search=${encodeURIComponent(searchQuery.trim())}&limit=1`);
+
+      if (!response.ok) {
+        throw new Error('Failed to search customer');
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.data && result.data.length > 0) {
+        const customer = result.data[0];
+        setSelectedCustomer(customer);
+
+        // Fetch last meter reading for this customer
+        await fetchLastReading(customer.id);
+
+        setErrors({});
+      } else {
+        setSelectedCustomer(null);
+        setLastReading(null);
+        setLastReadingDate(null);
+        setErrors({ search: 'No customer found with this information' });
+      }
+    } catch (error: any) {
+      console.error('Customer search error:', error);
+      setErrors({ search: error.message || 'Failed to search customer' });
+      setSelectedCustomer(null);
+    } finally {
+      setSearching(false);
     }
   };
 
+  // Fetch last meter reading for customer
+  const fetchLastReading = async (customerId: number) => {
+    try {
+      const response = await fetch(`/api/meter-readings?customerId=${customerId}&limit=1`);
+
+      if (!response.ok) {
+        // No previous readings - that's okay for new customers
+        setLastReading(0);
+        setLastReadingDate(null);
+        return;
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.data && result.data.length > 0) {
+        const reading = result.data[0];
+        setLastReading(parseFloat(reading.currentReading));
+        setLastReadingDate(reading.readingDate);
+      } else {
+        // No previous readings
+        setLastReading(0);
+        setLastReadingDate(null);
+      }
+    } catch (error) {
+      console.error('Error fetching last reading:', error);
+      setLastReading(0);
+      setLastReadingDate(null);
+    }
+  };
+
+  // Validate form
   const validateForm = () => {
     const newErrors: any = {};
 
@@ -82,32 +151,68 @@ export default function MeterReadingForm() {
       newErrors.currentReading = 'Current reading is required';
     } else if (isNaN(Number(readingData.currentReading))) {
       newErrors.currentReading = 'Reading must be a valid number';
-    } else if (selectedCustomer && Number(readingData.currentReading) < selectedCustomer.lastReading) {
-      newErrors.currentReading = 'Current reading cannot be less than previous reading';
+    } else if (lastReading !== null && Number(readingData.currentReading) < lastReading) {
+      newErrors.currentReading = `Current reading cannot be less than previous reading (${lastReading} kWh)`;
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Submit meter reading
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (validateForm()) {
-      setIsSubmitting(true);
-      // Simulate API call
-      setTimeout(() => {
-        setIsSubmitting(false);
-        setShowSuccess(true);
+    if (!validateForm()) {
+      return;
+    }
 
-        // Auto-generate bill if option is enabled
-        if (autoGenerateBill) {
-          handleGenerateBill();
-        }
-      }, 1500);
+    try {
+      setIsSubmitting(true);
+      setErrors({});
+
+      const response = await fetch('/api/meter-readings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customerId: selectedCustomer!.id,
+          currentReading: readingData.currentReading,
+          meterCondition: readingData.meterCondition,
+          accessibility: readingData.accessibility,
+          notes: readingData.notes,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to submit reading');
+      }
+
+      // Success!
+      setSavedReading({
+        readingId: result.data.readingId,
+        unitsConsumed: result.data.unitsConsumed,
+        previousReading: lastReading || 0,
+        currentReading: parseFloat(readingData.currentReading),
+      });
+      setShowSuccess(true);
+
+      // Auto-generate bill if enabled
+      if (autoGenerateBill) {
+        await handleGenerateBill();
+      }
+    } catch (error: any) {
+      console.error('Meter reading submission error:', error);
+      alert(`Error: ${error.message || 'Failed to submit meter reading'}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  // Generate bill
   const handleGenerateBill = async () => {
     if (!selectedCustomer) return;
 
@@ -126,7 +231,7 @@ export default function MeterReadingForm() {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.ok && data.success) {
         setBillGenerated(data.bill);
       } else {
         alert(data.error || 'Failed to generate bill');
@@ -139,10 +244,14 @@ export default function MeterReadingForm() {
     }
   };
 
+  // Reset form
   const handleReset = () => {
     setShowSuccess(false);
     setBillGenerated(null);
+    setSavedReading(null);
     setSelectedCustomer(null);
+    setLastReading(null);
+    setLastReadingDate(null);
     setReadingData({
       currentReading: '',
       readingDate: new Date().toISOString().split('T')[0],
@@ -150,27 +259,27 @@ export default function MeterReadingForm() {
       meterCondition: 'good',
       accessibility: 'accessible',
       notes: '',
-      photoUploaded: false
     });
     setSearchQuery('');
+    setErrors({});
   };
 
+  // Calculate consumption
   const calculateConsumption = () => {
-    if (selectedCustomer && readingData.currentReading) {
+    if (lastReading !== null && readingData.currentReading) {
       const current = Number(readingData.currentReading);
-      const previous = selectedCustomer.lastReading;
-      return current - previous;
+      return current - lastReading;
     }
     return 0;
   };
 
   return (
-    <DashboardLayout userType="employee" userName="Mike Johnson">
+    <DashboardLayout userType="employee" userName={session?.user?.name || 'Employee'}>
       <div className="h-full flex flex-col">
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto space-y-4 py-2">
             {/* Header */}
-            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10">
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Meter Reading Entry</h1>
@@ -182,14 +291,17 @@ export default function MeterReadingForm() {
               </div>
             </div>
 
-            {/* Success Message */}
-            {showSuccess && !billGenerated && !autoGenerateBill && (
+            {/* Success Message - Reading Saved */}
+            {showSuccess && !billGenerated && !autoGenerateBill && savedReading && (
               <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-2xl p-4 border border-green-500/50">
                 <div className="flex items-center space-x-3 mb-3">
                   <CheckCircle className="w-6 h-6 text-green-400" />
                   <div>
                     <h3 className="text-white font-semibold text-base">Reading Submitted Successfully!</h3>
-                    <p className="text-gray-700 dark:text-gray-300 text-xs">Meter reading has been recorded and saved. You can now generate the bill manually.</p>
+                    <p className="text-gray-300 text-xs">
+                      Consumption: {savedReading.unitsConsumed.toFixed(2)} kWh
+                      ({savedReading.previousReading} → {savedReading.currentReading} kWh)
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -204,7 +316,7 @@ export default function MeterReadingForm() {
                   >
                     {generatingBill ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Generating Bill...</span>
                       </>
                     ) : (
@@ -228,10 +340,10 @@ export default function MeterReadingForm() {
             {showSuccess && !billGenerated && autoGenerateBill && generatingBill && (
               <div className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 backdrop-blur-xl rounded-2xl p-4 border border-blue-500/50">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                  <Loader2 className="w-12 h-12 text-blue-400 animate-spin" />
                   <div>
                     <h3 className="text-white font-semibold text-base">Auto-Generating Bill...</h3>
-                    <p className="text-gray-700 dark:text-gray-300 text-xs">Reading saved successfully. Creating customer bill automatically...</p>
+                    <p className="text-gray-300 text-xs">Reading saved successfully. Creating customer bill automatically...</p>
                   </div>
                 </div>
               </div>
@@ -244,7 +356,7 @@ export default function MeterReadingForm() {
                   <CheckCircle className="w-6 h-6 text-blue-400" />
                   <div>
                     <h3 className="text-white font-semibold text-base">Bill Generated Successfully!</h3>
-                    <p className="text-gray-700 dark:text-gray-300 text-xs">Customer bill has been created and is now available for viewing.</p>
+                    <p className="text-gray-300 text-xs">Customer bill has been created and is now available for viewing.</p>
                   </div>
                 </div>
 
@@ -282,7 +394,7 @@ export default function MeterReadingForm() {
             )}
 
             {/* Customer Search */}
-            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10">
               <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">Customer Search</h2>
               <div className="flex space-x-2">
                 <div className="flex-1 relative">
@@ -292,9 +404,10 @@ export default function MeterReadingForm() {
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
-                      // Clear any previous customer selection and errors when typing
                       if (selectedCustomer) {
                         setSelectedCustomer(null);
+                        setLastReading(null);
+                        setLastReadingDate(null);
                       }
                       if (errors.search) {
                         setErrors({});
@@ -307,19 +420,30 @@ export default function MeterReadingForm() {
                       }
                     }}
                     placeholder="Enter account number, meter number, or customer name (min 3 chars)"
-                    className="w-full pl-10 pr-3 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                    disabled={searching}
+                    className="w-full pl-10 pr-3 py-2 text-sm bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors disabled:opacity-50"
                   />
                 </div>
                 <button
                   onClick={handleCustomerSearch}
-                  disabled={!searchQuery || searchQuery.trim().length < 3}
-                  className={`px-4 py-2 text-sm bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg font-medium transition-all ${
-                    !searchQuery || searchQuery.trim().length < 3
+                  disabled={!searchQuery || searchQuery.trim().length < 3 || searching}
+                  className={`px-4 py-2 text-sm bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg font-medium transition-all flex items-center space-x-2 ${
+                    !searchQuery || searchQuery.trim().length < 3 || searching
                       ? 'opacity-50 cursor-not-allowed'
                       : 'hover:shadow-lg hover:shadow-orange-500/50'
                   }`}
                 >
-                  Search
+                  {searching ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Searching...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search className="w-4 h-4" />
+                      <span>Search</span>
+                    </>
+                  )}
                 </button>
               </div>
               {errors.search && (
@@ -339,48 +463,66 @@ export default function MeterReadingForm() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <User className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <div className="flex items-start space-x-2">
+                      <User className="w-4 h-4 text-gray-400 mt-0.5" />
                       <div>
-                        <p className="text-gray-600 dark:text-gray-400 text-xs">Customer Name</p>
-                        <p className="text-white font-semibold text-sm">{selectedCustomer.name}</p>
+                        <p className="text-gray-400 text-xs">Customer Name</p>
+                        <p className="text-white font-semibold text-sm">{selectedCustomer.fullName}</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <FileText className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <div className="flex items-start space-x-2">
+                      <FileText className="w-4 h-4 text-gray-400 mt-0.5" />
                       <div>
-                        <p className="text-gray-600 dark:text-gray-400 text-xs">Account Number</p>
+                        <p className="text-gray-400 text-xs">Account Number</p>
                         <p className="text-white font-semibold text-sm">{selectedCustomer.accountNumber}</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <div className="flex items-start space-x-2">
+                      <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
                       <div>
-                        <p className="text-gray-600 dark:text-gray-400 text-xs">Address</p>
-                        <p className="text-gray-900 dark:text-white text-sm">{selectedCustomer.address}</p>
+                        <p className="text-gray-400 text-xs">Phone</p>
+                        <p className="text-white font-semibold text-sm">{selectedCustomer.phone}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                      <div>
+                        <p className="text-gray-400 text-xs">Address</p>
+                        <p className="text-white text-sm">{selectedCustomer.address}, {selectedCustomer.city}</p>
                       </div>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Gauge className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <div className="flex items-start space-x-2">
+                      <Gauge className="w-4 h-4 text-gray-400 mt-0.5" />
                       <div>
-                        <p className="text-gray-600 dark:text-gray-400 text-xs">Meter Number</p>
+                        <p className="text-gray-400 text-xs">Meter Number</p>
                         <p className="text-white font-semibold text-sm">{selectedCustomer.meterNumber}</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Zap className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <div className="flex items-start space-x-2">
+                      <Building className="w-4 h-4 text-gray-400 mt-0.5" />
                       <div>
-                        <p className="text-gray-600 dark:text-gray-400 text-xs">Last Reading</p>
-                        <p className="text-white font-semibold text-sm">{selectedCustomer.lastReading} kWh</p>
+                        <p className="text-gray-400 text-xs">Connection Type</p>
+                        <p className="text-white font-semibold text-sm">{selectedCustomer.connectionType}</p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    <div className="flex items-start space-x-2">
+                      <Zap className="w-4 h-4 text-gray-400 mt-0.5" />
                       <div>
-                        <p className="text-gray-600 dark:text-gray-400 text-xs">Last Reading Date</p>
-                        <p className="text-gray-900 dark:text-white text-sm">{selectedCustomer.lastReadingDate}</p>
+                        <p className="text-gray-400 text-xs">Last Reading</p>
+                        <p className="text-white font-semibold text-sm">
+                          {lastReading !== null ? `${lastReading} kWh` : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <Calendar className="w-4 h-4 text-gray-400 mt-0.5" />
+                      <div>
+                        <p className="text-gray-400 text-xs">Last Reading Date</p>
+                        <p className="text-white text-sm">
+                          {lastReadingDate ? new Date(lastReadingDate).toLocaleDateString() : 'N/A'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -389,8 +531,8 @@ export default function MeterReadingForm() {
             )}
 
             {/* Reading Form */}
-            {selectedCustomer && (
-              <form onSubmit={handleSubmit} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10 space-y-4">
+            {selectedCustomer && !showSuccess && (
+              <form onSubmit={handleSubmit} className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10 space-y-4">
                 <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">Meter Reading Details</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -400,8 +542,14 @@ export default function MeterReadingForm() {
                     <input
                       type="text"
                       value={readingData.currentReading}
-                      onChange={(e) => setReadingData({ ...readingData, currentReading: e.target.value })}
-                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                      onChange={(e) => {
+                        setReadingData({ ...readingData, currentReading: e.target.value });
+                        // Clear error when user types
+                        if (errors.currentReading) {
+                          setErrors({ ...errors, currentReading: undefined });
+                        }
+                      }}
+                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                       placeholder="Enter current meter reading"
                     />
                     {errors.currentReading && (
@@ -410,7 +558,7 @@ export default function MeterReadingForm() {
                         {errors.currentReading}
                       </p>
                     )}
-                    {readingData.currentReading && !errors.currentReading && (
+                    {readingData.currentReading && !errors.currentReading && lastReading !== null && (
                       <div className="mt-2 p-2 bg-green-500/20 rounded-lg border border-green-500/50">
                         <p className="text-green-400 text-xs">
                           Consumption: {calculateConsumption()} kWh
@@ -426,7 +574,8 @@ export default function MeterReadingForm() {
                       type="date"
                       value={readingData.readingDate}
                       onChange={(e) => setReadingData({ ...readingData, readingDate: e.target.value })}
-                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
                     />
                   </div>
 
@@ -437,7 +586,7 @@ export default function MeterReadingForm() {
                       type="time"
                       value={readingData.readingTime}
                       onChange={(e) => setReadingData({ ...readingData, readingTime: e.target.value })}
-                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                      className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
                     />
                   </div>
 
@@ -455,6 +604,20 @@ export default function MeterReadingForm() {
                       <option value="damaged" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Damaged</option>
                     </select>
                   </div>
+
+                  {/* Accessibility */}
+                  <div>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">Meter Accessibility</label>
+                    <select
+                      value={readingData.accessibility}
+                      onChange={(e) => setReadingData({ ...readingData, accessibility: e.target.value })}
+                      className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors font-medium"
+                    >
+                      <option value="accessible" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Accessible</option>
+                      <option value="restricted" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Restricted Access</option>
+                      <option value="inaccessible" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Inaccessible</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Notes */}
@@ -463,7 +626,7 @@ export default function MeterReadingForm() {
                   <textarea
                     value={readingData.notes}
                     onChange={(e) => setReadingData({ ...readingData, notes: e.target.value })}
-                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
+                    className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
                     rows={2}
                     placeholder="Add any additional notes or observations..."
                   />
@@ -494,8 +657,13 @@ export default function MeterReadingForm() {
                 <div className="flex items-center justify-end space-x-2">
                   <button
                     type="button"
-                    onClick={() => setSelectedCustomer(null)}
-                    className="px-4 py-2 text-sm bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all"
+                    onClick={() => {
+                      setSelectedCustomer(null);
+                      setLastReading(null);
+                      setLastReadingDate(null);
+                      setErrors({});
+                    }}
+                    className="px-4 py-2 text-sm bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-white/20 transition-all"
                   >
                     Cancel
                   </button>
@@ -510,7 +678,7 @@ export default function MeterReadingForm() {
                   >
                     {isSubmitting ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Submitting...</span>
                       </>
                     ) : (

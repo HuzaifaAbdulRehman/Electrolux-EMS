@@ -61,6 +61,94 @@ export default function CustomerSettings() {
     paperlessBilling: true
   });
 
+  // Load theme from localStorage on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'auto';
+    setPreferences(prev => ({ ...prev, theme: savedTheme }));
+    applyTheme(savedTheme);
+  }, []);
+
+  // Apply theme to document
+  const applyTheme = (theme: string) => {
+    const root = document.documentElement;
+
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else if (theme === 'light') {
+      root.classList.remove('dark');
+    } else {
+      // Auto - use system preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    }
+  };
+
+  const handleDownloadStatements = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch all paid bills
+      const response = await fetch('/api/bills?status=paid&limit=1000');
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to fetch billing history');
+      }
+
+      const bills = result.data;
+
+      if (bills.length === 0) {
+        setError('No billing history available to download');
+        return;
+      }
+
+      // Convert to CSV
+      const headers = ['Bill Number', 'Billing Period', 'Issue Date', 'Due Date', 'Units Consumed', 'Base Amount', 'Total Amount', 'Status', 'Payment Date'];
+      const csvRows = [headers.join(',')];
+
+      bills.forEach((bill: any) => {
+        const row = [
+          bill.billNumber || 'N/A',
+          bill.billingPeriod || 'N/A',
+          bill.issueDate || 'N/A',
+          bill.dueDate || 'N/A',
+          bill.unitsConsumed || '0',
+          `Rs. ${bill.baseAmount || '0'}`,
+          `Rs. ${bill.totalAmount || '0'}`,
+          bill.status || 'N/A',
+          bill.paymentDate || 'N/A'
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      // Create and download file
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `billing-history-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setSuccess(`Downloaded ${bills.length} billing statements successfully!`);
+      setTimeout(() => setSuccess(null), 3000);
+
+    } catch (err: any) {
+      console.error('Error downloading statements:', err);
+      setError(err.message || 'Failed to download billing history');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -446,7 +534,12 @@ export default function CustomerSettings() {
                       </label>
                       <select
                         value={preferences.theme}
-                        onChange={(e) => setPreferences({...preferences, theme: e.target.value})}
+                        onChange={(e) => {
+                          const newTheme = e.target.value;
+                          setPreferences({...preferences, theme: newTheme});
+                          localStorage.setItem('theme', newTheme);
+                          applyTheme(newTheme);
+                        }}
                         className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400 font-medium"
                       >
                         <option value="light" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Light</option>
@@ -519,9 +612,22 @@ export default function CustomerSettings() {
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                       Billing History
                     </h3>
-                    <button className="px-6 py-3 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-all flex items-center space-x-2">
-                      <Download className="w-5 h-5" />
-                      <span>Download All Statements</span>
+                    <button
+                      onClick={handleDownloadStatements}
+                      disabled={loading}
+                      className="px-6 py-3 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Downloading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-5 h-5" />
+                          <span>Download All Statements</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>

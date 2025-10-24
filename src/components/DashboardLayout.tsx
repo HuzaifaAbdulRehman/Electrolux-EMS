@@ -378,7 +378,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
                       ))}
                     </div>
                     <div className="p-3 text-center">
-                      <Link href="/notifications" className="text-sm text-yellow-500 hover:text-yellow-600">
+                      <Link href={`/${userType}/notifications`} className="text-sm text-yellow-500 hover:text-yellow-600">
                         View all notifications
                       </Link>
                     </div>

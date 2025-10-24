@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 
 import { useRouter } from 'next/navigation';
@@ -32,14 +32,42 @@ import {
 
 export default function Notifications() {
   const { data: session } = useSession();
-
   const router = useRouter();
+
   const [activeFilter, setActiveFilter] = useState('all');
-  const [selectedNotifications, setSelectedNotifications] = useState<number[]>([]);
-  const [showDetails, setShowDetails] = useState<number | null>(null);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/notifications?filter=${activeFilter}`);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to fetch notifications');
+      }
+
+      setNotifications(result.data);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error fetching notifications:', err);
+      setError(err.message || 'Failed to load notifications');
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch on mount and when filter changes
+  useEffect(() => {
+    fetchNotifications();
+  }, [activeFilter]);
 
   const handleNotificationAction = (actionUrl: string) => {
-    if (actionUrl) {
+    if (actionUrl && actionUrl !== '#') {
       router.push(actionUrl);
     }
   };
@@ -47,101 +75,6 @@ export default function Notifications() {
   const handleSettings = () => {
     router.push('/customer/settings');
   };
-
-  // Mock notifications data
-  const notifications = [
-    {
-      id: 1,
-      type: 'billing',
-      icon: DollarSign,
-      title: 'New Bill Generated',
-      message: 'Your October 2024 electricity bill of $245.50 is now available',
-      time: '2 hours ago',
-      date: '2024-10-10',
-      read: false,
-      priority: 'high',
-      actionUrl: '/customer/bills',
-      actionText: 'View Bill'
-    },
-    {
-      id: 2,
-      type: 'payment',
-      icon: CreditCard,
-      title: 'Payment Received',
-      message: 'Payment of $220.00 has been successfully processed',
-      time: '1 day ago',
-      date: '2024-10-09',
-      read: true,
-      priority: 'normal',
-      actionUrl: '/customer/payment',
-      actionText: 'View Receipt'
-    },
-    {
-      id: 3,
-      type: 'usage',
-      icon: Zap,
-      title: 'High Usage Alert',
-      message: 'Your electricity consumption is 25% higher than last month',
-      time: '2 days ago',
-      date: '2024-10-08',
-      read: false,
-      priority: 'medium',
-      actionUrl: '/customer/usage',
-      actionText: 'View Analytics'
-    },
-    {
-      id: 4,
-      type: 'outage',
-      icon: Power,
-      title: 'Planned Maintenance',
-      message: 'Scheduled power outage on Oct 15, 2024 from 10 AM to 2 PM in North Zone',
-      time: '3 days ago',
-      date: '2024-10-07',
-      read: true,
-      priority: 'high',
-      actionUrl: '#',
-      actionText: 'Learn More'
-    },
-    {
-      id: 5,
-      type: 'service',
-      icon: Wrench,
-      title: 'Service Request Update',
-      message: 'Your service request SR-2024-001 has been resolved',
-      time: '4 days ago',
-      date: '2024-10-06',
-      read: false,
-      priority: 'normal',
-      actionUrl: '/customer/services',
-      actionText: 'View Details'
-    },
-    {
-      id: 6,
-      type: 'system',
-      icon: Info,
-      title: 'System Update',
-      message: 'New features have been added to your customer portal',
-      time: '5 days ago',
-      date: '2024-10-05',
-      read: true,
-      priority: 'low',
-      actionUrl: '#',
-      actionText: 'Explore'
-    },
-    {
-      id: 7,
-      type: 'reminder',
-      icon: Calendar,
-      title: 'Payment Due Soon',
-      message: 'Your bill payment is due in 3 days. Amount: $245.50',
-      time: '1 week ago',
-      date: '2024-10-03',
-      read: false,
-      priority: 'high',
-      actionUrl: '/customer/payment',
-      actionText: 'Pay Now'
-    }
-  ];
 
   // Notification categories
   const categories = [
@@ -166,11 +99,7 @@ export default function Notifications() {
     }).length
   };
 
-  const filteredNotifications = notifications.filter(notif => {
-    if (activeFilter === 'all') return true;
-    if (activeFilter === 'unread') return !notif.read;
-    return notif.type === activeFilter;
-  });
+  // Notifications are already filtered by API based on activeFilter
 
   const getNotificationIcon = (type: string) => {
     const iconClass = "w-5 h-5";
@@ -205,19 +134,70 @@ export default function Notifications() {
     }
   };
 
-  const handleMarkAsRead = (id: number) => {
-    // Mark as read logic
-    console.log('Marking as read:', id);
+  const handleMarkAsRead = async (id: number) => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to mark as read');
+      }
+
+      // Update local state
+      setNotifications(prev => prev.map(notif =>
+        notif.id === id ? { ...notif, read: true } : notif
+      ));
+    } catch (err: any) {
+      console.error('Error marking as read:', err);
+      setError(err.message || 'Failed to mark notification as read');
+    }
   };
 
-  const handleMarkAllRead = () => {
-    // Mark all as read logic
-    console.log('Marking all as read');
+  const handleMarkAllRead = async () => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAllRead: true }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to mark all as read');
+      }
+
+      // Update local state
+      setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
+    } catch (err: any) {
+      console.error('Error marking all as read:', err);
+      setError(err.message || 'Failed to mark all notifications as read');
+    }
   };
 
-  const handleDelete = (id: number) => {
-    // Delete notification logic
-    console.log('Deleting:', id);
+  const handleDelete = async (id: number) => {
+    try {
+      const response = await fetch(`/api/notifications?id=${id}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to delete notification');
+      }
+
+      // Remove from local state
+      setNotifications(prev => prev.filter(notif => notif.id !== id));
+    } catch (err: any) {
+      console.error('Error deleting notification:', err);
+      setError(err.message || 'Failed to delete notification');
+    }
   };
 
   return (
@@ -333,7 +313,27 @@ export default function Notifications() {
           {/* Notifications List */}
           <div className="lg:col-span-3">
             <div className="space-y-4">
-              {filteredNotifications.map((notification) => (
+              {loading && (
+                <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-12 border border-gray-200 dark:border-white/10 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+                  <p className="text-gray-600 dark:text-gray-400">Loading notifications...</p>
+                </div>
+              )}
+
+              {error && !loading && (
+                <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-6 text-center">
+                  <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
+                  <p className="text-red-400 font-semibold">{error}</p>
+                  <button
+                    onClick={fetchNotifications}
+                    className="mt-4 px-4 py-2 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 hover:bg-red-500/30 transition-all"
+                  >
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {!loading && !error && notifications.map((notification) => (
                 <div
                   key={notification.id}
                   className={`bg-white/5 backdrop-blur-xl rounded-2xl p-6 border transition-all hover:border-gray-300 dark:border-gray-300 dark:border-white/20 ${
@@ -405,7 +405,7 @@ export default function Notifications() {
                 </div>
               ))}
 
-              {filteredNotifications.length === 0 && (
+              {!loading && !error && notifications.length === 0 && (
                 <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-12 border border-gray-200 dark:border-white/10 text-center">
                   <BellOff className="w-16 h-16 text-gray-500 mx-auto mb-4" />
                   <h3 className="text-gray-900 dark:text-white text-lg font-semibold mb-2">No notifications</h3>

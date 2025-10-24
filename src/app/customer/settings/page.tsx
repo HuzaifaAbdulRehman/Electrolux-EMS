@@ -1,62 +1,46 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
-  User,
   Bell,
   Shield,
   Eye,
   EyeOff,
-  Mail,
-  Phone,
-  MapPin,
   Save,
   AlertCircle,
   CheckCircle,
   Lock,
   Smartphone,
   Monitor,
-  Globe,
-  Volume2,
-  VolumeX,
   Moon,
   Sun,
-  Languages,
   CreditCard,
-  FileText,
-  Download
+  Download,
+  Loader2,
+  X,
+  Mail
 } from 'lucide-react';
 
 export default function CustomerSettings() {
   const { data: session } = useSession();
-
   const router = useRouter();
-  const [activeSection, setActiveSection] = useState('profile');
+
+  const [activeSection, setActiveSection] = useState('security');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
-  const handleSavePreferences = () => {
-    // TODO: Implement save preferences functionality
-    console.log('Saving preferences...');
-  };
-
-  const [profileData, setProfileData] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@email.com',
-    phone: '+1 (555) 123-4567',
-    address: '123 Main Street',
-    city: 'New York',
-    state: 'NY',
-    zipCode: '10001',
-    accountNumber: 'ELX-2024-001234',
-    meterNumber: 'MTR-485729'
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -72,31 +56,129 @@ export default function CustomerSettings() {
 
   const [preferences, setPreferences] = useState({
     language: 'english',
-    dateFormat: 'MM/DD/YYYY',
-    currency: 'USD',
+    dateFormat: 'DD/MM/YYYY',
+    currency: 'PKR',
     autoPayment: false,
     paperlessBilling: true,
     theme: 'auto'
   });
 
-  const handleSaveProfile = () => {
-    setSaveStatus('saving');
-    setTimeout(() => {
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 2000);
-    }, 1000);
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    // Validation
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      setError('All password fields are required');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      setError('New password must be at least 8 characters long');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setError('New passwords do not match');
+      return;
+    }
+
+    if (passwordData.currentPassword === passwordData.newPassword) {
+      setError('New password must be different from current password');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to change password');
+      }
+
+      setSuccess('Password changed successfully!');
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setTimeout(() => setSuccess(null), 5000);
+
+    } catch (err: any) {
+      setError(err.message || 'Failed to change password. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handlePasswordChange = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle password change logic
-    console.log('Password change submitted');
+  const handleSaveNotifications = async () => {
+    setError(null);
+    setSuccess(null);
+
+    try {
+      setLoading(true);
+
+      const response = await fetch('/api/customers/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationSettings }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to save notification preferences');
+      }
+
+      setSuccess('Notification preferences saved successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+
+    } catch (err: any) {
+      setError(err.message || 'Failed to save preferences. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSavePreferences = async () => {
+    setError(null);
+    setSuccess(null);
+
+    try {
+      setLoading(true);
+
+      const response = await fetch('/api/customers/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferences }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to save preferences');
+      }
+
+      setSuccess('Preferences saved successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+
+    } catch (err: any) {
+      setError(err.message || 'Failed to save preferences. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const menuItems = [
-    { id: 'profile', label: 'Profile Information', icon: User },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Security', icon: Shield },
+    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'preferences', label: 'Preferences', icon: Monitor },
     { id: 'billing', label: 'Billing Settings', icon: CreditCard }
   ];
@@ -114,6 +196,32 @@ export default function CustomerSettings() {
           </p>
         </div>
 
+        {/* Error Alert */}
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 flex items-start space-x-3">
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-red-400 font-semibold">{error}</p>
+            </div>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Success Alert */}
+        {success && (
+          <div className="bg-green-500/20 border border-green-500/50 rounded-xl p-4 flex items-start space-x-3">
+            <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-green-400 font-semibold">{success}</p>
+            </div>
+            <button onClick={() => setSuccess(null)} className="text-green-400 hover:text-green-300">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar Menu */}
           <div className="lg:col-span-1">
@@ -122,7 +230,11 @@ export default function CustomerSettings() {
                 {menuItems.map((item) => (
                   <button
                     key={item.id}
-                    onClick={() => setActiveSection(item.id)}
+                    onClick={() => {
+                      setActiveSection(item.id);
+                      setError(null);
+                      setSuccess(null);
+                    }}
                     className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
                       activeSection === item.id
                         ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
@@ -140,138 +252,6 @@ export default function CustomerSettings() {
           {/* Content Area */}
           <div className="lg:col-span-3">
             <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-              {/* Profile Section */}
-              {activeSection === 'profile' && (
-                <div className="space-y-6">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-                    Profile Information
-                  </h2>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        First Name
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.firstName}
-                        onChange={(e) => setProfileData({...profileData, firstName: e.target.value})}
-                        className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Last Name
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.lastName}
-                        onChange={(e) => setProfileData({...profileData, lastName: e.target.value})}
-                        className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        value={profileData.email}
-                        onChange={(e) => setProfileData({...profileData, email: e.target.value})}
-                        className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        value={profileData.phone}
-                        onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
-                        className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Street Address
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.address}
-                        onChange={(e) => setProfileData({...profileData, address: e.target.value})}
-                        className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        City
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.city}
-                        onChange={(e) => setProfileData({...profileData, city: e.target.value})}
-                        className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        State
-                      </label>
-                      <input
-                        type="text"
-                        value={profileData.state}
-                        onChange={(e) => setProfileData({...profileData, state: e.target.value})}
-                        className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                    <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
-                      <AlertCircle className="w-5 h-5" />
-                      <span className="font-medium">Account Information</span>
-                    </div>
-                    <div className="mt-2 space-y-1">
-                      <p className="text-sm text-gray-700 dark:text-gray-300">
-                        Account Number: <span className="font-mono">{profileData.accountNumber}</span>
-                      </p>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">
-                        Meter Number: <span className="font-mono">{profileData.meterNumber}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleSaveProfile}
-                    className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2"
-                  >
-                    {saveStatus === 'saving' ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        <span>Saving...</span>
-                      </>
-                    ) : saveStatus === 'saved' ? (
-                      <>
-                        <CheckCircle className="w-5 h-5" />
-                        <span>Saved!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-5 h-5" />
-                        <span>Save Changes</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-
               {/* Notifications Section */}
               {activeSection === 'notifications' && (
                 <div className="space-y-6">
@@ -315,11 +295,22 @@ export default function CustomerSettings() {
                     ))}
                   </div>
 
-                  <button 
-                    onClick={handleSavePreferences}
-                    className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+                  <button
+                    onClick={handleSaveNotifications}
+                    disabled={loading}
+                    className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Save Preferences
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-5 h-5" />
+                        <span>Save Preferences</span>
+                      </>
+                    )}
                   </button>
                 </div>
               )}
@@ -339,6 +330,8 @@ export default function CustomerSettings() {
                       <div className="relative">
                         <input
                           type={showPassword ? 'text' : 'password'}
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
                           className="w-full px-4 py-3 pr-12 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
                           placeholder="Enter current password"
                         />
@@ -359,6 +352,8 @@ export default function CustomerSettings() {
                       <div className="relative">
                         <input
                           type={showNewPassword ? 'text' : 'password'}
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
                           className="w-full px-4 py-3 pr-12 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
                           placeholder="Enter new password"
                         />
@@ -379,6 +374,8 @@ export default function CustomerSettings() {
                       <div className="relative">
                         <input
                           type={showConfirmPassword ? 'text' : 'password'}
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
                           className="w-full px-4 py-3 pr-12 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
                           placeholder="Confirm new password"
                         />
@@ -394,9 +391,20 @@ export default function CustomerSettings() {
 
                     <button
                       type="submit"
-                      className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+                      disabled={loading}
+                      className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Update Password
+                      {loading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Updating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-5 h-5" />
+                          <span>Update Password</span>
+                        </>
+                      )}
                     </button>
                   </form>
 
@@ -461,18 +469,44 @@ export default function CustomerSettings() {
                         onChange={(e) => setPreferences({...preferences, currency: e.target.value})}
                         className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400 font-medium"
                       >
+                        <option value="PKR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">PKR (Rs.)</option>
                         <option value="USD" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">USD ($)</option>
                         <option value="EUR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">EUR (€)</option>
-                        <option value="GBP" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">GBP (£)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Theme
+                      </label>
+                      <select
+                        value={preferences.theme}
+                        onChange={(e) => setPreferences({...preferences, theme: e.target.value})}
+                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400 font-medium"
+                      >
+                        <option value="light" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Light</option>
+                        <option value="dark" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Dark</option>
+                        <option value="auto" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Auto (System)</option>
                       </select>
                     </div>
                   </div>
 
-                  <button 
+                  <button
                     onClick={handleSavePreferences}
-                    className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all"
+                    disabled={loading}
+                    className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Save Preferences
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-5 h-5" />
+                        <span>Save Preferences</span>
+                      </>
+                    )}
                   </button>
                 </div>
               )}

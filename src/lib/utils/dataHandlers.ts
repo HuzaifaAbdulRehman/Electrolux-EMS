@@ -304,6 +304,96 @@ export const getBillStatusColor = (status: string): string => {
   }
 };
 
+/**
+ * Tariff slab interface
+ */
+export interface TariffSlab {
+  units: number;
+  rate: number;
+  amount: number;
+  range: string;
+}
+
+/**
+ * Calculate tariff slab breakdown from units consumed and tariff rates
+ * This mimics the calculation done in the backend bill generation
+ * @param unitsConsumed - Total units consumed
+ * @param tariff - Tariff object with slab rates (optional - uses default Pakistani residential rates)
+ * @returns Array of tariff slabs with units, rate, and amount
+ */
+export const calculateTariffSlabs = (
+  unitsConsumed: number,
+  tariff?: {
+    slab1Start: number;
+    slab1End: number;
+    slab1Rate: number;
+    slab2Start: number;
+    slab2End: number;
+    slab2Rate: number;
+    slab3Start: number;
+    slab3End: number;
+    slab3Rate: number;
+    slab4Start: number;
+    slab4End: number;
+    slab4Rate: number;
+    slab5Start: number;
+    slab5End: number | null;
+    slab5Rate: number;
+  }
+): TariffSlab[] => {
+  // Default Pakistani residential tariff structure if not provided
+  const defaultTariff = {
+    slab1Start: 0,
+    slab1End: 100,
+    slab1Rate: 5.0,
+    slab2Start: 100,
+    slab2End: 200,
+    slab2Rate: 8.0,
+    slab3Start: 200,
+    slab3End: 300,
+    slab3Rate: 12.0,
+    slab4Start: 300,
+    slab4End: 500,
+    slab4Rate: 18.0,
+    slab5Start: 500,
+    slab5End: null,
+    slab5Rate: 22.0,
+  };
+
+  const t = tariff || defaultTariff;
+
+  const slabs = [
+    { start: t.slab1Start, end: t.slab1End, rate: t.slab1Rate },
+    { start: t.slab2Start, end: t.slab2End, rate: t.slab2Rate },
+    { start: t.slab3Start, end: t.slab3End, rate: t.slab3Rate },
+    { start: t.slab4Start, end: t.slab4End, rate: t.slab4Rate },
+    { start: t.slab5Start, end: t.slab5End || 999999, rate: t.slab5Rate },
+  ];
+
+  const result: TariffSlab[] = [];
+  let remainingUnits = safeNumber(unitsConsumed, 0);
+
+  for (const slab of slabs) {
+    if (remainingUnits <= 0) break;
+
+    const slabUnits = Math.min(remainingUnits, slab.end - slab.start);
+    if (slabUnits > 0) {
+      const amount = slabUnits * slab.rate;
+      result.push({
+        units: slabUnits,
+        rate: slab.rate,
+        amount: amount,
+        range: slab.end === 999999
+          ? `${slab.start}+ kWh`
+          : `${slab.start}-${slab.end} kWh`
+      });
+      remainingUnits -= slabUnits;
+    }
+  }
+
+  return result;
+};
+
 // ========== EXPORT ALL ==========
 
 export default {
@@ -340,5 +430,6 @@ export default {
   // Bill-specific
   formatUnits,
   formatMeterReading,
-  getBillStatusColor
+  getBillStatusColor,
+  calculateTariffSlabs
 };

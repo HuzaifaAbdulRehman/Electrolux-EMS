@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { safeNumber, formatCurrency, safeDate, formatUnits } from '@/lib/utils/dataHandlers';
+import { safeNumber, formatCurrency, safeDate, formatUnits, calculateTariffSlabs, TariffSlab } from '@/lib/utils/dataHandlers';
 import {
   FileText,
   Download,
@@ -102,26 +102,32 @@ export default function ViewBills() {
       const result = await response.json();
 
       // Transform API data to match Bill interface
-      const transformedBills = result.data.map((bill: any) => ({
-        id: bill.id,
-        billNumber: bill.billNumber,
-        month: new Date(bill.billingMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-        issueDate: bill.issueDate,
-        dueDate: bill.dueDate,
-        units: safeNumber(bill.unitsConsumed, 0),
-        amount: safeNumber(bill.totalAmount, 0),
-        status: bill.status,
-        paidDate: bill.paymentDate,
-        paymentMethod: bill.status === 'paid' ? 'Online Banking' : undefined,
-        breakdown: {
-          baseAmount: safeNumber(bill.baseAmount, 0),
-          fixedCharges: safeNumber(bill.fixedCharges, 0),
-          electricityDuty: safeNumber(bill.electricityDuty, 0),
-          gst: safeNumber(bill.gstAmount, 0),
-          totalAmount: safeNumber(bill.totalAmount, 0),
-          tariffSlabs: []
-        }
-      }));
+      const transformedBills = result.data.map((bill: any) => {
+        const unitsConsumed = safeNumber(bill.unitsConsumed, 0);
+        // Calculate tariff slabs breakdown using the utility function
+        const tariffSlabs = calculateTariffSlabs(unitsConsumed);
+
+        return {
+          id: bill.id,
+          billNumber: bill.billNumber,
+          month: new Date(bill.billingMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          issueDate: bill.issueDate,
+          dueDate: bill.dueDate,
+          units: unitsConsumed,
+          amount: safeNumber(bill.totalAmount, 0),
+          status: bill.status,
+          paidDate: bill.paymentDate,
+          paymentMethod: bill.status === 'paid' ? 'Online Banking' : undefined,
+          breakdown: {
+            baseAmount: safeNumber(bill.baseAmount, 0),
+            fixedCharges: safeNumber(bill.fixedCharges, 0),
+            electricityDuty: safeNumber(bill.electricityDuty, 0),
+            gst: safeNumber(bill.gstAmount, 0),
+            totalAmount: safeNumber(bill.totalAmount, 0),
+            tariffSlabs: tariffSlabs
+          }
+        };
+      });
 
       setBills(transformedBills);
     } catch (error) {
@@ -613,6 +619,9 @@ export default function ViewBills() {
                           <div>
                             <p className="text-gray-900 dark:text-white font-semibold">{formatUnits(slab.units)}</p>
                             <p className="text-gray-600 dark:text-gray-400 text-xs">@ {formatCurrency(slab.rate, 'Rs.')}/kWh</p>
+                            {(slab as TariffSlab).range && (
+                              <p className="text-gray-500 dark:text-gray-500 text-xs mt-1">Range: {(slab as TariffSlab).range}</p>
+                            )}
                           </div>
                         </div>
                         <p className="text-gray-900 dark:text-white font-bold">{formatCurrency(slab.amount, 'Rs.')}</p>

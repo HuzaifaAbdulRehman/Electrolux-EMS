@@ -55,12 +55,10 @@ export default function CustomerSettings() {
   });
 
   const [preferences, setPreferences] = useState({
-    language: 'english',
     dateFormat: 'DD/MM/YYYY',
-    currency: 'PKR',
+    theme: 'auto',
     autoPayment: false,
-    paperlessBilling: true,
-    theme: 'auto'
+    paperlessBilling: true
   });
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -407,18 +405,6 @@ export default function CustomerSettings() {
                       )}
                     </button>
                   </form>
-
-                  <div className="pt-6 border-t border-gray-200 dark:border-white/10">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                      Two-Factor Authentication
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      Add an extra layer of security to your account
-                    </p>
-                    <button className="px-6 py-3 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-all">
-                      Enable 2FA
-                    </button>
-                  </div>
                 </div>
               )}
 
@@ -430,21 +416,6 @@ export default function CustomerSettings() {
                   </h2>
 
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Language
-                      </label>
-                      <select
-                        value={preferences.language}
-                        onChange={(e) => setPreferences({...preferences, language: e.target.value})}
-                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400 font-medium"
-                      >
-                        <option value="english" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">English</option>
-                        <option value="spanish" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Spanish</option>
-                        <option value="french" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">French</option>
-                      </select>
-                    </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Date Format
@@ -464,15 +435,9 @@ export default function CustomerSettings() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Currency
                       </label>
-                      <select
-                        value={preferences.currency}
-                        onChange={(e) => setPreferences({...preferences, currency: e.target.value})}
-                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400 font-medium"
-                      >
-                        <option value="PKR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">PKR (Rs.)</option>
-                        <option value="USD" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">USD ($)</option>
-                        <option value="EUR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">EUR (€)</option>
-                      </select>
+                      <div className="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-lg">
+                        <p className="text-gray-900 dark:text-white font-medium">PKR (Rs.) - Pakistani Rupee</p>
+                      </div>
                     </div>
 
                     <div>

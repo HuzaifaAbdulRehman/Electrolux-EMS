@@ -60,6 +60,7 @@ export async function GET(request: NextRequest) {
         issueDate: bills.issueDate,
         dueDate: bills.dueDate,
         unitsConsumed: bills.unitsConsumed,
+        meterReadingId: bills.meterReadingId,
         baseAmount: bills.baseAmount,
         fixedCharges: bills.fixedCharges,
         electricityDuty: bills.electricityDuty,
@@ -67,9 +68,14 @@ export async function GET(request: NextRequest) {
         totalAmount: bills.totalAmount,
         status: bills.status,
         paymentDate: bills.paymentDate,
+        // Meter reading data
+        previousReading: meterReadings.previousReading,
+        currentReading: meterReadings.currentReading,
+        readingDate: meterReadings.readingDate,
       })
       .from(bills)
       .leftJoin(customers, eq(bills.customerId, customers.id))
+      .leftJoin(meterReadings, eq(bills.meterReadingId, meterReadings.id))
       .$dynamic();
 
     if (conditions.length > 0) {

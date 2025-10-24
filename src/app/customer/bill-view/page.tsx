@@ -10,6 +10,7 @@ import {
   Shield,
   Phone
 } from 'lucide-react';
+import { calculateTariffSlabs, safeNumber as utilSafeNumber, safeString as utilSafeString, formatCurrency } from '@/lib/utils/dataHandlers';
 
 // Utility function to safely handle numbers and avoid NaN/NULL
 const safeNumber = (value: any, defaultValue: number = 0): number => {
@@ -125,30 +126,9 @@ export default function BillView() {
       amount: safeNumber(b.totalAmount)
     }));
 
-    // Calculate slab breakdown (simplified - you can enhance this)
+    // Calculate slab breakdown using shared utility function
     const units = safeNumber(bill.unitsConsumed);
-    const slabs = [];
-    let remainingUnits = units;
-    const slabRates = [
-      { start: 0, end: 100, rate: 3.50 },
-      { start: 101, end: 200, rate: 4.00 },
-      { start: 201, end: 300, rate: 4.50 },
-      { start: 301, end: 500, rate: 5.00 },
-      { start: 501, end: Infinity, rate: 5.50 }
-    ];
-
-    slabRates.forEach((slab, index) => {
-      if (remainingUnits > 0) {
-        const slabUnits = Math.min(remainingUnits, slab.end - slab.start);
-        slabs.push({
-          range: `${slab.start}-${slab.end === Infinity ? units : slab.end} units`,
-          units: slabUnits,
-          rate: slab.rate,
-          amount: slabUnits * slab.rate
-        });
-        remainingUnits -= slabUnits;
-      }
-    });
+    const slabs = calculateTariffSlabs(units);
 
     const energyCharge = safeNumber(bill.baseAmount);
     const fixedCharge = safeNumber(bill.fixedCharges);
@@ -171,10 +151,10 @@ export default function BillView() {
         billingMonth: new Date(bill.billingMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
       },
       reading: {
-        previous: safeNumber(bill.previousReading || 0),
-        current: safeNumber(bill.currentReading || bill.previousReading) + units,
-        previousDate: bill.previousReadingDate || new Date(bill.billingMonth).toLocaleDateString(),
-        currentDate: new Date(bill.issueDate).toLocaleDateString(),
+        previous: safeNumber(bill.previousReading, 0),
+        current: safeNumber(bill.currentReading, 0),
+        previousDate: bill.readingDate ? new Date(new Date(bill.readingDate).setMonth(new Date(bill.readingDate).getMonth() - 1)).toLocaleDateString() : new Date(bill.billingMonth).toLocaleDateString(),
+        currentDate: bill.readingDate ? new Date(bill.readingDate).toLocaleDateString() : new Date(bill.issueDate).toLocaleDateString(),
         unitsConsumed: units
       },
       charges: {
@@ -402,8 +382,8 @@ export default function BillView() {
                         <tr key={index}>
                           <td className="px-2 py-1 text-gray-600">{slab.range}</td>
                           <td className="px-2 py-1 text-right text-gray-900">{slab.units}</td>
-                          <td className="px-2 py-1 text-right text-gray-900">₹{slab.rate.toFixed(2)}</td>
-                          <td className="px-2 py-1 text-right text-gray-900 font-semibold">₹{slab.amount.toFixed(2)}</td>
+                          <td className="px-2 py-1 text-right text-gray-900">{formatCurrency(slab.rate, 'Rs.')}</td>
+                          <td className="px-2 py-1 text-right text-gray-900 font-semibold">{formatCurrency(slab.amount, 'Rs.')}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -414,27 +394,27 @@ export default function BillView() {
                 <div className="bg-gray-50 p-2 rounded space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-600">Energy Charges:</span>
-                    <span className="text-gray-900 font-semibold">₹{billData.charges.energyCharge.toFixed(2)}</span>
+                    <span className="text-gray-900 font-semibold">{formatCurrency(billData.charges.energyCharge, 'Rs.')}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-600">Fixed Charges:</span>
-                    <span className="text-gray-900 font-semibold">₹{billData.charges.fixedCharge.toFixed(2)}</span>
+                    <span className="text-gray-900 font-semibold">{formatCurrency(billData.charges.fixedCharge, 'Rs.')}</span>
                   </div>
                   <div className="flex justify-between text-xs pt-1 border-t border-gray-300">
                     <span className="text-gray-700 font-medium">Subtotal:</span>
-                    <span className="text-gray-900 font-semibold">₹{billData.charges.subtotal.toFixed(2)}</span>
+                    <span className="text-gray-900 font-semibold">{formatCurrency(billData.charges.subtotal, 'Rs.')}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-600">Electricity Duty:</span>
-                    <span className="text-gray-900 font-semibold">₹{billData.charges.electricityDuty.toFixed(2)}</span>
+                    <span className="text-gray-900 font-semibold">{formatCurrency(billData.charges.electricityDuty, 'Rs.')}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-600">GST (18%):</span>
-                    <span className="text-gray-900 font-semibold">₹{billData.charges.gst.toFixed(2)}</span>
+                    <span className="text-gray-900 font-semibold">{formatCurrency(billData.charges.gst, 'Rs.')}</span>
                   </div>
                   <div className="flex justify-between text-base pt-2 border-t-2 border-gray-400">
                     <span className="text-gray-900 font-bold">TOTAL AMOUNT:</span>
-                    <span className="text-orange-600 font-bold text-lg">₹{billData.charges.total.toFixed(2)}</span>
+                    <span className="text-orange-600 font-bold text-lg">{formatCurrency(billData.charges.total, 'Rs.')}</span>
                   </div>
                 </div>
               </div>
@@ -465,7 +445,7 @@ export default function BillView() {
                     <div className="space-y-1">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-orange-800">Amount:</span>
-                        <span className="text-xl font-bold text-orange-600">₹{billData.charges.total.toFixed(2)}</span>
+                        <span className="text-xl font-bold text-orange-600">{formatCurrency(billData.charges.total, 'Rs.')}</span>
                       </div>
                       <div className="flex justify-between text-xs">
                         <span className="text-orange-700">Due Date:</span>
@@ -512,7 +492,7 @@ export default function BillView() {
                           </p>
                           <p className="text-xs text-gray-500">{record.month.split(' ')[0]}</p>
                           <p className={`text-xs ${isCurrentMonth ? 'text-yellow-600 font-semibold' : 'text-gray-500'}`}>
-                            ₹{record.amount.toFixed(0)}
+                            {formatCurrency(record.amount, 'Rs.', 0)}
                           </p>
                         </div>
                       );

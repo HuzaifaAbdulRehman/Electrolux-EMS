@@ -45,3 +45,15 @@ next-env.d.ts
 # claude local settings
 .claude/settings.local.json
 .claude/settings.local.json
+COMPLETE_CURRENCY_CONVERSION.md
+CURRENCY_CONVERSION_SUMMARY.md
+FINAL_PROJECT_STATUS.md
+FINAL_RECOMMENDATIONS_SUMMARY.md
+FIXES_APPLIED.md
+NULL_NAN_FIXES_SUMMARY.md
+PROJECT_ANALYSIS_REPORT.md
+TARIFF_AND_CURRENCY_ANALYSIS.md
+TESTING_QUICK_START.md
+VIVA_SQL_SCRIPTS.sql
+.claude/settings.local.json
+.claude/settings.local.json

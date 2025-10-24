@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { bills, customers, meterReadings, tariffs } from '@/lib/drizzle/schema';
+import { bills, customers, meterReadings, tariffs, notifications } from '@/lib/drizzle/schema';
 import { eq, and, desc, gte, lte, or, like, sql } from 'drizzle-orm';
 
 // GET /api/bills - Get bills (filtered by user type)
@@ -256,6 +256,20 @@ export async function POST(request: NextRequest) {
         outstandingBalance: sql`${customers.outstandingBalance} + ${totalAmount}`,
       })
       .where(eq(customers.id, customerId));
+
+    // Create notification for new bill
+    if (customer?.userId) {
+      await db.insert(notifications).values({
+        userId: customer.userId,
+        notificationType: 'billing',
+        title: 'New Bill Generated',
+        message: `Your electricity bill for ${billingMonth} has been generated. Amount: Rs. ${totalAmount.toFixed(2)}. Due date: ${dueDate.toISOString().split('T')[0]}`,
+        priority: 'high',
+        actionUrl: '/customer/bills',
+        actionText: 'View Bill',
+        isRead: 0,
+      } as any);
+    }
 
     return NextResponse.json({
       success: true,

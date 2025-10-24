@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { workOrders, customers, employees } from '@/lib/drizzle/schema';
+import { workOrders, customers, employees, notifications } from '@/lib/drizzle/schema';
 import { eq, and, desc, or } from 'drizzle-orm';
 
 // GET /api/work-orders - Get work orders
@@ -159,6 +159,29 @@ export async function PATCH(request: NextRequest) {
       .update(workOrders)
       .set(updateData)
       .where(eq(workOrders.id, id));
+
+    // Create notification for customer when work order is completed
+    if (status === 'completed' && workOrder.customerId) {
+      // Get customer's userId
+      const [customer] = await db
+        .select({ userId: customers.userId })
+        .from(customers)
+        .where(eq(customers.id, workOrder.customerId))
+        .limit(1);
+
+      if (customer?.userId) {
+        await db.insert(notifications).values({
+          userId: customer.userId,
+          notificationType: 'work_order',
+          title: 'Work Order Completed',
+          message: `Your work order "${workOrder.title}" has been completed successfully. ${completionNotes || ''}`,
+          priority: 'normal',
+          actionUrl: '/customer/services',
+          actionText: 'View Details',
+          isRead: 0,
+        } as any);
+      }
+    }
 
     return NextResponse.json({
       success: true,

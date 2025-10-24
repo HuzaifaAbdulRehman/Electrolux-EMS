@@ -76,38 +76,56 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { customerId, employeeId, workType, title, description, priority, dueDate } = body;
 
-    // Customers can only create complaint_resolution work orders for themselves
+    // Customers can only create complaint_resolution or meter_reading work orders for themselves
     if (session.user.userType === 'customer') {
-      if (workType !== 'complaint_resolution') {
-        return NextResponse.json({ error: 'Customers can only submit complaints' }, { status: 403 });
+      // Validate work type - customers can only submit complaints or meter reading requests
+      if (workType !== 'complaint_resolution' && workType !== 'meter_reading') {
+        return NextResponse.json({ error: 'Customers can only submit complaints or meter reading requests' }, { status: 403 });
       }
 
       if (!title || !description) {
         return NextResponse.json({ error: 'Title and description are required' }, { status: 400 });
       }
 
-      // Auto-calculate due date (7 days from now for complaints)
-      const calculatedDueDate = new Date();
-      calculatedDueDate.setDate(calculatedDueDate.getDate() + 7);
+      // Auto-calculate due date if not provided
+      let calculatedDueDate = dueDate;
+      if (!calculatedDueDate) {
+        const date = new Date();
+        date.setDate(date.getDate() + (workType === 'complaint_resolution' ? 7 : 3)); // 7 days for complaints, 3 days for meter reading
+        calculatedDueDate = date.toISOString().split('T')[0];
+      }
 
       const [workOrder] = await db.insert(workOrders).values({
         employeeId: null, // Will be assigned by admin/employee later
         customerId: session.user.customerId,
-        workType: 'complaint_resolution',
+        workType,
         title,
         description,
         priority: priority || 'medium',
         status: 'assigned', // 'assigned' status means "awaiting assignment to employee"
         assignedDate: new Date().toISOString().split('T')[0],
-        dueDate: calculatedDueDate.toISOString().split('T')[0],
+        dueDate: calculatedDueDate,
       } as any);
 
-      // Create notification for admin/employees about new complaint
-      // (Optional: could notify specific admin users)
+      // Create notification for customer
+      if (session.user.userId) {
+        await db.insert(notifications).values({
+          userId: session.user.userId,
+          notificationType: workType === 'complaint_resolution' ? 'complaint' : 'service',
+          title: workType === 'complaint_resolution' ? 'Complaint Submitted' : 'Reading Request Submitted',
+          message: workType === 'complaint_resolution'
+            ? `Your complaint has been received. Request ID: WO-${workOrder.insertId}`
+            : `Your meter reading request has been received. Request ID: WO-${workOrder.insertId}`,
+          priority: 'normal',
+          actionUrl: workType === 'complaint_resolution' ? '/customer/complaints' : '/customer/request-reading',
+          actionText: 'View Details',
+          isRead: 0,
+        } as any);
+      }
 
       return NextResponse.json({
         success: true,
-        message: 'Complaint submitted successfully',
+        message: workType === 'complaint_resolution' ? 'Complaint submitted successfully' : 'Reading request submitted successfully',
         data: {
           workOrderId: workOrder.insertId,
         },

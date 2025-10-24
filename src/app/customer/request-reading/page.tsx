@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Gauge,
@@ -37,51 +36,60 @@ export default function RequestReading() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [requestId, setRequestId] = useState('');
+  const [previousRequests, setPreviousRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [accountInfo, setAccountInfo] = useState<any>(null);
 
-  // Customer account info (would come from backend)
-  const accountInfo = {
-    accountNumber: 'ELX-2024-001234',
-    customerName: 'Huzaifa',
-    address: '123 Main Street, Apt 4B, Downtown, City 12345',
-    meterNumber: 'MTR-485729',
-    lastReading: 12485,
-    lastReadingDate: '2024-09-10',
-    zone: 'Zone-A'
+  // Fetch customer account info and previous requests
+  useEffect(() => {
+    fetchAccountInfo();
+    fetchPreviousRequests();
+  }, []);
+
+  const fetchAccountInfo = async () => {
+    try {
+      // Fetch from customer profile/account API
+      const response = await fetch('/api/customers/profile');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setAccountInfo({
+            accountNumber: result.data.accountNumber || 'N/A',
+            customerName: result.data.fullName || 'Customer',
+            address: result.data.address || 'N/A',
+            meterNumber: result.data.meterNumber || 'N/A',
+            lastReading: result.data.lastReading || 0,
+            lastReadingDate: result.data.lastReadingDate || 'N/A',
+            zone: result.data.zone || 'N/A'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching account info:', error);
+    }
   };
 
-  // Previous requests (mock data)
-  const previousRequests = [
-    {
-      id: 1,
-      requestNumber: 'REQ-2024-001',
-      requestedDate: '2024-10-01',
-      preferredDate: '2024-10-05',
-      status: 'completed',
-      assignedTo: 'Mike Johnson',
-      completedDate: '2024-10-05',
-      readingTaken: 12485
-    },
-    {
-      id: 2,
-      requestNumber: 'REQ-2024-002',
-      requestedDate: '2024-09-01',
-      preferredDate: '2024-09-05',
-      status: 'completed',
-      assignedTo: 'Sarah Smith',
-      completedDate: '2024-09-04',
-      readingTaken: 12020
-    },
-    {
-      id: 3,
-      requestNumber: 'REQ-2024-003',
-      requestedDate: '2024-08-01',
-      preferredDate: '2024-08-05',
-      status: 'completed',
-      assignedTo: 'Mike Johnson',
-      completedDate: '2024-08-05',
-      readingTaken: 11540
+  const fetchPreviousRequests = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/work-orders');
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Filter only meter_reading work orders
+          const readingRequests = (result.data || []).filter(
+            (order: any) => order.workType === 'meter_reading'
+          );
+          setPreviousRequests(readingRequests);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching previous requests:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const requestTypes = [
     { value: 'regular', label: 'Regular Reading', description: 'Standard monthly meter reading' },
@@ -104,31 +112,60 @@ export default function RequestReading() {
     { value: 'urgent', label: 'Urgent', color: 'from-red-500 to-pink-500', description: 'Within 24 hours' }
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      const newRequestId = `REQ-2024-${String(Math.floor(Math.random() * 9000) + 1000)}`;
-      setRequestId(newRequestId);
-      setIsSubmitting(false);
-      setShowSuccess(true);
+    try {
+      // Create work order with type 'meter_reading'
+      const response = await fetch('/api/work-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workType: 'meter_reading',
+          title: `${formData.requestType} - Meter Reading Request`,
+          description: `Request Type: ${formData.requestType}\nPreferred Time: ${formData.preferredTimeSlot}\nContact: ${formData.contactPhone}\nAlternate: ${formData.alternatePhone}\n\nAccess Instructions:\n${formData.accessInstructions || 'None provided'}`,
+          priority: formData.urgency,
+          dueDate: formData.preferredDate,
+        }),
+      });
 
-      // Reset form after 5 seconds
-      setTimeout(() => {
-        setShowSuccess(false);
-        setFormData({
-          requestType: 'regular',
-          preferredDate: '',
-          preferredTimeSlot: 'morning',
-          contactPhone: '+1234567890',
-          alternatePhone: '',
-          accessInstructions: '',
-          urgency: 'normal'
-        });
-      }, 5000);
-    }, 2000);
+      if (!response.ok) {
+        throw new Error('Failed to submit request');
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        const newRequestId = `REQ-${result.data.workOrderId}`;
+        setRequestId(newRequestId);
+        setShowSuccess(true);
+
+        // Refresh previous requests
+        await fetchPreviousRequests();
+
+        // Reset form after 5 seconds
+        setTimeout(() => {
+          setShowSuccess(false);
+          setFormData({
+            requestType: 'regular',
+            preferredDate: '',
+            preferredTimeSlot: 'morning',
+            contactPhone: formData.contactPhone,
+            alternatePhone: formData.alternatePhone,
+            accessInstructions: '',
+            urgency: 'normal'
+          });
+        }, 5000);
+      } else {
+        throw new Error(result.error || 'Failed to submit request');
+      }
+    } catch (err: any) {
+      console.error('Error submitting request:', err);
+      alert(`❌ Error: ${err.message || 'Failed to submit request'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -220,43 +257,50 @@ export default function RequestReading() {
                   <User className="w-4 h-4 mr-2" />
                   Account Information
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="flex items-start space-x-3">
-                    <FileText className="w-4 h-4 text-purple-400 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Account Number</p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{accountInfo.accountNumber}</p>
+                {accountInfo ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex items-start space-x-3">
+                      <FileText className="w-4 h-4 text-purple-400 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Account Number</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{accountInfo.accountNumber}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <Gauge className="w-4 h-4 text-purple-400 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Meter Number</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{accountInfo.meterNumber}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3 md:col-span-2">
+                      <MapPin className="w-4 h-4 text-purple-400 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Service Address</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{accountInfo.address}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <Zap className="w-4 h-4 text-purple-400 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Last Reading</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{accountInfo.lastReading} kWh</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <Calendar className="w-4 h-4 text-purple-400 mt-0.5" />
+                      <div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Last Reading Date</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{accountInfo.lastReadingDate}</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-start space-x-3">
-                    <Gauge className="w-4 h-4 text-purple-400 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Meter Number</p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{accountInfo.meterNumber}</p>
-                    </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Loading account info...</p>
                   </div>
-                  <div className="flex items-start space-x-3 md:col-span-2">
-                    <MapPin className="w-4 h-4 text-purple-400 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Service Address</p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{accountInfo.address}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <Zap className="w-4 h-4 text-purple-400 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Last Reading</p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{accountInfo.lastReading} kWh</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3">
-                    <Calendar className="w-4 h-4 text-purple-400 mt-0.5" />
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Last Reading Date</p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{accountInfo.lastReadingDate}</p>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* Request Form */}
@@ -456,40 +500,52 @@ export default function RequestReading() {
                   <History className="w-4 h-4 mr-2" />
                   Previous Requests
                 </h3>
-                <div className="space-y-3">
-                  {previousRequests.map((request) => (
-                    <div
-                      key={request.id}
-                      className="p-3 bg-white dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-gray-900 dark:text-white">{request.requestNumber}</span>
-                        <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(request.status)}`}>
-                          {getStatusIcon(request.status)}
-                          <span className="capitalize">{request.status.replace('_', ' ')}</span>
-                        </span>
+                {loading ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Loading...</p>
+                  </div>
+                ) : previousRequests.length === 0 ? (
+                  <div className="text-center py-6">
+                    <Clock className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600 dark:text-gray-400">No previous requests</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {previousRequests.slice(0, 5).map((request) => (
+                      <div
+                        key={request.id}
+                        className="p-3 bg-white dark:bg-white/5 rounded-lg border border-gray-200 dark:border-white/10"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold text-gray-900 dark:text-white">REQ-{request.id}</span>
+                          <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(request.status)}`}>
+                            {getStatusIcon(request.status)}
+                            <span className="capitalize">{request.status.replace('_', ' ')}</span>
+                          </span>
+                        </div>
+                        <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
+                          <div className="flex justify-between">
+                            <span>Requested:</span>
+                            <span className="text-gray-900 dark:text-white">{new Date(request.assignedDate).toLocaleDateString()}</span>
+                          </div>
+                          {request.completionDate && (
+                            <div className="flex justify-between">
+                              <span>Completed:</span>
+                              <span className="text-gray-900 dark:text-white">{new Date(request.completionDate).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                          {request.employeeName && (
+                            <div className="flex justify-between">
+                              <span>Employee:</span>
+                              <span className="text-gray-900 dark:text-white">{request.employeeName}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-                        <div className="flex justify-between">
-                          <span>Requested:</span>
-                          <span className="text-gray-900 dark:text-white">{request.requestedDate}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Completed:</span>
-                          <span className="text-gray-900 dark:text-white">{request.completedDate}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Reading Taken:</span>
-                          <span className="text-green-400 font-semibold">{request.readingTaken} kWh</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Employee:</span>
-                          <span className="text-gray-900 dark:text-white">{request.assignedTo}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Need Help */}

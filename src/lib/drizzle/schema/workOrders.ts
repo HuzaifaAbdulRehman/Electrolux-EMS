@@ -4,7 +4,7 @@ import { customers } from './customers';
 
 export const workOrders = mysqlTable('work_orders', {
   id: int('id').primaryKey().autoincrement(),
-  employeeId: int('employee_id').notNull().references(() => employees.id),
+  employeeId: int('employee_id').references(() => employees.id), // Nullable - complaints can be unassigned
   customerId: int('customer_id').references(() => customers.id),
   workType: mysqlEnum('work_type', ['meter_reading', 'maintenance', 'complaint_resolution', 'new_connection', 'disconnection', 'reconnection']).notNull(),
   title: varchar('title', { length: 255 }).notNull(),

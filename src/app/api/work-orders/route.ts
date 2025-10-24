@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/work-orders - Create work order (Admin/Employee)
+// POST /api/work-orders - Create work order (Admin/Employee) or complaint (Customer)
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -73,13 +73,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (session.user.userType === 'customer') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
     const body = await request.json();
     const { customerId, employeeId, workType, title, description, priority, dueDate } = body;
 
+    // Customers can only create complaint_resolution work orders for themselves
+    if (session.user.userType === 'customer') {
+      if (workType !== 'complaint_resolution') {
+        return NextResponse.json({ error: 'Customers can only submit complaints' }, { status: 403 });
+      }
+
+      if (!title || !description) {
+        return NextResponse.json({ error: 'Title and description are required' }, { status: 400 });
+      }
+
+      // Auto-calculate due date (7 days from now for complaints)
+      const calculatedDueDate = new Date();
+      calculatedDueDate.setDate(calculatedDueDate.getDate() + 7);
+
+      const [workOrder] = await db.insert(workOrders).values({
+        employeeId: null, // Will be assigned by admin/employee later
+        customerId: session.user.customerId,
+        workType: 'complaint_resolution',
+        title,
+        description,
+        priority: priority || 'medium',
+        status: 'assigned', // 'assigned' status means "awaiting assignment to employee"
+        assignedDate: new Date().toISOString().split('T')[0],
+        dueDate: calculatedDueDate.toISOString().split('T')[0],
+      } as any);
+
+      // Create notification for admin/employees about new complaint
+      // (Optional: could notify specific admin users)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Complaint submitted successfully',
+        data: {
+          workOrderId: workOrder.insertId,
+        },
+      }, { status: 201 });
+    }
+
+    // Admin/Employee creating work orders
     if (!employeeId || !workType || !title || !dueDate) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }

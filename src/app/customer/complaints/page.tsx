@@ -1,9 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-
-import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   MessageSquare,
@@ -29,18 +27,15 @@ import {
 
 export default function ComplaintsFeedback() {
   const { data: session } = useSession();
-
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState('complaints');
   const [showNewComplaint, setShowNewComplaint] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-
-  const handleSendMessage = () => {
-    // TODO: Implement send message functionality
-    console.log('Sending message...');
-  };
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Form state for new complaint
   const [formData, setFormData] = useState({
@@ -50,71 +45,48 @@ export default function ComplaintsFeedback() {
     priority: 'medium'
   });
 
-  // Mock data for existing complaints
-  const complaints = [
-    {
-      id: 1,
-      ticketNumber: 'TKT-2024-001234',
-      category: 'Billing',
-      subject: 'Incorrect bill amount for October',
-      description: 'My bill shows 650 units but my meter reading is only 485 units.',
-      status: 'in_progress',
-      priority: 'high',
-      createdDate: '2024-10-28',
-      lastUpdated: '2024-10-29',
-      assignedTo: 'John Smith',
-      responses: [
-        {
-          from: 'Support Team',
-          date: '2024-10-29',
-          message: 'We are investigating your billing issue. Our team will verify your meter reading.'
-        }
-      ]
-    },
-    {
-      id: 2,
-      ticketNumber: 'TKT-2024-001233',
-      category: 'Service',
-      subject: 'Frequent power outages in my area',
-      description: 'There have been 3 power outages this week in Sector 5.',
-      status: 'resolved',
-      priority: 'medium',
-      createdDate: '2024-10-25',
-      lastUpdated: '2024-10-27',
-      assignedTo: 'Sarah Johnson',
-      responses: [
-        {
-          from: 'Support Team',
-          date: '2024-10-26',
-          message: 'We identified the issue with the transformer in your area.'
-        },
-        {
-          from: 'Support Team',
-          date: '2024-10-27',
-          message: 'The transformer has been repaired. The issue should be resolved now.'
-        }
-      ]
-    },
-    {
-      id: 3,
-      ticketNumber: 'TKT-2024-001232',
-      category: 'Technical',
-      subject: 'Smart meter not working properly',
-      description: 'My smart meter display is blank and not showing readings.',
-      status: 'pending',
-      priority: 'low',
-      createdDate: '2024-10-30',
-      lastUpdated: '2024-10-30',
-      assignedTo: 'Pending Assignment',
-      responses: []
+  // Fetch complaints (work orders with type='complaint_resolution') from API
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
+
+  const fetchComplaints = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch('/api/work-orders');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch complaints');
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Filter only complaint_resolution work orders
+        const complaintOrders = (result.data || []).filter(
+          (order: any) => order.workType === 'complaint_resolution'
+        );
+        setComplaints(complaintOrders);
+      } else {
+        throw new Error(result.error || 'Failed to fetch complaints');
+      }
+    } catch (err: any) {
+      console.error('Error fetching complaints:', err);
+      setError(err.message || 'Failed to load complaints');
+      setComplaints([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'resolved': return 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30';
+      case 'completed': return 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30';
       case 'in_progress': return 'text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30';
-      case 'pending': return 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30';
+      case 'assigned': return 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30';
+      case 'cancelled': return 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30';
       default: return 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-900/30';
     }
   };
@@ -128,17 +100,50 @@ export default function ComplaintsFeedback() {
     }
   };
 
-  const handleSubmitComplaint = (e: React.FormEvent) => {
+  const handleSubmitComplaint = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle complaint submission
-    console.log('Submitting complaint:', formData);
-    setShowNewComplaint(false);
-    setFormData({
-      category: '',
-      subject: '',
-      description: '',
-      priority: 'medium'
-    });
+
+    try {
+      setSubmitting(true);
+
+      // Create work order with type 'complaint_resolution'
+      const response = await fetch('/api/work-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workType: 'complaint_resolution',
+          title: formData.subject,
+          description: `Category: ${formData.category}\n\n${formData.description}`,
+          priority: formData.priority,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit complaint');
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Success - refresh complaints list
+        await fetchComplaints();
+        setShowNewComplaint(false);
+        setFormData({
+          category: '',
+          subject: '',
+          description: '',
+          priority: 'medium',
+        });
+        alert('✅ Complaint submitted successfully! We will review it shortly.');
+      } else {
+        throw new Error(result.error || 'Failed to submit complaint');
+      }
+    } catch (err: any) {
+      console.error('Error submitting complaint:', err);
+      alert(`❌ Error: ${err.message || 'Failed to submit complaint'}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -174,7 +179,7 @@ export default function ComplaintsFeedback() {
               </div>
               <span className="text-xs text-gray-600 dark:text-gray-400">Total</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">12</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{complaints.length}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400">Total Complaints</p>
           </div>
 
@@ -185,7 +190,9 @@ export default function ComplaintsFeedback() {
               </div>
               <span className="text-xs text-yellow-600 dark:text-yellow-400">Active</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">3</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              {complaints.filter(c => c.status === 'in_progress' || c.status === 'assigned').length}
+            </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">In Progress</p>
           </div>
 
@@ -196,19 +203,23 @@ export default function ComplaintsFeedback() {
               </div>
               <span className="text-xs text-green-600 dark:text-green-400">Closed</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">8</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              {complaints.filter(c => c.status === 'completed').length}
+            </p>
             <p className="text-sm text-gray-600 dark:text-gray-400">Resolved</p>
           </div>
 
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-white" />
+                <Clock className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Rating</span>
+              <span className="text-xs text-gray-600 dark:text-gray-400">Pending</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">4.5/5</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Satisfaction</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              {complaints.filter(c => c.status === 'assigned').length}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Awaiting Action</p>
           </div>
         </div>
 
@@ -260,113 +271,141 @@ export default function ComplaintsFeedback() {
                   className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400 font-medium"
                 >
                   <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">All Status</option>
-                  <option value="pending" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Pending</option>
+                  <option value="assigned" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Assigned</option>
                   <option value="in_progress" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">In Progress</option>
-                  <option value="resolved" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Resolved</option>
+                  <option value="completed" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Completed</option>
+                  <option value="cancelled" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Cancelled</option>
                 </select>
               </div>
             </div>
 
+            {/* Loading State */}
+            {loading && (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && !loading && (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+                <AlertCircle className="w-12 h-12 text-red-600 dark:text-red-400 mx-auto mb-3" />
+                <p className="text-red-600 dark:text-red-400 font-medium mb-2">Failed to load complaints</p>
+                <p className="text-sm text-red-500 dark:text-red-400 mb-4">{error}</p>
+                <button
+                  onClick={fetchComplaints}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!loading && !error && complaints.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-gray-400 dark:text-gray-500 mb-4">
+                  <MessageSquare className="mx-auto h-16 w-16" />
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 font-medium mb-2">No complaints found</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Submit your first complaint using the button above</p>
+              </div>
+            )}
+
             {/* Complaints List */}
-            {complaints.map((complaint) => (
-              <div
-                key={complaint.id}
-                className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-all"
-              >
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {complaint.ticketNumber}
-                        </span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(complaint.status)}`}>
-                          {complaint.status.replace('_', ' ').toUpperCase()}
-                        </span>
-                        <span className={`text-xs font-medium ${getPriorityColor(complaint.priority)}`}>
-                          {complaint.priority.toUpperCase()} Priority
-                        </span>
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                        {complaint.subject}
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-400 mb-3">
-                        {complaint.description}
-                      </p>
-                      <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
-                        <div className="flex items-center space-x-1">
-                          <Tag className="w-4 h-4" />
-                          <span>{complaint.category}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Calendar className="w-4 h-4" />
-                          <span>{complaint.createdDate}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <User className="w-4 h-4" />
-                          <span>{complaint.assignedTo}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setSelectedComplaint(selectedComplaint === complaint.id ? null : complaint.id)}
-                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-                    >
-                      <ChevronRight className={`w-5 h-5 transform transition-transform ${selectedComplaint === complaint.id ? 'rotate-90' : ''}`} />
-                    </button>
-                  </div>
+            {!loading && !error && complaints
+              .filter((complaint) => filterStatus === 'all' || complaint.status === filterStatus)
+              .map((complaint) => {
+                // Extract category from description (format: "Category: billing\n\ndescription")
+                const descriptionParts = complaint.description?.split('\n\n') || [];
+                const categoryLine = descriptionParts[0] || '';
+                const extractedCategory = categoryLine.startsWith('Category:')
+                  ? categoryLine.replace('Category:', '').trim()
+                  : 'General';
+                const actualDescription = descriptionParts.slice(1).join('\n\n') || complaint.description;
 
-                  {/* Expanded View with Responses */}
-                  {selectedComplaint === complaint.id && (
-                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/10">
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Response History</h4>
-                      {complaint.responses.length > 0 ? (
-                        <div className="space-y-3">
-                          {complaint.responses.map((response, index) => (
-                            <div key={index} className="bg-gray-50 dark:bg-white/5 rounded-lg p-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                  {response.from}
-                                </span>
-                                <span className="text-xs text-gray-600 dark:text-gray-400">
-                                  {response.date}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-700 dark:text-gray-300">
-                                {response.message}
-                              </p>
+                return (
+                  <div
+                    key={complaint.id}
+                    className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-all"
+                  >
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <span className="text-sm font-mono text-gray-600 dark:text-gray-400">
+                              TKT-{complaint.id}
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(complaint.status)}`}>
+                              {complaint.status.replace('_', ' ').toUpperCase()}
+                            </span>
+                            <span className={`text-xs font-medium ${getPriorityColor(complaint.priority)}`}>
+                              {complaint.priority.toUpperCase()} Priority
+                            </span>
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            {complaint.title}
+                          </h3>
+                          <p className="text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                            {actualDescription}
+                          </p>
+                          <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
+                            <div className="flex items-center space-x-1">
+                              <Tag className="w-4 h-4" />
+                              <span className="capitalize">{extractedCategory}</span>
                             </div>
-                          ))}
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="w-4 h-4" />
+                              <span>{new Date(complaint.assignedDate || complaint.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            {complaint.employeeName && (
+                              <div className="flex items-center space-x-1">
+                                <User className="w-4 h-4" />
+                                <span>{complaint.employeeName}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          No responses yet. We'll update you soon.
-                        </p>
-                      )}
+                        <button
+                          onClick={() => setSelectedComplaint(selectedComplaint === complaint.id ? null : complaint.id)}
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                        >
+                          <ChevronRight className={`w-5 h-5 transform transition-transform ${selectedComplaint === complaint.id ? 'rotate-90' : ''}`} />
+                        </button>
+                      </div>
 
-                      {/* Add Response */}
-                      {complaint.status !== 'resolved' && (
-                        <div className="mt-4">
-                          <div className="flex space-x-2">
-                            <input
-                              type="text"
-                              placeholder="Add a comment..."
-                              className="flex-1 px-4 py-2 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
-                            />
-                            <button 
-                              onClick={handleSendMessage}
-                              className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all"
-                            >
-                              <Send className="w-5 h-5" />
-                            </button>
+                      {/* Expanded View */}
+                      {selectedComplaint === complaint.id && (
+                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/10">
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Complaint Details</h4>
+                          <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-4 mb-4">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                              {actualDescription}
+                            </p>
+                          </div>
+
+                          {complaint.completionNotes && (
+                            <div className="mb-4">
+                              <h5 className="text-xs font-semibold text-gray-700 dark:text-gray-400 mb-2">Staff Notes:</h5>
+                              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+                                <p className="text-sm text-gray-700 dark:text-gray-300">{complaint.completionNotes}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Coming Soon Message */}
+                          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 text-center">
+                            <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                              <MessageCircle className="w-4 h-4 inline mr-1" />
+                              Response messaging feature coming soon
+                            </p>
                           </div>
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
-              </div>
-            ))}
+                  </div>
+                );
+              })}
           </div>
         ) : (
           // Feedback Tab Content
@@ -374,59 +413,43 @@ export default function ComplaintsFeedback() {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
               We Value Your Feedback
             </h2>
-            <form className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  How satisfied are you with our service?
-                </label>
-                <div className="flex items-center space-x-2">
-                  {[1, 2, 3, 4, 5].map((rating) => (
-                    <button
-                      key={rating}
-                      type="button"
-                      className="p-2 hover:scale-110 transition-transform"
-                    >
-                      <Star className="w-8 h-8 text-yellow-400 fill-current" />
-                    </button>
-                  ))}
+
+            {/* Coming Soon Notice */}
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-400 dark:border-yellow-600 rounded-xl p-8 text-center">
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                  <Star className="w-8 h-8 text-white" />
                 </div>
               </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                Feedback System Coming Soon
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                We're working on a comprehensive feedback system to better serve you. This feature will allow you to rate our services and provide valuable insights.
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-500">
+                In the meantime, you can submit any concerns through the Complaints tab
+              </p>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  What can we improve?
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {['Billing', 'Customer Service', 'App Experience', 'Power Quality', 'Response Time', 'Communication'].map((area) => (
-                    <label key={area} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        className="w-4 h-4 text-yellow-400 rounded"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{area}</span>
-                    </label>
-                  ))}
-                </div>
+            {/* Preview of upcoming features */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 opacity-50">
+              <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-4 border border-gray-200 dark:border-white/10">
+                <Star className="w-8 h-8 text-yellow-400 mb-2" />
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Rate Services</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Provide star ratings for our services</p>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Additional Comments
-                </label>
-                <textarea
-                  rows={4}
-                  placeholder="Share your thoughts with us..."
-                  className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400"
-                />
+              <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-4 border border-gray-200 dark:border-white/10">
+                <ThumbsUp className="w-8 h-8 text-green-400 mb-2" />
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Improvement Areas</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Select areas where we can improve</p>
               </div>
-
-              <button
-                type="submit"
-                className="w-full px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all font-medium"
-              >
-                Submit Feedback
-              </button>
-            </form>
+              <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-4 border border-gray-200 dark:border-white/10">
+                <MessageCircle className="w-8 h-8 text-blue-400 mb-2" />
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Detailed Comments</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Share your thoughts and suggestions</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -518,13 +541,10 @@ export default function ComplaintsFeedback() {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                {/* File attachment - Coming Soon */}
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                   <Paperclip className="w-4 h-4" />
-                  <span>Attach files (optional)</span>
-                  <input type="file" className="hidden" />
-                  <button type="button" className="text-blue-600 dark:text-blue-400 hover:underline">
-                    Browse
-                  </button>
+                  <span>File attachment feature coming soon</span>
                 </div>
 
                 <div className="flex space-x-4">
@@ -537,9 +557,10 @@ export default function ComplaintsFeedback() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all font-medium"
+                    disabled={submitting}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Submit Complaint
+                    {submitting ? 'Submitting...' : 'Submit Complaint'}
                   </button>
                 </div>
               </form>

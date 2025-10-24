@@ -33,6 +33,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 .env.local
+!.env.example
 
 # vercel
 .vercel
@@ -44,7 +45,8 @@ next-env.d.ts
 
 # claude local settings
 .claude/settings.local.json
-.claude/settings.local.json
+
+# project docs not for commit
 COMPLETE_CURRENCY_CONVERSION.md
 CURRENCY_CONVERSION_SUMMARY.md
 FINAL_PROJECT_STATUS.md
@@ -55,5 +57,5 @@ PROJECT_ANALYSIS_REPORT.md
 TARIFF_AND_CURRENCY_ANALYSIS.md
 TESTING_QUICK_START.md
 VIVA_SQL_SCRIPTS.sql
-.claude/settings.local.json
+src/app/customer/payment/page.tsx.backup
 .claude/settings.local.json

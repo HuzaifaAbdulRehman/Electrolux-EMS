@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { payments, bills, customers } from '@/lib/drizzle/schema';
+import { payments, bills, customers, notifications, users } from '@/lib/drizzle/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 
 // GET /api/payments - Get payments
@@ -141,6 +141,27 @@ export async function POST(request: NextRequest) {
         paymentStatus: 'paid',
       } as any)
       .where(eq(customers.id, bill.customerId));
+
+    // Get customer's user ID for notification
+    const [customer] = await db
+      .select({ userId: customers.userId })
+      .from(customers)
+      .where(eq(customers.id, bill.customerId))
+      .limit(1);
+
+    // Create payment notification
+    if (customer?.userId) {
+      await db.insert(notifications).values({
+        userId: customer.userId,
+        notificationType: 'payment',
+        title: 'Payment Received',
+        message: `Payment of Rs. ${amount} has been successfully processed for bill ${bill.billNumber}`,
+        priority: 'normal',
+        actionUrl: '/customer/payment',
+        actionText: 'View Receipt',
+        isRead: 0,
+      } as any);
+    }
 
     return NextResponse.json({
       success: true,

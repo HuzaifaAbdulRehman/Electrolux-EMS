@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 
 import DashboardLayout from '@/components/DashboardLayout';
@@ -14,127 +14,115 @@ import {
   XCircle,
   AlertCircle,
   Play,
-  Pause,
   Search,
-  Filter,
   Plus,
-  ArrowRight,
   Zap,
-  Wrench,
   FileText,
   Phone,
-  Navigation
+  Navigation,
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
 
 interface WorkOrder {
-  id: string;
-  orderNumber: string;
-  type: string;
-  priority: string;
+  id: number;
+  title: string;
+  description: string | null;
+  workType: string;
   status: string;
-  customerName: string;
-  customerPhone: string;
-  address: string;
-  zone: string;
-  description: string;
+  priority: string;
   assignedDate: string;
   dueDate: string;
-  startTime?: string;
-  completionTime?: string;
-  notes?: string;
+  completionDate: string | null;
+  completionNotes: string | null;
+  customerName: string | null;
+  customerAccount: string | null;
+  customerPhone: string | null;
+  customerAddress: string | null;
+  customerCity: string | null;
+  employeeName: string | null;
 }
 
 export default function WorkOrders() {
   const { data: session } = useSession();
+
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [updating, setUpdating] = useState(false);
 
   const [activeTab, setActiveTab] = useState('assigned');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterPriority, setFilterPriority] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completionNotes, setCompletionNotes] = useState('');
+  const [selectedOrderForCompletion, setSelectedOrderForCompletion] = useState<WorkOrder | null>(null);
 
-  // Mock work orders data
-  const workOrders: WorkOrder[] = [
-    {
-      id: '1',
-      orderNumber: 'WO-2024-10-001',
-      type: 'Meter Reading',
-      priority: 'high',
-      status: 'assigned',
-      customerName: 'Sarah Johnson',
-      customerPhone: '+1 234-567-8901',
-      address: '123 Oak Street, Sector 3',
-      zone: 'North Zone',
-      description: 'Regular monthly meter reading required. Customer preferred time: 9 AM - 12 PM',
-      assignedDate: '2024-10-11',
-      dueDate: '2024-10-12',
-    },
-    {
-      id: '2',
-      orderNumber: 'WO-2024-10-002',
-      type: 'Meter Installation',
-      priority: 'medium',
-      status: 'assigned',
-      customerName: 'Michael Brown',
-      customerPhone: '+1 234-567-8902',
-      address: '456 Pine Avenue, Sector 5',
-      zone: 'East Zone',
-      description: 'New meter installation for new connection. Equipment available in warehouse.',
-      assignedDate: '2024-10-11',
-      dueDate: '2024-10-13',
-    },
-    {
-      id: '3',
-      orderNumber: 'WO-2024-10-003',
-      type: 'Complaint Resolution',
-      priority: 'high',
-      status: 'in-progress',
-      customerName: 'Emily Davis',
-      customerPhone: '+1 234-567-8903',
-      address: '789 Maple Drive, Sector 2',
-      zone: 'South Zone',
-      description: 'Customer reports voltage fluctuations. Check transformer and wiring.',
-      assignedDate: '2024-10-10',
-      dueDate: '2024-10-11',
-      startTime: '2024-10-11 08:30 AM',
-    },
-    {
-      id: '4',
-      orderNumber: 'WO-2024-10-004',
-      type: 'Meter Repair',
-      priority: 'low',
-      status: 'assigned',
-      customerName: 'David Wilson',
-      customerPhone: '+1 234-567-8904',
-      address: '321 Elm Street, Sector 4',
-      zone: 'West Zone',
-      description: 'Meter display malfunction. Replace display unit if necessary.',
-      assignedDate: '2024-10-11',
-      dueDate: '2024-10-14',
-    },
-    {
-      id: '5',
-      orderNumber: 'WO-2024-10-005',
-      type: 'Meter Reading',
-      priority: 'medium',
-      status: 'completed',
-      customerName: 'Lisa Anderson',
-      customerPhone: '+1 234-567-8905',
-      address: '654 Cedar Lane, Sector 1',
-      zone: 'North Zone',
-      description: 'Regular monthly meter reading completed successfully.',
-      assignedDate: '2024-10-09',
-      dueDate: '2024-10-10',
-      startTime: '2024-10-10 10:00 AM',
-      completionTime: '2024-10-10 10:15 AM',
-      notes: 'Reading: 4532 kWh. Meter in good condition.'
-    },
-  ];
+  // Fetch work orders from API
+  const fetchWorkOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch('/api/work-orders');
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to fetch work orders');
+      }
+
+      setWorkOrders(result.data || []);
+    } catch (err: any) {
+      console.error('Error fetching work orders:', err);
+      setError(err.message || 'Failed to load work orders');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update work order status
+  const updateWorkOrderStatus = async (id: number, newStatus: string, notes: string = '') => {
+    try {
+      setUpdating(true);
+      const response = await fetch('/api/work-orders', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id,
+          status: newStatus,
+          completionNotes: notes,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update work order');
+      }
+
+      // Refresh work orders
+      await fetchWorkOrders();
+      return true;
+    } catch (err: any) {
+      console.error('Error updating work order:', err);
+      alert(err.message || 'Failed to update work order');
+      return false;
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWorkOrders();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'assigned': return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
-      case 'in-progress': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
+      case 'in_progress': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
       case 'completed': return 'bg-green-500/20 text-green-400 border-green-500/50';
       case 'cancelled': return 'bg-red-500/20 text-red-400 border-red-500/50';
       default: return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
@@ -143,6 +131,7 @@ export default function WorkOrders() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
+      case 'urgent': return 'text-red-500';
       case 'high': return 'text-red-400';
       case 'medium': return 'text-yellow-400';
       case 'low': return 'text-green-400';
@@ -153,37 +142,83 @@ export default function WorkOrders() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'assigned': return <AlertCircle className="w-5 h-5" />;
-      case 'in-progress': return <Play className="w-5 h-5" />;
+      case 'in_progress': return <Play className="w-5 h-5" />;
       case 'completed': return <CheckCircle className="w-5 h-5" />;
       case 'cancelled': return <XCircle className="w-5 h-5" />;
       default: return <Clock className="w-5 h-5" />;
     }
   };
 
+  const formatWorkType = (workType: string) => {
+    return workType
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch {
+      return dateString;
+    }
+  };
+
   const filteredOrders = workOrders.filter(order => {
     const matchesTab = activeTab === 'all' || order.status === activeTab;
     const matchesSearch =
-      order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.address.toLowerCase().includes(searchQuery.toLowerCase());
+      order.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customerAddress?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order.customerAccount?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesPriority = filterPriority === 'all' || order.priority === filterPriority;
 
     return matchesTab && matchesSearch && matchesPriority;
   });
 
-  const handleStartWork = (orderId: string) => {
-    console.log('Starting work order:', orderId);
-    // In real app, update status to 'in-progress'
+  const handleStartWork = async (orderId: number) => {
+    if (updating) return;
+    const success = await updateWorkOrderStatus(orderId, 'in_progress');
+    if (success && showDetails) {
+      setShowDetails(false);
+    }
   };
 
-  const handleCompleteWork = (orderId: string) => {
-    console.log('Completing work order:', orderId);
-    // In real app, update status to 'completed'
+  const handleCompleteWork = (order: WorkOrder) => {
+    setSelectedOrderForCompletion(order);
+    setCompletionNotes('');
+    setShowCompletionModal(true);
+  };
+
+  const handleConfirmCompletion = async () => {
+    if (!selectedOrderForCompletion) return;
+
+    if (!completionNotes.trim()) {
+      alert('Please enter completion notes');
+      return;
+    }
+
+    const success = await updateWorkOrderStatus(
+      selectedOrderForCompletion.id,
+      'completed',
+      completionNotes
+    );
+
+    if (success) {
+      setShowCompletionModal(false);
+      setSelectedOrderForCompletion(null);
+      setCompletionNotes('');
+      if (showDetails) {
+        setShowDetails(false);
+      }
+    }
   };
 
   const stats = {
     assigned: workOrders.filter(o => o.status === 'assigned').length,
-    inProgress: workOrders.filter(o => o.status === 'in-progress').length,
+    inProgress: workOrders.filter(o => o.status === 'in_progress').length,
     completed: workOrders.filter(o => o.status === 'completed').length,
     total: workOrders.length,
   };
@@ -198,9 +233,22 @@ export default function WorkOrders() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Work Orders</h1>
               <p className="text-gray-600 dark:text-gray-400">Manage your assigned tasks and field work</p>
             </div>
-            <button className="mt-4 sm:mt-0 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all flex items-center space-x-2 font-semibold">
-              <Plus className="w-5 h-5" />
-              <span>Request Work Order</span>
+            <button
+              onClick={fetchWorkOrders}
+              disabled={loading}
+              className="mt-4 sm:mt-0 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all flex items-center space-x-2 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Refreshing...</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-5 h-5" />
+                  <span>Refresh Orders</span>
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -255,7 +303,7 @@ export default function WorkOrders() {
         {/* Tabs */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-1 border border-gray-200 dark:border-white/10">
           <div className="flex flex-wrap gap-1">
-            {['assigned', 'in-progress', 'completed', 'all'].map((tab) => (
+            {['assigned', 'in_progress', 'completed', 'all'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -265,7 +313,7 @@ export default function WorkOrders() {
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                 }`}
               >
-                {tab.replace('-', ' ')}
+                {tab.replace('_', ' ')}
               </button>
             ))}
           </div>
@@ -280,7 +328,7 @@ export default function WorkOrders() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by order number, customer, or address..."
+                placeholder="Search by title, customer, account number, or address..."
                 className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors"
               />
             </div>
@@ -290,6 +338,7 @@ export default function WorkOrders() {
               className="px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400 font-medium"
             >
               <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">All Priorities</option>
+              <option value="urgent" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Urgent Priority</option>
               <option value="high" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">High Priority</option>
               <option value="medium" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Medium Priority</option>
               <option value="low" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Low Priority</option>
@@ -297,125 +346,260 @@ export default function WorkOrders() {
           </div>
         </div>
 
-        {/* Work Orders List */}
-        <div className="space-y-4">
-          {filteredOrders.length === 0 ? (
-            <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-12 border border-gray-200 dark:border-white/10 text-center">
-              <ClipboardList className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No work orders found</h3>
-              <p className="text-gray-600 dark:text-gray-400">Try adjusting your filters or search criteria</p>
-            </div>
-          ) : (
-            filteredOrders.map((order) => (
-              <div
-                key={order.id}
-                className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-6 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-all"
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-4 flex items-start space-x-3">
+            <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5" />
+            <div className="flex-1">
+              <h3 className="text-red-400 font-semibold">Error Loading Work Orders</h3>
+              <p className="text-red-300 text-sm mt-1">{error}</p>
+              <button
+                onClick={fetchWorkOrders}
+                className="mt-3 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
               >
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  {/* Left Section */}
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-3">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)} flex items-center space-x-1`}>
-                        {getStatusIcon(order.status)}
-                        <span className="capitalize">{order.status.replace('-', ' ')}</span>
-                      </span>
-                      <span className={`text-sm font-semibold ${getPriorityColor(order.priority)}`}>
-                        {order.priority.toUpperCase()} PRIORITY
-                      </span>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {order.orderNumber}
-                      </span>
-                    </div>
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
 
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      {order.type}
-                    </h3>
+        {/* Loading State */}
+        {loading && !error && (
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-12 border border-gray-200 dark:border-white/10 text-center">
+            <Loader2 className="w-16 h-16 text-green-500 mx-auto mb-4 animate-spin" />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Loading Work Orders</h3>
+            <p className="text-gray-600 dark:text-gray-400">Please wait while we fetch your assigned tasks...</p>
+          </div>
+        )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                      <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                        <User className="w-4 h-4" />
-                        <span>{order.customerName}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                        <Phone className="w-4 h-4" />
-                        <span>{order.customerPhone}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                        <MapPin className="w-4 h-4" />
-                        <span>{order.address}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-                        <Navigation className="w-4 h-4" />
-                        <span>{order.zone}</span>
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
-                      {order.description}
-                    </p>
-
-                    <div className="flex items-center space-x-4 text-xs text-gray-600 dark:text-gray-400">
-                      <span className="flex items-center space-x-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>Assigned: {order.assignedDate}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <Clock className="w-3 h-3" />
-                        <span>Due: {order.dueDate}</span>
-                      </span>
-                      {order.startTime && (
-                        <span className="flex items-center space-x-1">
-                          <Play className="w-3 h-3" />
-                          <span>Started: {order.startTime}</span>
+        {/* Work Orders List */}
+        {!loading && !error && (
+          <div className="space-y-4">
+            {filteredOrders.length === 0 ? (
+              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-12 border border-gray-200 dark:border-white/10 text-center">
+                <ClipboardList className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No work orders found</h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {searchQuery || filterPriority !== 'all'
+                    ? 'Try adjusting your filters or search criteria'
+                    : 'You have no work orders assigned at the moment'}
+                </p>
+              </div>
+            ) : (
+              filteredOrders.map((order) => (
+                <div
+                  key={order.id}
+                  className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-6 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-all"
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    {/* Left Section */}
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)} flex items-center space-x-1`}>
+                          {getStatusIcon(order.status)}
+                          <span className="capitalize">{order.status.replace('_', ' ')}</span>
                         </span>
+                        <span className={`text-sm font-semibold ${getPriorityColor(order.priority)}`}>
+                          {order.priority.toUpperCase()} PRIORITY
+                        </span>
+                        {order.customerAccount && (
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            {order.customerAccount}
+                          </span>
+                        )}
+                      </div>
+
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        {order.title}
+                      </h3>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                        {order.customerName && (
+                          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                            <User className="w-4 h-4" />
+                            <span>{order.customerName}</span>
+                          </div>
+                        )}
+                        {order.customerPhone && (
+                          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                            <Phone className="w-4 h-4" />
+                            <span>{order.customerPhone}</span>
+                          </div>
+                        )}
+                        {order.customerAddress && (
+                          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                            <MapPin className="w-4 h-4" />
+                            <span>{order.customerAddress}</span>
+                          </div>
+                        )}
+                        {order.customerCity && (
+                          <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                            <Navigation className="w-4 h-4" />
+                            <span>{order.customerCity}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {order.description && (
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                          {order.description}
+                        </p>
                       )}
+
+                      <div className="flex items-center space-x-4 text-xs text-gray-600 dark:text-gray-400">
+                        <span className="flex items-center space-x-1">
+                          <Zap className="w-3 h-3" />
+                          <span>{formatWorkType(order.workType)}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>Assigned: {formatDate(order.assignedDate)}</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <Clock className="w-3 h-3" />
+                          <span>Due: {formatDate(order.dueDate)}</span>
+                        </span>
+                        {order.completionDate && (
+                          <span className="flex items-center space-x-1 text-green-400">
+                            <CheckCircle className="w-3 h-3" />
+                            <span>Completed: {formatDate(order.completionDate)}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right Section - Actions */}
+                    <div className="flex flex-row lg:flex-col gap-2">
+                      {order.status === 'assigned' && (
+                        <button
+                          onClick={() => handleStartWork(order.id)}
+                          disabled={updating}
+                          className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all flex items-center space-x-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {updating ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Play className="w-4 h-4" />
+                          )}
+                          <span>Start Work</span>
+                        </button>
+                      )}
+                      {order.status === 'in_progress' && (
+                        <button
+                          onClick={() => handleCompleteWork(order)}
+                          disabled={updating}
+                          className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all flex items-center space-x-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {updating ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4" />
+                          )}
+                          <span>Complete</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setShowDetails(true);
+                        }}
+                        className="px-4 py-2 bg-white/10 border border-white/20 text-gray-900 dark:text-white rounded-lg hover:bg-white/20 transition-all flex items-center space-x-2 text-sm font-medium"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>Details</span>
+                      </button>
                     </div>
                   </div>
 
-                  {/* Right Section - Actions */}
-                  <div className="flex flex-row lg:flex-col gap-2">
-                    {order.status === 'assigned' && (
-                      <button
-                        onClick={() => handleStartWork(order.id)}
-                        className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all flex items-center space-x-2 text-sm font-medium"
-                      >
-                        <Play className="w-4 h-4" />
-                        <span>Start Work</span>
-                      </button>
-                    )}
-                    {order.status === 'in-progress' && (
-                      <button
-                        onClick={() => handleCompleteWork(order.id)}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all flex items-center space-x-2 text-sm font-medium"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        <span>Complete</span>
-                      </button>
-                    )}
-                    <button
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setShowDetails(true);
-                      }}
-                      className="px-4 py-2 bg-white/10 border border-white/20 text-gray-900 dark:text-white rounded-lg hover:bg-white/20 transition-all flex items-center space-x-2 text-sm font-medium"
-                    >
-                      <FileText className="w-4 h-4" />
-                      <span>Details</span>
-                    </button>
-                  </div>
+                  {order.completionNotes && (
+                    <div className="mt-4 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Completion Notes:</p>
+                      <p className="text-sm text-gray-900 dark:text-white">{order.completionNotes}</p>
+                    </div>
+                  )}
                 </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
 
-                {order.notes && (
-                  <div className="mt-4 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Completion Notes:</p>
-                    <p className="text-sm text-gray-900 dark:text-white">{order.notes}</p>
-                  </div>
+      {/* Completion Modal */}
+      {showCompletionModal && selectedOrderForCompletion && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-lg w-full">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Complete Work Order</h2>
+              <button
+                onClick={() => {
+                  setShowCompletionModal(false);
+                  setSelectedOrderForCompletion(null);
+                  setCompletionNotes('');
+                }}
+                disabled={updating}
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50"
+              >
+                <XCircle className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{selectedOrderForCompletion.title}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{formatWorkType(selectedOrderForCompletion.workType)}</p>
+                {selectedOrderForCompletion.customerName && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Customer: {selectedOrderForCompletion.customerName}</p>
                 )}
               </div>
-            ))
-          )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  Completion Notes <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={completionNotes}
+                  onChange={(e) => setCompletionNotes(e.target.value)}
+                  placeholder="Enter details about the work completed, observations, meter readings, etc..."
+                  rows={5}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors resize-none"
+                />
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Please provide detailed notes about the work completed</p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowCompletionModal(false);
+                    setSelectedOrderForCompletion(null);
+                    setCompletionNotes('');
+                  }}
+                  disabled={updating}
+                  className="flex-1 px-6 py-3 bg-white/10 border border-white/20 text-gray-900 dark:text-white rounded-lg hover:bg-white/20 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmCompletion}
+                  disabled={updating || !completionNotes.trim()}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  {updating ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Completing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-5 h-5" />
+                      <span>Mark Complete</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Details Modal */}
       {showDetails && selectedOrder && (
@@ -436,12 +620,12 @@ export default function WorkOrders() {
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Order Information</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Order Number</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{selectedOrder.orderNumber}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Account Number</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{selectedOrder.customerAccount || 'N/A'}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Type</p>
-                    <p className="font-semibold text-gray-900 dark:text-white">{selectedOrder.type}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Work Type</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{formatWorkType(selectedOrder.workType)}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Priority</p>
@@ -452,38 +636,92 @@ export default function WorkOrders() {
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
                     <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${getStatusColor(selectedOrder.status)}`}>
-                      {selectedOrder.status.replace('-', ' ')}
+                      {selectedOrder.status.replace('_', ' ')}
                     </span>
                   </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Assigned Date</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{formatDate(selectedOrder.assignedDate)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Due Date</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{formatDate(selectedOrder.dueDate)}</p>
+                  </div>
+                  {selectedOrder.completionDate && (
+                    <div className="col-span-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Completion Date</p>
+                      <p className="font-semibold text-green-400">{formatDate(selectedOrder.completionDate)}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Customer Information</h3>
-                <div className="space-y-2">
-                  <p className="text-gray-900 dark:text-white">{selectedOrder.customerName}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{selectedOrder.customerPhone}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{selectedOrder.address}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{selectedOrder.zone}</p>
+              {selectedOrder.customerName && (
+                <div className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Customer Information</h3>
+                  <div className="space-y-2">
+                    <p className="text-gray-900 dark:text-white">{selectedOrder.customerName}</p>
+                    {selectedOrder.customerPhone && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{selectedOrder.customerPhone}</p>
+                    )}
+                    {selectedOrder.customerAddress && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{selectedOrder.customerAddress}</p>
+                    )}
+                    {selectedOrder.customerCity && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{selectedOrder.customerCity}</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-
-              <div className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Description</h3>
-                <p className="text-gray-700 dark:text-gray-300">{selectedOrder.description}</p>
-              </div>
-
-              {selectedOrder.status === 'assigned' && (
-                <button
-                  onClick={() => {
-                    handleStartWork(selectedOrder.id);
-                    setShowDetails(false);
-                  }}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all font-medium"
-                >
-                  Start This Work Order
-                </button>
               )}
+
+              {selectedOrder.description && (
+                <div className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Description</h3>
+                  <p className="text-gray-700 dark:text-gray-300">{selectedOrder.description}</p>
+                </div>
+              )}
+
+              {selectedOrder.completionNotes && (
+                <div className="bg-green-500/10 rounded-xl p-4 border border-green-500/20">
+                  <h3 className="font-semibold text-green-400 mb-3">Completion Notes</h3>
+                  <p className="text-gray-700 dark:text-gray-300">{selectedOrder.completionNotes}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                {selectedOrder.status === 'assigned' && (
+                  <button
+                    onClick={() => handleStartWork(selectedOrder.id)}
+                    disabled={updating}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    {updating ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Starting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-5 h-5" />
+                        <span>Start This Work Order</span>
+                      </>
+                    )}
+                  </button>
+                )}
+                {selectedOrder.status === 'in_progress' && (
+                  <button
+                    onClick={() => {
+                      setShowDetails(false);
+                      handleCompleteWork(selectedOrder);
+                    }}
+                    disabled={updating}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    <span>Complete This Work Order</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

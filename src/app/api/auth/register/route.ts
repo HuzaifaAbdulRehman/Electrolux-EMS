@@ -87,6 +87,10 @@ export async function POST(request: NextRequest) {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(data.password, saltRounds);
 
+    // Generate 6-digit verification code
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCodeExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
     // Start transaction (if supported by your MySQL setup)
     let newUser: any = null;
 
@@ -99,6 +103,9 @@ export async function POST(request: NextRequest) {
         name: data.fullName,
         phone: data.phone,
         isActive: 1,
+        emailVerified: 0, // Not verified initially
+        verificationCode: verificationCode,
+        verificationCodeExpiry: verificationCodeExpiry,
       });
 
       // Get the newly created user ID
@@ -134,7 +141,8 @@ export async function POST(request: NextRequest) {
       // Return success response (without sensitive data)
       return NextResponse.json({
         success: true,
-        message: 'Registration successful! You can now login with your email and password.',
+        message: 'Registration successful! Please verify your email to continue.',
+        verificationCode: process.env.NODE_ENV === 'development' ? verificationCode : undefined, // Only in dev mode
         data: {
           email: data.email,
           accountNumber,

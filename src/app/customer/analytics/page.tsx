@@ -191,10 +191,10 @@ export default function UsageAnalytics() {
   };
 
   const savingsTips = [
-    { icon: ThermometerSun, tip: 'Set AC to 24°C to save up to 15% on cooling costs', savings: '$30/month', priority: 'high' },
-    { icon: Lightbulb, tip: 'Switch to LED bulbs for 75% less energy consumption', savings: '$15/month', priority: 'medium' },
-    { icon: Clock, tip: 'Run appliances during off-peak hours (10 PM - 6 AM)', savings: '$25/month', priority: 'high' },
-    { icon: Wind, tip: 'Use ceiling fans to reduce AC usage by 40%', savings: '$20/month', priority: 'medium' }
+    { icon: ThermometerSun, tip: 'Set AC to 24°C to save up to 15% on cooling costs', savings: 'Rs 3,000/month', priority: 'high' },
+    { icon: Lightbulb, tip: 'Switch to LED bulbs for 75% less energy consumption', savings: 'Rs 1,500/month', priority: 'medium' },
+    { icon: Clock, tip: 'Run appliances during off-peak hours (10 PM - 6 AM)', savings: 'Rs 2,500/month', priority: 'high' },
+    { icon: Wind, tip: 'Use ceiling fans to reduce AC usage by 40%', savings: 'Rs 2,000/month', priority: 'medium' }
   ];
 
   const lineChartOptions = {
@@ -329,7 +329,7 @@ export default function UsageAnalytics() {
                   <span className="text-xs text-green-400">Est.</span>
                 </div>
                 <p className="text-xs text-gray-600 dark:text-gray-400">Current Bill</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">${estimatedBill}</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">Rs {estimatedBill}</p>
               </div>
             </div>
 
@@ -457,7 +457,7 @@ export default function UsageAnalytics() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Save Energy</h3>
                     <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                      Reducing consumption by 10% can save approximately ${(estimatedBill * 0.1).toFixed(2)}/month.
+                      Reducing consumption by 10% can save approximately Rs {(estimatedBill * 0.1).toFixed(2)}/month.
                     </p>
                     <p className="text-xs text-green-600 dark:text-green-400 font-semibold">
                       Target: {Math.round(currentMonthUsage * 0.9)} kWh next month
@@ -493,8 +493,8 @@ export default function UsageAnalytics() {
               </div>
               <div className="mt-5 text-center p-4 bg-white dark:bg-white/5 rounded-xl border border-green-200 dark:border-white/10">
                 <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Total Savings Potential</p>
-                <p className="text-4xl font-bold text-green-600 dark:text-green-400">$90/month</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">or $1,080/year if you implement all tips</p>
+                <p className="text-4xl font-bold text-green-600 dark:text-green-400">Rs 9,000/month</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">or Rs 108,000/year if you implement all tips</p>
               </div>
             </div>
 

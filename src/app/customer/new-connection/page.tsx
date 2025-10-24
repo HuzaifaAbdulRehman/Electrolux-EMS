@@ -481,7 +481,7 @@ export default function NewConnection() {
                   <div>
                     <p className="text-blue-300 text-sm font-semibold mb-1">Estimated Connection Charges</p>
                     <p className="text-gray-600 dark:text-gray-400 text-sm">
-                      Single Phase: $150 | Three Phase: $350 | Industrial: Custom Quote
+                      Single Phase: Rs 15,000 | Three Phase: Rs 35,000 | Industrial: Custom Quote
                     </p>
                   </div>
                 </div>
@@ -717,7 +717,7 @@ export default function NewConnection() {
                   <div>
                     <p className="text-yellow-300 font-semibold mb-1">Application Fee</p>
                     <p className="text-gray-600 dark:text-gray-400 text-sm">
-                      A non-refundable application processing fee of $25 will be charged. Connection charges will be communicated after site inspection.
+                      A non-refundable application processing fee of Rs 2,500 will be charged. Connection charges will be communicated after site inspection.
                     </p>
                   </div>
                 </div>

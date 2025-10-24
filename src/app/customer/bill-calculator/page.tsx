@@ -212,12 +212,12 @@ export default function BillCalculator() {
                 {selectedTariff.slabs.map((slab: any, index: number) => (
                   <div key={index} className="flex justify-between text-xs">
                     <span className="text-gray-600 dark:text-gray-400">{slab.label}</span>
-                    <span className="text-gray-900 dark:text-white font-medium">${slab.rate}/unit</span>
+                    <span className="text-gray-900 dark:text-white font-medium">Rs {slab.rate}/unit</span>
                   </div>
                 ))}
                 <div className="flex justify-between text-xs pt-1 border-t border-blue-500/20">
                   <span className="text-gray-600 dark:text-gray-400">Fixed Charge</span>
-                  <span className="text-gray-900 dark:text-white font-medium">${selectedTariff.fixedCharge}</span>
+                  <span className="text-gray-900 dark:text-white font-medium">Rs {selectedTariff.fixedCharge}</span>
                 </div>
               </div>
             </div>
@@ -239,27 +239,27 @@ export default function BillCalculator() {
                       <Zap className="w-4 h-4 text-yellow-500" />
                       <span className="text-gray-600 dark:text-gray-400">Energy Charges</span>
                     </div>
-                    <span className="text-gray-900 dark:text-white font-semibold">${energyCharge.toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">Rs {energyCharge.toFixed(2)}</span>
                   </div>
 
                   <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-white/10">
                     <span className="text-gray-600 dark:text-gray-400">Fixed Charges</span>
-                    <span className="text-gray-900 dark:text-white font-semibold">${fixedCharge.toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">Rs {fixedCharge.toFixed(2)}</span>
                   </div>
 
                   <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-white/10">
                     <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
-                    <span className="text-gray-900 dark:text-white font-semibold">${subtotal.toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">Rs {subtotal.toFixed(2)}</span>
                   </div>
 
                   <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-white/10">
                     <span className="text-gray-600 dark:text-gray-400">Electricity Duty (5%)</span>
-                    <span className="text-gray-900 dark:text-white font-semibold">${electricityDuty.toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">Rs {electricityDuty.toFixed(2)}</span>
                   </div>
 
                   <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-white/10">
                     <span className="text-gray-600 dark:text-gray-400">GST (18%)</span>
-                    <span className="text-gray-900 dark:text-white font-semibold">${gst.toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">Rs {gst.toFixed(2)}</span>
                   </div>
 
                   {/* Total */}
@@ -268,7 +268,7 @@ export default function BillCalculator() {
                       <DollarSign className="w-5 h-5 text-green-500" />
                       <span className="text-lg font-bold text-gray-900 dark:text-white">Total Amount</span>
                     </div>
-                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">${totalAmount.toFixed(2)}</span>
+                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">Rs {totalAmount.toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -283,7 +283,7 @@ export default function BillCalculator() {
                   <div className="p-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/20">
                     <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Average Rate</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">
-                      ${(totalAmount / unitsConsumed).toFixed(2)}
+                      Rs {(totalAmount / unitsConsumed).toFixed(2)}
                     </p>
                     <p className="text-xs text-green-400">per kWh</p>
                   </div>

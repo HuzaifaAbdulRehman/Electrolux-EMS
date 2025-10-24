@@ -247,16 +247,38 @@ export async function GET(request: NextRequest) {
         .orderBy(desc(bills.issueDate))
         .limit(6);
 
-      // Get consumption trend
-      const consumptionTrend = await db
+      // Get consumption trend from bills (last 6 months)
+      const consumptionHistory = await db
         .select({
-          month: meterReadings.readingDate,
-          units: meterReadings.unitsConsumed,
+          billingPeriod: bills.billingMonth,
+          unitsConsumed: bills.unitsConsumed,
+          totalAmount: bills.totalAmount,
         })
-        .from(meterReadings)
-        .where(eq(meterReadings.customerId, customerId!))
-        .orderBy(desc(meterReadings.readingDate))
+        .from(bills)
+        .where(eq(bills.customerId, customerId!))
+        .orderBy(desc(bills.billingMonth))
         .limit(6);
+
+      // Get last payment
+      const [lastPayment] = await db
+        .select({
+          amount: payments.paymentAmount,
+          paymentDate: payments.paymentDate,
+        })
+        .from(payments)
+        .where(eq(payments.customerId, customerId!))
+        .orderBy(desc(payments.paymentDate))
+        .limit(1);
+
+      // Calculate average consumption
+      const avgConsumptionResult = await db
+        .select({
+          avg: sql<number>`AVG(${bills.unitsConsumed})`,
+        })
+        .from(bills)
+        .where(eq(bills.customerId, customerId!));
+
+      const avgConsumption = avgConsumptionResult[0]?.avg || 0;
 
       // Get recent payments
       const recentPayments = await db
@@ -272,12 +294,34 @@ export async function GET(request: NextRequest) {
         .orderBy(desc(payments.paymentDate))
         .limit(5);
 
+      // Get current bill (most recent pending bill)
+      const [currentBill] = await db
+        .select({
+          billNumber: bills.billNumber,
+          totalAmount: bills.totalAmount,
+          dueDate: bills.dueDate,
+        })
+        .from(bills)
+        .where(
+          and(
+            eq(bills.customerId, customerId!),
+            eq(bills.status, 'pending')
+          )
+        )
+        .orderBy(desc(bills.issueDate))
+        .limit(1);
+
       return NextResponse.json({
         success: true,
         data: {
-          customer,
+          accountNumber: customer.accountNumber,
+          fullName: customer.fullName,
+          outstandingBalance: customer.outstandingBalance?.toString() || '0',
+          currentBill,
+          avgConsumption: Math.round(avgConsumption),
+          lastPayment,
+          consumptionHistory,
           recentBills,
-          consumptionTrend,
           recentPayments,
         },
       });

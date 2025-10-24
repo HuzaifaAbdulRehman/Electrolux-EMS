@@ -53,9 +53,9 @@ export async function GET(request: NextRequest) {
     const result = await query;
 
     // Get total count
-    const countQuery = db.select({ count: sql<number>`count(*)` }).from(meterReadings);
+    let countQuery = db.select({ count: sql<number>`count(*)` }).from(meterReadings);
     if (conditions.length > 0) {
-      countQuery.where(conditions[0] as any);
+      countQuery = countQuery.where(conditions[0] as any);
     }
     const [{ count }] = await countQuery;
 

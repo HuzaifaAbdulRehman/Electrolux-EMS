@@ -9,3 +9,5 @@ export * from './payments';
 export * from './connectionApplications';
 export * from './workOrders';
 export * from './notifications';
+export * from './billRequests';
+export * from './connectionRequests';

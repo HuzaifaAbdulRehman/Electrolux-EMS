@@ -89,8 +89,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Generate a random secure password for employee
-    const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase() + '!@#';
+    // Generate a cryptographically secure password for employee
+    const crypto = await import('crypto');
+    const randomPassword = crypto.randomBytes(8).toString('base64').replace(/[/+=]/g, '') +
+                          crypto.randomBytes(4).toString('hex').toUpperCase() + '!@#';
     const bcrypt = await import('bcryptjs');
     const hashedPassword = await bcrypt.hash(randomPassword, 12);
 

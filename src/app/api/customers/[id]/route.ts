@@ -130,7 +130,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const body = await request.json();
+    let body = await request.json();
 
     // If customer is updating their own profile, limit the fields they can update
     if (session.user.userType === 'customer') {

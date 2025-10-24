@@ -104,12 +104,12 @@ export async function GET(request: NextRequest) {
     const result = await query;
 
     // Get total count for pagination
-    const countQuery = db
+    let countQuery = db
       .select({ count: sql`count(*)` })
       .from(customers);
 
     if (conditions.length > 0) {
-      countQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
+      countQuery = countQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
     }
 
     const [{ count }] = await countQuery as any;
@@ -161,8 +161,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate a random secure password
-    const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase() + '!@#';
+    // Generate a cryptographically secure password
+    const crypto = await import('crypto');
+    const randomPassword = crypto.randomBytes(8).toString('base64').replace(/[/+=]/g, '') +
+                          crypto.randomBytes(4).toString('hex').toUpperCase() + '!@#';
     const bcrypt = await import('bcryptjs');
     const hashedPassword = await bcrypt.hash(randomPassword, 12);
 

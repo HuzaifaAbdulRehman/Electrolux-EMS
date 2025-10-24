@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
@@ -71,14 +71,57 @@ export default function ViewBills() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [loading, setLoading] = useState(true);
   const [requestForm, setRequestForm] = useState({
     billingMonth: '',
     priority: 'medium',
     notes: ''
   });
 
-  // Mock bills data
-  const bills: Bill[] = [
+  // Fetch real bills data
+  useEffect(() => {
+    fetchBills();
+  }, []);
+
+  const fetchBills = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/bills?limit=50');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch bills');
+      }
+
+      const result = await response.json();
+
+      // Transform API data to match Bill interface
+      const transformedBills = result.data.map((bill: any) => ({
+        id: bill.id,
+        billNumber: bill.billNumber,
+        month: new Date(bill.billingMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        issueDate: bill.issueDate,
+        dueDate: bill.dueDate,
+        units: bill.unitsConsumed,
+        amount: parseFloat(bill.totalAmount),
+        status: bill.status,
+        paidDate: bill.paymentDate,
+        paymentMethod: bill.status === 'paid' ? 'Online Banking' : undefined,
+        breakdown: {
+          baseAmount: parseFloat(bill.baseAmount || 0),
+          fixedCharges: parseFloat(bill.fixedCharges || 0),
+          electricityDuty: parseFloat(bill.electricityDuty || 0),
+          gst: parseFloat(bill.gstAmount || 0),
+          totalAmount: parseFloat(bill.totalAmount),
+          tariffSlabs: []
+        }
+      }));
+
+      setBills(transformedBills);
+    } catch (error) {
+      console.error('Error fetching bills:', error);
+      // Fallback to mock data if API fails
+      setBills([
     {
       id: 1,
       billNumber: 'BILL-202410-001234',
@@ -155,7 +198,11 @@ export default function ViewBills() {
       amount: 235.00,
       status: 'paid'
     }
-  ];
+  ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredBills = bills.filter(bill => {
     const matchesSearch = bill.billNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -164,14 +211,14 @@ export default function ViewBills() {
     return matchesSearch && matchesFilter;
   });
 
-  // Analytics calculations
+  // Analytics calculations with safe checks
   const totalPaid = bills.filter(b => b.status === 'paid').reduce((sum, b) => sum + b.amount, 0);
-  const avgConsumption = Math.round(bills.reduce((sum, b) => sum + b.units, 0) / bills.length);
-  const avgAmount = (bills.reduce((sum, b) => sum + b.amount, 0) / bills.length).toFixed(2);
+  const avgConsumption = bills.length > 0 ? Math.round(bills.reduce((sum, b) => sum + b.units, 0) / bills.length) : 0;
+  const avgAmount = bills.length > 0 ? (bills.reduce((sum, b) => sum + b.amount, 0) / bills.length).toFixed(2) : '0';
   const currentMonth = bills[0];
   const lastMonth = bills[1];
-  const consumptionChange = ((currentMonth.units - lastMonth.units) / lastMonth.units * 100).toFixed(1);
-  const amountChange = ((currentMonth.amount - lastMonth.amount) / lastMonth.amount * 100).toFixed(1);
+  const consumptionChange = currentMonth && lastMonth ? ((currentMonth.units - lastMonth.units) / lastMonth.units * 100).toFixed(1) : '0';
+  const amountChange = currentMonth && lastMonth ? ((currentMonth.amount - lastMonth.amount) / lastMonth.amount * 100).toFixed(1) : '0';
 
   // Combined Chart Data - Shows both consumption and cost
   const combinedTrendData = {
@@ -355,8 +402,18 @@ export default function ViewBills() {
     }, 100);
   };
 
+  if (loading) {
+    return (
+      <DashboardLayout userType="customer" userName="Customer">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
-    <DashboardLayout userType="customer" userName="Huzaifa">
+    <DashboardLayout userType="customer" userName="Customer">
       <div className="max-w-[1920px] mx-auto space-y-6 pb-8">
         {/* Header with Request Button */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">

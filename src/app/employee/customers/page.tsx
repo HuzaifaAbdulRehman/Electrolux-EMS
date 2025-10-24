@@ -210,7 +210,7 @@ export default function EmployeeCustomers() {
                     <td className="px-6 py-4">
                       <div>
                         <p className="text-white font-semibold">{customer.avgConsumption} kWh/mo</p>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm">Last Bill: ${customer.lastBill}</p>
+                        <p className="text-gray-600 dark:text-gray-400 text-sm">Last Bill: Rs {customer.lastBill}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">

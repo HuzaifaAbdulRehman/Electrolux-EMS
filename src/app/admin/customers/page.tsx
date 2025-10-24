@@ -222,7 +222,7 @@ export default function AdminCustomers() {
               </div>
               <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">${totalRevenue.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">Rs {totalRevenue.toFixed(2)}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400">Monthly Revenue</p>
           </div>
 
@@ -233,7 +233,7 @@ export default function AdminCustomers() {
               </div>
               <span className="text-xs text-red-600 dark:text-red-400">Outstanding</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">${totalOutstanding.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">Rs {totalOutstanding.toFixed(2)}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400">Total Outstanding</p>
           </div>
         </div>
@@ -341,11 +341,11 @@ export default function AdminCustomers() {
                     <td className="px-6 py-4">
                       <div>
                         <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          ${customer.lastBillAmount}
+                          Rs {customer.lastBillAmount}
                         </p>
                         <p className={`text-xs ${getPaymentStatusColor(customer.paymentStatus)}`}>
                           {customer.paymentStatus === 'paid' ? 'Paid' :
-                           customer.paymentStatus === 'overdue' ? `Overdue: $${customer.outstandingBalance}` :
+                           customer.paymentStatus === 'overdue' ? `Overdue: Rs ${customer.outstandingBalance}` :
                            'Pending'}
                         </p>
                       </div>
@@ -443,13 +443,13 @@ export default function AdminCustomers() {
                         <div>
                           <p className="text-sm text-gray-600 dark:text-gray-400">Last Bill</p>
                           <p className="text-lg font-medium text-gray-900 dark:text-white">
-                            ${customer.lastBillAmount}
+                            Rs {customer.lastBillAmount}
                           </p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-600 dark:text-gray-400">Outstanding</p>
                           <p className="text-lg font-medium text-gray-900 dark:text-white">
-                            ${customer.outstandingBalance}
+                            Rs {customer.outstandingBalance}
                           </p>
                         </div>
                         <div>

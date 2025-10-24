@@ -75,6 +75,7 @@ export default function ViewBills() {
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState('');
   const [requestForm, setRequestForm] = useState({
     billingMonth: '',
@@ -90,6 +91,7 @@ export default function ViewBills() {
   const fetchBills = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch('/api/bills?limit=50');
 
       if (!response.ok) {
@@ -123,85 +125,8 @@ export default function ViewBills() {
       setBills(transformedBills);
     } catch (error) {
       console.error('Error fetching bills:', error);
-      // Fallback to mock data if API fails
-      setBills([
-    {
-      id: 1,
-      billNumber: 'BILL-202410-001234',
-      month: 'October 2024',
-      issueDate: '2024-10-01',
-      dueDate: '2024-10-15',
-      units: 460,
-      amount: 245.50,
-      status: 'paid',
-      paidDate: '2024-10-05',
-      paymentMethod: 'Online Banking',
-      breakdown: {
-        baseAmount: 184.00,
-        fixedCharges: 25.00,
-        electricityDuty: 10.45,
-        gst: 39.50,
-        totalAmount: 258.95,
-        tariffSlabs: [
-          { units: 100, rate: 3.50, amount: 350.00 },
-          { units: 200, rate: 4.00, amount: 800.00 },
-          { units: 160, rate: 5.00, amount: 800.00 }
-        ]
-      }
-    },
-    {
-      id: 2,
-      billNumber: 'BILL-202409-001234',
-      month: 'September 2024',
-      issueDate: '2024-09-01',
-      dueDate: '2024-09-15',
-      units: 420,
-      amount: 220.00,
-      status: 'paid',
-      paidDate: '2024-09-12',
-      paymentMethod: 'Credit Card'
-    },
-    {
-      id: 3,
-      billNumber: 'BILL-202408-001234',
-      month: 'August 2024',
-      issueDate: '2024-08-01',
-      dueDate: '2024-08-15',
-      units: 485,
-      amount: 258.75,
-      status: 'paid'
-    },
-    {
-      id: 4,
-      billNumber: 'BILL-202407-001234',
-      month: 'July 2024',
-      issueDate: '2024-07-01',
-      dueDate: '2024-07-15',
-      units: 510,
-      amount: 275.00,
-      status: 'paid'
-    },
-    {
-      id: 5,
-      billNumber: 'BILL-202406-001234',
-      month: 'June 2024',
-      issueDate: '2024-06-01',
-      dueDate: '2024-06-15',
-      units: 380,
-      amount: 195.50,
-      status: 'paid'
-    },
-    {
-      id: 6,
-      billNumber: 'BILL-202405-001234',
-      month: 'May 2024',
-      issueDate: '2024-05-01',
-      dueDate: '2024-05-15',
-      units: 445,
-      amount: 235.00,
-      status: 'paid'
-    }
-  ]);
+      setError('Unable to load bills. Please try again later.');
+      setBills([]);
     } finally {
       setLoading(false);
     }
@@ -220,8 +145,8 @@ export default function ViewBills() {
   const avgAmount = bills.length > 0 ? (bills.reduce((sum, b) => sum + b.amount, 0) / bills.length).toFixed(2) : '0';
   const currentMonth = bills[0];
   const lastMonth = bills[1];
-  const consumptionChange = currentMonth && lastMonth ? ((currentMonth.units - lastMonth.units) / lastMonth.units * 100).toFixed(1) : '0';
-  const amountChange = currentMonth && lastMonth ? ((currentMonth.amount - lastMonth.amount) / lastMonth.amount * 100).toFixed(1) : '0';
+  const consumptionChange = currentMonth && lastMonth && lastMonth.units > 0 ? ((currentMonth.units - lastMonth.units) / lastMonth.units * 100).toFixed(1) : '0';
+  const amountChange = currentMonth && lastMonth && lastMonth.amount > 0 ? ((currentMonth.amount - lastMonth.amount) / lastMonth.amount * 100).toFixed(1) : '0';
 
   // Combined Chart Data - Shows both consumption and cost
   const combinedTrendData = {

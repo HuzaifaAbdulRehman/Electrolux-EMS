@@ -479,7 +479,7 @@ export default function BillView() {
 
                   <div className="bg-blue-50 border border-blue-200 p-2 rounded text-xs">
                     <p className="text-blue-800">
-                      <span className="font-bold">Avg. Daily:</span> {(billData.reading.unitsConsumed / 30).toFixed(1)} kWh
+                      <span className="font-bold">Avg. Daily:</span> {billData.reading.unitsConsumed ? (billData.reading.unitsConsumed / 30).toFixed(1) : '0'} kWh
                       <span className="mx-2">•</span>
                       <span className="font-bold">Tariff:</span> {billData.customer.connectionType} Slab
                     </p>

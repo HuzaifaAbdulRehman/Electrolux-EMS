@@ -251,7 +251,7 @@ export default function OnlinePayment() {
                           <DollarSign className="w-4 h-4 text-green-400 mr-1" />
                           <p className="text-xs text-gray-600 dark:text-gray-400">Amount Due</p>
                         </div>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">${currentBill.amount.toFixed(2)}</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">Rs {currentBill.amount.toFixed(2)}</p>
                       </div>
                       <div className="p-4 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-xl border border-blue-500/20">
                         <div className="flex items-center mb-2">
@@ -276,7 +276,7 @@ export default function OnlinePayment() {
                           <AlertCircle className="w-4 h-4 mr-2 text-orange-400" />
                           Late Fee
                         </span>
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">${currentBill.lateFee.toFixed(2)}</span>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">Rs {currentBill.lateFee.toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
@@ -299,7 +299,7 @@ export default function OnlinePayment() {
                             : 'bg-white/5 text-gray-900 dark:text-white hover:bg-white/10 border-gray-300 dark:border-white/20 hover:border-yellow-400/50'
                         }`}
                       >
-                        ${amount}
+                        Rs {amount}
                       </button>
                     ))}
                   </div>
@@ -507,7 +507,7 @@ export default function OnlinePayment() {
                       ) : (
                         <>
                           <Lock className="w-5 h-5" />
-                          <span>Pay ${paymentAmount}</span>
+                          <span>Pay Rs {paymentAmount}</span>
                         </>
                       )}
                     </button>
@@ -533,7 +533,7 @@ export default function OnlinePayment() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Amount Paid</span>
-                      <span className="text-white font-semibold">${paymentAmount}</span>
+                      <span className="text-white font-semibold">Rs {paymentAmount}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Payment Method</span>
@@ -573,19 +573,19 @@ export default function OnlinePayment() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Bill Amount</span>
-                  <span className="text-gray-900 dark:text-white">${currentBill.amount.toFixed(2)}</span>
+                  <span className="text-gray-900 dark:text-white">Rs {currentBill.amount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Late Fee</span>
-                  <span className="text-gray-900 dark:text-white">${currentBill.lateFee.toFixed(2)}</span>
+                  <span className="text-gray-900 dark:text-white">Rs {currentBill.lateFee.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600 dark:text-gray-400">Processing Fee</span>
-                  <span className="text-gray-900 dark:text-white">$0.00</span>
+                  <span className="text-gray-900 dark:text-white">Rs 0.00</span>
                 </div>
                 <div className="border-t border-gray-200 dark:border-white/10 pt-3 flex justify-between">
                   <span className="text-white font-semibold">Total Amount</span>
-                  <span className="text-2xl font-bold text-green-400">${paymentAmount}</span>
+                  <span className="text-2xl font-bold text-green-400">Rs {paymentAmount}</span>
                 </div>
               </div>
             </div>
@@ -622,7 +622,7 @@ export default function OnlinePayment() {
                 {recentTransactions.map((transaction) => (
                   <div key={transaction.id} className="p-3 bg-white dark:bg-white/5 rounded-lg">
                     <div className="flex justify-between mb-1">
-                      <span className="text-white font-medium">${transaction.amount.toFixed(2)}</span>
+                      <span className="text-white font-medium">Rs {transaction.amount.toFixed(2)}</span>
                       <span className="text-green-400 text-xs">Success</span>
                     </div>
                     <div className="flex justify-between">

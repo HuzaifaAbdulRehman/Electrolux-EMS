@@ -123,7 +123,7 @@ export default function CustomerDashboard() {
   const summaryCards = [
     {
       title: 'Outstanding Balance',
-      value: `$${parseFloat(outstandingBalance).toFixed(2)}`,
+      value: `Rs ${parseFloat(outstandingBalance).toFixed(2)}`,
       change: parseFloat(outstandingBalance) > 0 ? 'Payment Due' : 'Paid',
       trend: parseFloat(outstandingBalance) > 0 ? 'up' : 'neutral',
       icon: DollarSign,
@@ -131,7 +131,7 @@ export default function CustomerDashboard() {
     },
     {
       title: 'Current Bill',
-      value: currentBill ? `$${parseFloat(currentBill.totalAmount || 0).toFixed(2)}` : '$0.00',
+      value: currentBill ? `Rs ${parseFloat(currentBill.totalAmount || 0).toFixed(2)}` : 'Rs 0.00',
       change: currentBill?.dueDate ? `Due: ${new Date(currentBill.dueDate).toLocaleDateString()}` : 'No bill',
       trend: 'neutral',
       icon: FileText,
@@ -147,7 +147,7 @@ export default function CustomerDashboard() {
     },
     {
       title: 'Last Payment',
-      value: lastPayment ? `$${parseFloat(lastPayment.amount).toFixed(2)}` : 'N/A',
+      value: lastPayment ? `Rs ${parseFloat(lastPayment.amount).toFixed(2)}` : 'N/A',
       change: lastPayment ? new Date(lastPayment.paymentDate).toLocaleDateString() : 'No payments',
       trend: 'neutral',
       icon: CreditCard,
@@ -354,7 +354,7 @@ export default function CustomerDashboard() {
                         <p className="text-gray-700 dark:text-gray-300">{bill.unitsConsumed} kWh</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-gray-900 dark:text-white font-semibold">${parseFloat(bill.totalAmount).toFixed(2)}</p>
+                        <p className="text-gray-900 dark:text-white font-semibold">Rs {parseFloat(bill.totalAmount).toFixed(2)}</p>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-gray-600 dark:text-gray-400">{new Date(bill.dueDate).toLocaleDateString()}</p>
@@ -413,7 +413,7 @@ export default function CustomerDashboard() {
                         <p className="text-gray-700 dark:text-gray-300">{new Date(payment.paymentDate).toLocaleDateString()}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-gray-900 dark:text-white font-semibold">${parseFloat(payment.amount).toFixed(2)}</p>
+                        <p className="text-gray-900 dark:text-white font-semibold">Rs {parseFloat(payment.amount).toFixed(2)}</p>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border capitalize ${getPaymentStatusColor(payment.paymentMethod)}`}>

@@ -16,6 +16,7 @@ const registrationSchema = z.object({
   city: z.string().min(2, 'City is required'),
   state: z.string().min(2, 'State is required'),
   pincode: z.string().regex(/^\d{6}$/, 'Pincode must be 6 digits'),
+  meterNumber: z.string().regex(/^MTR-[A-Z]{3}-\d{6}$/, 'Meter number must be in format MTR-XXX-XXXXXX (e.g., MTR-KHI-000001)'),
   connectionType: z.enum(['Residential', 'Commercial', 'Industrial', 'Agricultural']).optional().default('Residential'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -68,6 +69,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if meter number is already assigned
+    const existingMeter = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.meterNumber, data.meterNumber))
+      .limit(1);
+
+    if (existingMeter.length > 0) {
+      return NextResponse.json(
+        { error: 'Meter number is already assigned to another customer' },
+        { status: 409 }
+      );
+    }
+
     // Generate secure password hash
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(data.password, saltRounds);
@@ -89,16 +104,15 @@ export async function POST(request: NextRequest) {
       // Get the newly created user ID
       [newUser] = await db.select().from(users).where(eq(users.email, data.email)).limit(1);
 
-      // Generate unique account and meter numbers
+      // Generate unique account number (not meter - use customer's meter)
       const timestamp = Date.now();
       const accountNumber = `ELX-${new Date().getFullYear()}-${String(timestamp).slice(-6)}`;
-      const meterNumber = `MTR-${String(timestamp).slice(-8)}`;
 
       // Create customer record
       const customerData: any = {
         userId: newUser.id,
         accountNumber,
-        meterNumber,
+        meterNumber: data.meterNumber, // Use customer's meter number from input
         fullName: data.fullName,
         email: data.email,
         phone: data.phone,
@@ -124,7 +138,7 @@ export async function POST(request: NextRequest) {
         data: {
           email: data.email,
           accountNumber,
-          meterNumber,
+          meterNumber: data.meterNumber, // Return customer's meter number
           fullName: data.fullName,
         },
       }, { status: 201 });

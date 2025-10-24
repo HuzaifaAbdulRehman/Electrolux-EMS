@@ -25,6 +25,9 @@ interface FormErrors {
   confirmPassword?: string;
   phoneNumber?: string;
   fullAddress?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
   meterNumber?: string;
   termsAccepted?: string;
 }
@@ -37,6 +40,9 @@ export default function RegisterPage() {
     confirmPassword: '',
     phoneNumber: '',
     fullAddress: '',
+    city: '',
+    state: '',
+    pincode: '',
     meterNumber: '',
     termsAccepted: false
   });
@@ -119,24 +125,49 @@ export default function RegisterPage() {
       newErrors.confirmPassword = 'Passwords do not match';
     }
     
-    // Phone Number validation
-    const phoneRegex = /^\d{10}$/;
+    // Phone Number validation (Pakistani format: 11 digits starting with 0)
+    const phoneRegex = /^0\d{10}$/;
     if (!formData.phoneNumber) {
       newErrors.phoneNumber = 'Phone number is required';
     } else if (!phoneRegex.test(formData.phoneNumber.replace(/\D/g, ''))) {
-      newErrors.phoneNumber = 'Phone number must be 10 digits';
+      newErrors.phoneNumber = 'Phone number must be 11 digits (e.g., 03001234567)';
     }
     
     // Address validation
     if (!formData.fullAddress) {
       newErrors.fullAddress = 'Full address is required';
     }
-    
-    // Meter Number validation
+
+    // City validation
+    if (!formData.city) {
+      newErrors.city = 'City is required';
+    } else if (formData.city.length < 2) {
+      newErrors.city = 'City must be at least 2 characters';
+    }
+
+    // State validation
+    if (!formData.state) {
+      newErrors.state = 'State is required';
+    } else if (formData.state.length < 2) {
+      newErrors.state = 'State must be at least 2 characters';
+    }
+
+    // Pincode validation
+    const pincodeRegex = /^\d{6}$/;
+    if (!formData.pincode) {
+      newErrors.pincode = 'Pincode is required';
+    } else if (!pincodeRegex.test(formData.pincode)) {
+      newErrors.pincode = 'Pincode must be 6 digits';
+    }
+
+    // Meter Number validation (Format: MTR-XXX-XXXXXX)
+    const meterRegex = /^MTR-[A-Z]{3}-\d{6}$/;
     if (!formData.meterNumber) {
       newErrors.meterNumber = 'Meter number is required';
+    } else if (!meterRegex.test(formData.meterNumber)) {
+      newErrors.meterNumber = 'Meter number must be in format MTR-XXX-XXXXXX (e.g., MTR-KHI-000001)';
     }
-    
+
     // Terms validation
     if (!formData.termsAccepted) {
       newErrors.termsAccepted = 'You must accept the terms and conditions';
@@ -167,13 +198,14 @@ export default function RegisterPage() {
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
+          confirmPassword: formData.confirmPassword,
           fullName: formData.fullName,
-          phone: formData.phoneNumber.replace(/\D/g, ''),
+          phone: formData.phoneNumber.replace(/\D/g, '').substring(1), // Remove leading 0, send 10 digits
           address: formData.fullAddress,
-          city: 'Mumbai', // You can add city field to form
-          state: 'Maharashtra', // You can add state field
-          pincode: '400001', // You can add pincode field
-          meterNumber: formData.meterNumber,
+          city: formData.city,
+          state: formData.state,
+          pincode: formData.pincode,
+          meterNumber: formData.meterNumber.toUpperCase(), // Ensure uppercase
         }),
       });
 
@@ -306,7 +338,7 @@ export default function RegisterPage() {
                         value={formData.fullName}
                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                         className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-                        placeholder="Huzaifa"
+                        placeholder="Huzaifa Abdul Rehman"
                       />
                     </div>
                     {errors.fullName && (
@@ -327,7 +359,7 @@ export default function RegisterPage() {
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-                        placeholder="john@example.com"
+                        placeholder="huzaifa@test.com"
                       />
                     </div>
                     {errors.email && (
@@ -351,7 +383,7 @@ export default function RegisterPage() {
                         value={formData.password}
                         onChange={handlePasswordChange}
                         className="w-full pl-10 pr-10 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-                        placeholder="Min. 8 chars"
+                        placeholder="Enter your password"
                       />
                       <button
                         type="button"
@@ -432,8 +464,8 @@ export default function RegisterPage() {
                         value={formData.phoneNumber}
                         onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                         className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-                        placeholder="1234567890"
-                        maxLength={10}
+                        placeholder="03001234567"
+                        maxLength={11}
                       />
                     </div>
                     {errors.phoneNumber && (
@@ -452,9 +484,10 @@ export default function RegisterPage() {
                       <input
                         type="text"
                         value={formData.meterNumber}
-                        onChange={(e) => setFormData({ ...formData, meterNumber: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, meterNumber: e.target.value.toUpperCase() })}
                         className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-                        placeholder="Meter number"
+                        placeholder="MTR-KHI-000001"
+                        maxLength={14}
                       />
                     </div>
                     {errors.meterNumber && (
@@ -475,7 +508,7 @@ export default function RegisterPage() {
                       value={formData.fullAddress}
                       onChange={(e) => setFormData({ ...formData, fullAddress: e.target.value })}
                       className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
-                      placeholder="Enter your complete address"
+                      placeholder="House 123, Street 5, Gulshan-e-Iqbal"
                       rows={2}
                     />
                   </div>
@@ -485,6 +518,64 @@ export default function RegisterPage() {
                       {errors.fullAddress}
                     </p>
                   )}
+                </div>
+
+                {/* City, State, Pincode Grid */}
+                <div className="grid grid-cols-3 gap-3">
+                  {/* City */}
+                  <div>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">City *</label>
+                    <input
+                      type="text"
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                      placeholder="Karachi"
+                    />
+                    {errors.city && (
+                      <p className="text-red-400 text-xs mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.city}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* State */}
+                  <div>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">State *</label>
+                    <input
+                      type="text"
+                      value={formData.state}
+                      onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                      placeholder="Sindh"
+                    />
+                    {errors.state && (
+                      <p className="text-red-400 text-xs mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.state}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Pincode */}
+                  <div>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">Pincode *</label>
+                    <input
+                      type="text"
+                      value={formData.pincode}
+                      onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                      placeholder="75300"
+                      maxLength={6}
+                    />
+                    {errors.pincode && (
+                      <p className="text-red-400 text-xs mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.pincode}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Terms and Conditions */}

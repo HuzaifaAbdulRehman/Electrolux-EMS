@@ -278,7 +278,7 @@ export default function AdminDashboard() {
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Monthly Revenue</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-              ${(parseFloat(metrics?.monthlyRevenue || 0) / 1000).toFixed(1)}K
+              Rs {(parseFloat(metrics?.monthlyRevenue || 0) / 1000).toFixed(1)}K
             </p>
           </div>
 
@@ -290,7 +290,7 @@ export default function AdminDashboard() {
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Outstanding</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-              ${(parseFloat(metrics?.outstandingAmount || 0) / 1000).toFixed(1)}K
+              Rs {(parseFloat(metrics?.outstandingAmount || 0) / 1000).toFixed(1)}K
             </p>
           </div>
 
@@ -415,7 +415,7 @@ export default function AdminDashboard() {
                         <p className="text-gray-500 dark:text-gray-400 text-sm">{bill.accountNumber}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-gray-900 dark:text-white font-semibold">${parseFloat(bill.totalAmount).toFixed(2)}</p>
+                        <p className="text-gray-900 dark:text-white font-semibold">Rs {parseFloat(bill.totalAmount).toFixed(2)}</p>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-gray-600 dark:text-gray-400">{new Date(bill.dueDate).toLocaleDateString()}</p>

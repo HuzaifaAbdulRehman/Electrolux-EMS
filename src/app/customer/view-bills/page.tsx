@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { safeNumber, formatCurrency, safeDate, formatUnits } from '@/lib/utils/dataHandlers';
 import {
   FileText,
   Download,
@@ -107,17 +108,17 @@ export default function ViewBills() {
         month: new Date(bill.billingMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
         issueDate: bill.issueDate,
         dueDate: bill.dueDate,
-        units: bill.unitsConsumed,
-        amount: parseFloat(bill.totalAmount),
+        units: safeNumber(bill.unitsConsumed, 0),
+        amount: safeNumber(bill.totalAmount, 0),
         status: bill.status,
         paidDate: bill.paymentDate,
         paymentMethod: bill.status === 'paid' ? 'Online Banking' : undefined,
         breakdown: {
-          baseAmount: parseFloat(bill.baseAmount || 0),
-          fixedCharges: parseFloat(bill.fixedCharges || 0),
-          electricityDuty: parseFloat(bill.electricityDuty || 0),
-          gst: parseFloat(bill.gstAmount || 0),
-          totalAmount: parseFloat(bill.totalAmount),
+          baseAmount: safeNumber(bill.baseAmount, 0),
+          fixedCharges: safeNumber(bill.fixedCharges, 0),
+          electricityDuty: safeNumber(bill.electricityDuty, 0),
+          gst: safeNumber(bill.gstAmount, 0),
+          totalAmount: safeNumber(bill.totalAmount, 0),
           tariffSlabs: []
         }
       }));
@@ -140,13 +141,13 @@ export default function ViewBills() {
   });
 
   // Analytics calculations with safe checks
-  const totalPaid = bills.filter(b => b.status === 'paid').reduce((sum, b) => sum + b.amount, 0);
-  const avgConsumption = bills.length > 0 ? Math.round(bills.reduce((sum, b) => sum + b.units, 0) / bills.length) : 0;
-  const avgAmount = bills.length > 0 ? (bills.reduce((sum, b) => sum + b.amount, 0) / bills.length).toFixed(2) : '0';
+  const totalPaid = bills.filter(b => b.status === 'paid').reduce((sum, b) => sum + safeNumber(b.amount, 0), 0);
+  const avgConsumption = bills.length > 0 ? Math.round(bills.reduce((sum, b) => sum + safeNumber(b.units, 0), 0) / bills.length) : 0;
+  const avgAmount = bills.length > 0 ? (bills.reduce((sum, b) => sum + safeNumber(b.amount, 0), 0) / bills.length) : 0;
   const currentMonth = bills[0];
   const lastMonth = bills[1];
-  const consumptionChange = currentMonth && lastMonth && lastMonth.units > 0 ? ((currentMonth.units - lastMonth.units) / lastMonth.units * 100).toFixed(1) : '0';
-  const amountChange = currentMonth && lastMonth && lastMonth.amount > 0 ? ((currentMonth.amount - lastMonth.amount) / lastMonth.amount * 100).toFixed(1) : '0';
+  const consumptionChange = currentMonth && lastMonth && safeNumber(lastMonth.units, 0) > 0 ? ((safeNumber(currentMonth.units, 0) - safeNumber(lastMonth.units, 0)) / safeNumber(lastMonth.units, 1) * 100).toFixed(1) : '0';
+  const amountChange = currentMonth && lastMonth && safeNumber(lastMonth.amount, 0) > 0 ? ((safeNumber(currentMonth.amount, 0) - safeNumber(lastMonth.amount, 0)) / safeNumber(lastMonth.amount, 1) * 100).toFixed(1) : '0';
 
   // Combined Chart Data - Shows both consumption and cost
   const combinedTrendData = {
@@ -154,7 +155,7 @@ export default function ViewBills() {
     datasets: [
       {
         label: 'Units Consumed (kWh)',
-        data: bills.map(b => b.units).reverse(),
+        data: bills.map(b => safeNumber(b.units, 0)).reverse(),
         backgroundColor: 'rgba(59, 130, 246, 0.8)',
         borderColor: 'rgb(59, 130, 246)',
         borderWidth: 2,
@@ -162,8 +163,8 @@ export default function ViewBills() {
         yAxisID: 'y'
       },
       {
-        label: 'Bill Amount (₹)',
-        data: bills.map(b => b.amount).reverse(),
+        label: 'Bill Amount (Rs.)',
+        data: bills.map(b => safeNumber(b.amount, 0)).reverse(),
         backgroundColor: 'rgba(251, 191, 36, 0.8)',
         borderColor: 'rgb(251, 191, 36)',
         borderWidth: 2,
@@ -236,7 +237,7 @@ export default function ViewBills() {
         beginAtZero: true,
         title: {
           display: true,
-          text: 'Amount (₹)',
+          text: 'Amount (Rs.)',
           color: 'rgb(251, 191, 36)',
           font: { size: 12, weight: 'bold' as const }
         },
@@ -372,7 +373,7 @@ export default function ViewBills() {
               <p className="text-gray-700 dark:text-gray-300 font-medium">Total Paid</p>
               <DollarSign className="w-6 h-6 text-green-400" />
             </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">₹{totalPaid.toFixed(2)}</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(totalPaid, 'Rs.')}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Last 6 months</p>
           </div>
 
@@ -381,8 +382,8 @@ export default function ViewBills() {
               <p className="text-gray-700 dark:text-gray-300 font-medium">Avg Consumption</p>
               <Zap className="w-6 h-6 text-blue-400" />
             </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">{avgConsumption}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">kWh/month</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{formatUnits(avgConsumption)}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">per month</p>
           </div>
 
           <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-xl rounded-2xl p-6 border border-purple-500/30">
@@ -390,7 +391,7 @@ export default function ViewBills() {
               <p className="text-gray-700 dark:text-gray-300 font-medium">Avg Bill Amount</p>
               <TrendingUp className="w-6 h-6 text-purple-400" />
             </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">₹{avgAmount}</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{formatCurrency(avgAmount, 'Rs.')}</p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">per month</p>
           </div>
 
@@ -402,7 +403,7 @@ export default function ViewBills() {
                 <TrendingDown className="w-6 h-6 text-green-400" />
               }
             </div>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">{currentMonth.units} kWh</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{currentMonth ? formatUnits(currentMonth.units) : 'N/A'}</p>
             <p className={`text-sm mt-1 ${parseFloat(consumptionChange) > 0 ? 'text-red-400' : 'text-green-400'}`}>
               {parseFloat(consumptionChange) > 0 ? '+' : ''}{consumptionChange}% vs last month
             </p>
@@ -433,15 +434,15 @@ export default function ViewBills() {
           <div className="mt-4 grid grid-cols-3 gap-4">
             <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-xl p-4 border border-blue-500/20">
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Avg Units/Month</p>
-              <p className="text-2xl font-bold text-blue-500">{avgConsumption} kWh</p>
+              <p className="text-2xl font-bold text-blue-500">{formatUnits(avgConsumption)}</p>
             </div>
             <div className="bg-gradient-to-br from-yellow-400/10 to-orange-500/10 rounded-xl p-4 border border-yellow-400/20">
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Avg Bill/Month</p>
-              <p className="text-2xl font-bold text-yellow-400">₹{avgAmount}</p>
+              <p className="text-2xl font-bold text-yellow-400">{formatCurrency(avgAmount, 'Rs.')}</p>
             </div>
             <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-xl p-4 border border-purple-500/20">
               <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Cost per Unit</p>
-              <p className="text-2xl font-bold text-purple-400">₹{(parseFloat(avgAmount) / avgConsumption).toFixed(2)}</p>
+              <p className="text-2xl font-bold text-purple-400">{formatCurrency(avgConsumption > 0 ? (avgAmount / avgConsumption) : 0, 'Rs.')}</p>
             </div>
           </div>
         </div>
@@ -499,16 +500,16 @@ export default function ViewBills() {
                     </td>
                     <td className="px-6 py-4">
                       <p className="text-sm text-gray-900 dark:text-white">{bill.month}</p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Issued: {bill.issueDate}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Issued: {safeDate(bill.issueDate)}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{bill.units}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatUnits(bill.units)}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-bold text-yellow-400">₹{bill.amount.toFixed(2)}</p>
+                      <p className="text-sm font-bold text-yellow-400">{formatCurrency(bill.amount, 'Rs.')}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{bill.dueDate}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{safeDate(bill.dueDate)}</p>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(bill.status)}`}>
@@ -573,7 +574,7 @@ export default function ViewBills() {
                       <Clock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       <p className="text-gray-600 dark:text-gray-400 text-xs">Due Date</p>
                     </div>
-                    <p className="text-gray-900 dark:text-white font-semibold">{selectedBill.dueDate}</p>
+                    <p className="text-gray-900 dark:text-white font-semibold">{safeDate(selectedBill.dueDate)}</p>
                   </div>
 
                   <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
@@ -581,7 +582,7 @@ export default function ViewBills() {
                       <Zap className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       <p className="text-gray-600 dark:text-gray-400 text-xs">Units Consumed</p>
                     </div>
-                    <p className="text-gray-900 dark:text-white font-semibold">{selectedBill.units} kWh</p>
+                    <p className="text-gray-900 dark:text-white font-semibold">{formatUnits(selectedBill.units)}</p>
                   </div>
 
                   <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
@@ -610,11 +611,11 @@ export default function ViewBills() {
                             {index + 1}
                           </div>
                           <div>
-                            <p className="text-gray-900 dark:text-white font-semibold">{slab.units} kWh</p>
-                            <p className="text-gray-600 dark:text-gray-400 text-xs">@ ₹{slab.rate}/kWh</p>
+                            <p className="text-gray-900 dark:text-white font-semibold">{formatUnits(slab.units)}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-xs">@ {formatCurrency(slab.rate, 'Rs.')}/kWh</p>
                           </div>
                         </div>
-                        <p className="text-gray-900 dark:text-white font-bold">₹{slab.amount.toFixed(2)}</p>
+                        <p className="text-gray-900 dark:text-white font-bold">{formatCurrency(slab.amount, 'Rs.')}</p>
                       </div>
                     ))}
                   </div>
@@ -626,23 +627,23 @@ export default function ViewBills() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-white/10">
                       <p className="text-gray-600 dark:text-gray-400">Base Amount (Energy Charges)</p>
-                      <p className="text-gray-900 dark:text-white font-semibold">₹{selectedBill.breakdown.baseAmount.toFixed(2)}</p>
+                      <p className="text-gray-900 dark:text-white font-semibold">{formatCurrency(selectedBill.breakdown.baseAmount, 'Rs.')}</p>
                     </div>
                     <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-white/10">
                       <p className="text-gray-600 dark:text-gray-400">Fixed Charges</p>
-                      <p className="text-gray-900 dark:text-white font-semibold">₹{selectedBill.breakdown.fixedCharges.toFixed(2)}</p>
+                      <p className="text-gray-900 dark:text-white font-semibold">{formatCurrency(selectedBill.breakdown.fixedCharges, 'Rs.')}</p>
                     </div>
                     <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-white/10">
                       <p className="text-gray-600 dark:text-gray-400">Electricity Duty (5%)</p>
-                      <p className="text-gray-900 dark:text-white font-semibold">₹{selectedBill.breakdown.electricityDuty.toFixed(2)}</p>
+                      <p className="text-gray-900 dark:text-white font-semibold">{formatCurrency(selectedBill.breakdown.electricityDuty, 'Rs.')}</p>
                     </div>
                     <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-white/10">
                       <p className="text-gray-600 dark:text-gray-400">GST (18%)</p>
-                      <p className="text-gray-900 dark:text-white font-semibold">₹{selectedBill.breakdown.gst.toFixed(2)}</p>
+                      <p className="text-gray-900 dark:text-white font-semibold">{formatCurrency(selectedBill.breakdown.gst, 'Rs.')}</p>
                     </div>
                     <div className="flex items-center justify-between py-3 pt-4 border-t-2 border-gray-300 dark:border-white/20">
                       <p className="text-gray-900 dark:text-white font-bold text-lg">Total Amount</p>
-                      <p className="text-yellow-400 font-bold text-2xl">₹{selectedBill.breakdown.totalAmount.toFixed(2)}</p>
+                      <p className="text-yellow-400 font-bold text-2xl">{formatCurrency(selectedBill.breakdown.totalAmount, 'Rs.')}</p>
                     </div>
                   </div>
                 </div>
@@ -657,11 +658,11 @@ export default function ViewBills() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-gray-400 text-xs mb-1">Payment Date</p>
-                        <p className="text-white font-semibold">{selectedBill.paidDate}</p>
+                        <p className="text-white font-semibold">{selectedBill.paidDate ? safeDate(selectedBill.paidDate) : 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-gray-400 text-xs mb-1">Payment Method</p>
-                        <p className="text-white font-semibold">{selectedBill.paymentMethod}</p>
+                        <p className="text-white font-semibold">{selectedBill.paymentMethod || 'N/A'}</p>
                       </div>
                     </div>
                   </div>

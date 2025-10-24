@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { safeNumber, formatCurrency, safeDate, formatUnits } from '@/lib/utils/dataHandlers';
 import {
   Zap,
   DollarSign,
@@ -117,29 +118,29 @@ export default function CustomerDashboard() {
   // Calculate summary cards from real data
   const lastPayment = recentPayments[0];
   const avgConsumption = consumptionHistory.length > 0
-    ? Math.round(consumptionHistory.reduce((acc: number, item: any) => acc + parseFloat(item.unitsConsumed || 0), 0) / consumptionHistory.length)
+    ? Math.round(consumptionHistory.reduce((acc: number, item: any) => acc + safeNumber(item.unitsConsumed, 0), 0) / consumptionHistory.length)
     : 0;
 
   const summaryCards = [
     {
       title: 'Outstanding Balance',
-      value: `Rs ${parseFloat(outstandingBalance).toFixed(2)}`,
-      change: parseFloat(outstandingBalance) > 0 ? 'Payment Due' : 'Paid',
-      trend: parseFloat(outstandingBalance) > 0 ? 'up' : 'neutral',
+      value: formatCurrency(outstandingBalance, 'Rs.'),
+      change: safeNumber(outstandingBalance) > 0 ? 'Payment Due' : 'Paid',
+      trend: safeNumber(outstandingBalance) > 0 ? 'up' : 'neutral',
       icon: DollarSign,
-      color: parseFloat(outstandingBalance) > 0 ? 'from-red-500 to-rose-500' : 'from-green-500 to-emerald-500'
+      color: safeNumber(outstandingBalance) > 0 ? 'from-red-500 to-rose-500' : 'from-green-500 to-emerald-500'
     },
     {
       title: 'Current Bill',
-      value: currentBill ? `Rs ${parseFloat(currentBill.totalAmount || 0).toFixed(2)}` : 'Rs 0.00',
-      change: currentBill?.dueDate ? `Due: ${new Date(currentBill.dueDate).toLocaleDateString()}` : 'No bill',
+      value: currentBill ? formatCurrency(currentBill.totalAmount, 'Rs.') : formatCurrency(0, 'Rs.'),
+      change: currentBill?.dueDate ? `Due: ${safeDate(currentBill.dueDate)}` : 'No bill',
       trend: 'neutral',
       icon: FileText,
       color: 'from-yellow-400 to-orange-500'
     },
     {
       title: 'Avg Monthly Usage',
-      value: `${avgConsumption} kWh`,
+      value: formatUnits(avgConsumption),
       change: 'last 6 months',
       trend: 'neutral',
       icon: Activity,
@@ -147,8 +148,8 @@ export default function CustomerDashboard() {
     },
     {
       title: 'Last Payment',
-      value: lastPayment ? `Rs ${parseFloat(lastPayment.amount).toFixed(2)}` : 'N/A',
-      change: lastPayment ? new Date(lastPayment.paymentDate).toLocaleDateString() : 'No payments',
+      value: lastPayment ? formatCurrency(lastPayment.paymentAmount, 'Rs.') : 'N/A',
+      change: lastPayment ? safeDate(lastPayment.paymentDate) : 'No payments',
       trend: 'neutral',
       icon: CreditCard,
       color: 'from-blue-500 to-cyan-500'
@@ -164,7 +165,7 @@ export default function CustomerDashboard() {
     datasets: [
       {
         label: 'Consumption (kWh)',
-        data: consumptionHistory.map((item: any) => parseFloat(item.unitsConsumed || 0)).slice(-6),
+        data: consumptionHistory.map((item: any) => safeNumber(item.unitsConsumed, 0)).slice(-6),
         borderColor: 'rgb(251, 146, 60)',
         backgroundColor: 'rgba(251, 146, 60, 0.1)',
         tension: 0.4,
@@ -321,7 +322,7 @@ export default function CustomerDashboard() {
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Your billing history</p>
               </div>
               <button
-                onClick={() => router.push('/customer/bills')}
+                onClick={() => router.push('/customer/view-bills')}
                 className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-semibold"
               >
                 View All →
@@ -348,16 +349,16 @@ export default function CustomerDashboard() {
                         <p className="text-gray-900 dark:text-white font-medium">{bill.billNumber}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-gray-700 dark:text-gray-300">{bill.billingPeriod}</p>
+                        <p className="text-gray-700 dark:text-gray-300">{bill.billingMonth ? new Date(bill.billingMonth).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-gray-700 dark:text-gray-300">{bill.unitsConsumed} kWh</p>
+                        <p className="text-gray-700 dark:text-gray-300">{formatUnits(bill.unitsConsumed)}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-gray-900 dark:text-white font-semibold">Rs {parseFloat(bill.totalAmount).toFixed(2)}</p>
+                        <p className="text-gray-900 dark:text-white font-semibold">{formatCurrency(bill.totalAmount, 'Rs.')}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-gray-600 dark:text-gray-400">{new Date(bill.dueDate).toLocaleDateString()}</p>
+                        <p className="text-gray-600 dark:text-gray-400">{safeDate(bill.dueDate)}</p>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(bill.status)}`}>
@@ -399,7 +400,7 @@ export default function CustomerDashboard() {
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Date</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Amount</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Method</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Bill No</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Receipt No</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
@@ -410,10 +411,10 @@ export default function CustomerDashboard() {
                         <p className="text-gray-900 dark:text-white font-medium">PAY-{payment.id}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-gray-700 dark:text-gray-300">{new Date(payment.paymentDate).toLocaleDateString()}</p>
+                        <p className="text-gray-700 dark:text-gray-300">{safeDate(payment.paymentDate)}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-gray-900 dark:text-white font-semibold">Rs {parseFloat(payment.amount).toFixed(2)}</p>
+                        <p className="text-gray-900 dark:text-white font-semibold">{formatCurrency(payment.paymentAmount, 'Rs.')}</p>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border capitalize ${getPaymentStatusColor(payment.paymentMethod)}`}>
@@ -421,7 +422,7 @@ export default function CustomerDashboard() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-gray-600 dark:text-gray-400">{payment.billNumber}</p>
+                        <p className="text-gray-600 dark:text-gray-400">{payment.receiptNumber || 'N/A'}</p>
                       </td>
                     </tr>
                   ))

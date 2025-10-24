@@ -273,12 +273,12 @@ export async function GET(request: NextRequest) {
       // Calculate average consumption
       const avgConsumptionResult = await db
         .select({
-          avg: sql<number>`AVG(${bills.unitsConsumed})`,
+          avg: sql<number>`AVG(CAST(${bills.unitsConsumed} AS DECIMAL(10,2)))`,
         })
         .from(bills)
         .where(eq(bills.customerId, customerId!));
 
-      const avgConsumption = avgConsumptionResult[0]?.avg || 0;
+      const avgConsumption = parseFloat(avgConsumptionResult[0]?.avg?.toString() || '0') || 0;
 
       // Get recent payments
       const recentPayments = await db

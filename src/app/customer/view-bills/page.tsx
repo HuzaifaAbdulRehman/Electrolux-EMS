@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   FileText,
@@ -67,12 +68,14 @@ interface Bill {
 
 export default function ViewBills() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
+  const [customerName, setCustomerName] = useState('');
   const [requestForm, setRequestForm] = useState({
     billingMonth: '',
     priority: 'medium',
@@ -404,7 +407,7 @@ export default function ViewBills() {
 
   if (loading) {
     return (
-      <DashboardLayout userType="customer" userName="Customer">
+      <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400"></div>
         </div>
@@ -413,7 +416,7 @@ export default function ViewBills() {
   }
 
   return (
-    <DashboardLayout userType="customer" userName="Customer">
+    <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
       <div className="max-w-[1920px] mx-auto space-y-6 pb-8">
         {/* Header with Request Button */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">

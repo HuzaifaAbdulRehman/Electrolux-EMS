@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
       })
       .from(payments)
       .leftJoin(customers, eq(payments.customerId, customers.id))
-      .leftJoin(bills, eq(payments.billId, bills.id));
+      .leftJoin(bills, eq(payments.billId, bills.id))
+      .$dynamic();
 
     const conditions = [];
 
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
     const result = await query;
 
     // Get total count
-    let countQuery = db.select({ count: sql<number>`count(*)` }).from(payments);
+    let countQuery = db.select({ count: sql<number>`count(*)` }).from(payments).$dynamic();
     if (conditions.length > 0) {
       countQuery = countQuery.where(conditions[0] as any);
     }
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
       transactionId,
       receiptNumber,
       status: 'completed',
-    });
+    } as any);
 
     // Update bill status
     await db
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
       .set({
         status: 'paid',
         paymentDate: new Date().toISOString().split('T')[0],
-      })
+      } as any)
       .where(eq(bills.id, billId));
 
     // Update customer outstanding balance
@@ -138,7 +139,7 @@ export async function POST(request: NextRequest) {
         outstandingBalance: sql`GREATEST(0, ${customers.outstandingBalance} - ${amount})`,
         lastPaymentDate: new Date().toISOString().split('T')[0],
         paymentStatus: 'paid',
-      })
+      } as any)
       .where(eq(customers.id, bill.customerId));
 
     return NextResponse.json({

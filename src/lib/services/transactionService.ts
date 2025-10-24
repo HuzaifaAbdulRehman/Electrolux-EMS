@@ -1,6 +1,6 @@
 import { db } from '@/lib/drizzle/db';
-import { bills, customers, payments, users } from '@/lib/drizzle/schema';
-import { eq, sql, and } from 'drizzle-orm';
+import { bills, customers, payments, users, workOrders, tariffs } from '@/lib/drizzle/schema';
+import { eq, sql, and, desc } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
@@ -39,12 +39,13 @@ export async function processPaymentTransaction(
       const [paymentResult] = await tx.insert(payments).values({
         customerId,
         billId,
-        amount: amount.toString(),
+        paymentAmount: amount.toString(),
         paymentMethod,
         paymentDate: new Date().toISOString().split('T')[0],
         transactionId,
         receiptNumber: `RCP-${Date.now()}`,
-      });
+        status: 'completed',
+      } as any);
 
       paymentId = paymentResult.insertId;
 
@@ -98,7 +99,7 @@ export async function processPaymentTransaction(
           outstandingBalance: outstanding.toString(),
           paymentStatus: outstanding > 0 ? 'pending' : 'paid',
           updatedAt: new Date(),
-        })
+        } as any)
         .where(eq(customers.id, customerId));
 
       // Transaction commits automatically if no error
@@ -195,7 +196,7 @@ export async function registerCustomerTransaction(userData: {
         outstandingBalance: '0',
         averageMonthlyUsage: '0',
         paymentStatus: 'paid',
-      });
+      } as any);
 
       // Transaction commits automatically
       return {
@@ -236,25 +237,27 @@ export async function generateBillTransaction(
   try {
     return await db.transaction(async (tx) => {
       // Step 1: Get tariff details with slabs (normalized structure)
-      const tariffData = await tx
+      const [tariffData] = await tx
         .select()
-        .from(sql`tariffs`)
-        .where(sql`id = ${tariffId}`)
+        .from(tariffs)
+        .where(eq(tariffs.id, tariffId))
         .limit(1);
 
-      if (!tariffData.length) {
+      if (!tariffData) {
         throw new Error('Tariff not found');
       }
 
-      // Step 2: Get tariff slabs (from normalized table)
-      const slabs = await tx
-        .select()
-        .from(sql`tariff_slabs`)
-        .where(sql`tariff_id = ${tariffId}`)
-        .orderBy(sql`slab_order`);
+      // Step 2: Get tariff slabs (simplified - using direct tariff rates)
+      const slabs = [
+        { startUnits: tariffData.slab1Start, endUnits: tariffData.slab1End, ratePerUnit: tariffData.slab1Rate },
+        { startUnits: tariffData.slab2Start, endUnits: tariffData.slab2End, ratePerUnit: tariffData.slab2Rate },
+        { startUnits: tariffData.slab3Start, endUnits: tariffData.slab3End, ratePerUnit: tariffData.slab3Rate },
+        { startUnits: tariffData.slab4Start, endUnits: tariffData.slab4End, ratePerUnit: tariffData.slab4Rate },
+        { startUnits: tariffData.slab5Start, endUnits: tariffData.slab5End, ratePerUnit: tariffData.slab5Rate },
+      ];
 
       // Step 3: Calculate bill amount using normalized slab structure
-      let totalAmount = parseFloat(tariffData[0].fixedCharge || '0');
+      let totalAmount = parseFloat(tariffData.fixedCharge || '0');
       let remainingUnits = unitsConsumed;
 
       for (const slab of slabs) {
@@ -296,7 +299,7 @@ export async function generateBillTransaction(
         lateFee: '0',
         totalAmount: finalAmount.toString(),
         status: 'issued',
-      });
+      } as any);
 
       // Step 7: Update customer outstanding balance
       await tx
@@ -338,8 +341,8 @@ export async function updateWorkOrderTransaction(
       // Get work order details
       const [workOrder] = await tx
         .select()
-        .from(sql`work_orders`)
-        .where(sql`id = ${workOrderId}`)
+        .from(workOrders)
+        .where(eq(workOrders.id, workOrderId))
         .limit(1);
 
       if (!workOrder) {
@@ -360,12 +363,12 @@ export async function updateWorkOrderTransaction(
       }
 
       await tx
-        .update(sql`work_orders`)
-        .set(updateData)
-        .where(sql`id = ${workOrderId}`);
+        .update(workOrders)
+        .set(updateData as any)
+        .where(eq(workOrders.id, workOrderId));
 
       // If meter reading work order, update meter reading status
-      if (workOrder.workType === 'meter_reading' && status === 'completed') {
+      if ((workOrder as any).workType === 'meter_reading' && status === 'completed') {
         // Additional logic for meter reading completion
         // This ensures data consistency
       }

@@ -82,8 +82,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'You already have a pending connection request',
-          applicationNumber: existingRequests[0].application_number,
-          status: existingRequests[0].status
+          applicationNumber: (existingRequests[0] as any).application_number,
+          status: (existingRequests[0] as any).status
         },
         { status: 400 }
       );

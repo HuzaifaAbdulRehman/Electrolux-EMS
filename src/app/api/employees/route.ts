@@ -36,7 +36,8 @@ export async function GET(request: NextRequest) {
         workOrdersCount: sql<number>`(SELECT COUNT(*) FROM ${workOrders} WHERE ${workOrders.employeeId} = ${employees.id})`,
         readingsCount: sql<number>`(SELECT COUNT(*) FROM ${meterReadings} WHERE ${meterReadings.employeeId} = ${employees.id})`,
       })
-      .from(employees);
+      .from(employees)
+      .$dynamic();
 
     const conditions = [];
 
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
       assignedZone,
       status: 'active',
       hireDate: new Date().toISOString().split('T')[0],
-    });
+    } as any);
 
     return NextResponse.json({
       success: true,

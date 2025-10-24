@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       electricityDutyPercent: electricityDutyPercent.toString(),
       gstPercent: gstPercent.toString(),
       effectiveDate: new Date().toISOString().split('T')[0],
-    });
+    } as any);
 
     return NextResponse.json({
       success: true,

@@ -23,6 +23,27 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
+    const conditions = [];
+
+    // Filter based on user type
+    if (session.user.userType === 'customer') {
+      conditions.push(eq(bills.customerId, session.user.customerId!));
+    } else if (customerId) {
+      conditions.push(eq(bills.customerId, parseInt(customerId)));
+    }
+
+    if (status) {
+      conditions.push(eq(bills.status, status as any));
+    }
+
+    if (fromDate) {
+      conditions.push(gte(bills.issueDate, fromDate as any));
+    }
+
+    if (toDate) {
+      conditions.push(lte(bills.issueDate, toDate as any));
+    }
+
     let query = db
       .select({
         id: bills.id,
@@ -42,41 +63,20 @@ export async function GET(request: NextRequest) {
         paymentDate: bills.paymentDate,
       })
       .from(bills)
-      .leftJoin(customers, eq(bills.customerId, customers.id));
-
-    const conditions = [];
-
-    // Filter based on user type
-    if (session.user.userType === 'customer') {
-      conditions.push(eq(bills.customerId, session.user.customerId!));
-    } else if (customerId) {
-      conditions.push(eq(bills.customerId, parseInt(customerId)));
-    }
-
-    if (status) {
-      conditions.push(eq(bills.status, status as any));
-    }
-
-    if (fromDate) {
-      conditions.push(gte(bills.issueDate, fromDate));
-    }
-
-    if (toDate) {
-      conditions.push(lte(bills.issueDate, toDate));
-    }
+      .leftJoin(customers, eq(bills.customerId, customers.id))
+      .$dynamic();
 
     if (conditions.length > 0) {
       query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
     }
 
-    query = query.orderBy(desc(bills.issueDate)).limit(limit).offset(offset);
-
-    const result = await query;
+    const result = await query.orderBy(desc(bills.issueDate)).limit(limit).offset(offset);
 
     // Get total count
     let countQuery = db
       .select({ count: sql<number>`count(*)` })
-      .from(bills);
+      .from(bills)
+      .$dynamic();
 
     if (conditions.length > 0) {
       countQuery = countQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
@@ -207,9 +207,9 @@ export async function POST(request: NextRequest) {
     }
 
     const fixedCharges = parseFloat(tariff.fixedCharge);
-    const electricityDuty = baseAmount * (parseFloat(tariff.electricityDutyPercent) / 100);
+    const electricityDuty = baseAmount * (parseFloat(tariff.electricityDutyPercent || '0') / 100);
     const subtotal = baseAmount + fixedCharges + electricityDuty;
-    const gstAmount = subtotal * (parseFloat(tariff.gstPercent) / 100);
+    const gstAmount = subtotal * (parseFloat(tariff.gstPercent || '0') / 100);
     const totalAmount = subtotal + gstAmount;
 
     // Generate bill number
@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 15); // 15 days payment period
 
-    const [newBill] = await db.insert(bills).values({
+    await db.insert(bills).values({
       customerId,
       billNumber,
       billingMonth,
@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
       gstAmount: gstAmount.toFixed(2),
       totalAmount: totalAmount.toFixed(2),
       status: 'issued',
-    });
+    } as any);
 
     // Update customer's last bill amount
     await db
@@ -249,7 +249,6 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Bill generated successfully',
       data: {
-        billId: newBill.insertId,
         billNumber,
         totalAmount: totalAmount.toFixed(2),
       },

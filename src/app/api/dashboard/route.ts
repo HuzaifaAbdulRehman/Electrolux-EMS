@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
 import { customers, bills, payments, employees, workOrders, meterReadings, connectionApplications, notifications } from '@/lib/drizzle/schema';
-import { eq, sql, desc, and, gte, lte } from 'drizzle-orm';
+import { eq, sql, desc, and, gte, lte, or, inArray } from 'drizzle-orm';
 import { subDays, startOfMonth, endOfMonth, format, addDays, parseISO, differenceInDays } from 'date-fns';
 
 export async function GET(request: NextRequest) {
@@ -152,14 +152,14 @@ export async function GET(request: NextRequest) {
     if (userType === 'employee') {
       const employeeId = session.user.employeeId;
 
-      // Get employee's work orders
+      // Get employee's active work orders (assigned + in_progress)
       const [assignedOrders] = await db
         .select({ count: sql<number>`count(*)` })
         .from(workOrders)
         .where(
           and(
             eq(workOrders.employeeId, employeeId!),
-            eq(workOrders.status, 'assigned')
+            inArray(workOrders.status, ['assigned', 'in_progress'])
           )
         );
 

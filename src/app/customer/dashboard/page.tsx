@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Zap,
@@ -12,7 +13,12 @@ import {
   TrendingDown,
   ArrowUp,
   ArrowDown,
-  Clock
+  Clock,
+  FileText,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
 import {
@@ -41,33 +47,99 @@ ChartJS.register(
 
 export default function CustomerDashboard() {
   const router = useRouter();
-  const customerName = 'Huzaifa';
+  const { data: session } = useSession();
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/dashboard');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data');
+      }
+
+      const result = await response.json();
+      setDashboardData(result.data);
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error || !dashboardData) {
+    return (
+      <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+          <p className="text-red-400">{error || 'No data available'}</p>
+          <button
+            onClick={fetchDashboardData}
+            className="mt-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const {
+    accountNumber = 'N/A',
+    currentBill = {},
+    recentBills = [],
+    recentPayments = [],
+    consumptionHistory = [],
+    outstandingBalance = '0'
+  } = dashboardData;
 
   const handlePayNow = () => {
     router.push('/customer/payment');
   };
 
-  // Summary Cards Data
+  // Calculate summary cards from real data
+  const lastPayment = recentPayments[0];
+  const avgConsumption = consumptionHistory.length > 0
+    ? Math.round(consumptionHistory.reduce((acc: number, item: any) => acc + parseFloat(item.unitsConsumed || 0), 0) / consumptionHistory.length)
+    : 0;
+
   const summaryCards = [
     {
-      title: 'Current Balance',
-      value: '$245.50',
-      change: '+12.5%',
-      trend: 'up',
+      title: 'Outstanding Balance',
+      value: `$${parseFloat(outstandingBalance).toFixed(2)}`,
+      change: parseFloat(outstandingBalance) > 0 ? 'Payment Due' : 'Paid',
+      trend: parseFloat(outstandingBalance) > 0 ? 'up' : 'neutral',
       icon: DollarSign,
-      color: 'from-green-500 to-emerald-500'
+      color: parseFloat(outstandingBalance) > 0 ? 'from-red-500 to-rose-500' : 'from-green-500 to-emerald-500'
     },
     {
-      title: 'This Month Usage',
-      value: '485 kWh',
-      change: '-5.2%',
-      trend: 'down',
-      icon: Zap,
+      title: 'Current Bill',
+      value: currentBill ? `$${parseFloat(currentBill.totalAmount || 0).toFixed(2)}` : '$0.00',
+      change: currentBill?.dueDate ? `Due: ${new Date(currentBill.dueDate).toLocaleDateString()}` : 'No bill',
+      trend: 'neutral',
+      icon: FileText,
       color: 'from-yellow-400 to-orange-500'
     },
     {
       title: 'Avg Monthly Usage',
-      value: '457 kWh',
+      value: `${avgConsumption} kWh`,
       change: 'last 6 months',
       trend: 'neutral',
       icon: Activity,
@@ -75,21 +147,24 @@ export default function CustomerDashboard() {
     },
     {
       title: 'Last Payment',
-      value: '$220.00',
-      change: 'Oct 5, 2024',
+      value: lastPayment ? `$${parseFloat(lastPayment.amount).toFixed(2)}` : 'N/A',
+      change: lastPayment ? new Date(lastPayment.paymentDate).toLocaleDateString() : 'No payments',
       trend: 'neutral',
       icon: CreditCard,
       color: 'from-blue-500 to-cyan-500'
     }
   ];
 
-  // Usage Trend Chart Data (Line Chart)
+  // Usage Trend Chart Data from real consumption history
   const usageTrendData = {
-    labels: ['Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'],
+    labels: consumptionHistory.map((item: any) => {
+      const date = new Date(item.billingPeriod);
+      return date.toLocaleDateString('en-US', { month: 'short' });
+    }).slice(-6),
     datasets: [
       {
         label: 'Consumption (kWh)',
-        data: [380, 510, 485, 420, 460, 485],
+        data: consumptionHistory.map((item: any) => parseFloat(item.unitsConsumed || 0)).slice(-6),
         borderColor: 'rgb(251, 146, 60)',
         backgroundColor: 'rgba(251, 146, 60, 0.1)',
         tension: 0.4,
@@ -99,161 +174,302 @@ export default function CustomerDashboard() {
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
         pointRadius: 5,
-        pointHoverRadius: 7,
+        pointHoverRadius: 8
       }
     ]
   };
 
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        padding: 12,
+        titleColor: 'rgb(255, 255, 255)',
+        bodyColor: 'rgb(255, 255, 255)',
+        cornerRadius: 8
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.6)'
+        }
+      },
+      y: {
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)'
+        },
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.6)',
+          callback: function(value: any) {
+            return value + ' kWh';
+          }
+        }
+      }
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'paid': return 'bg-green-500/20 text-green-400 border-green-500/50';
+      case 'pending':
+      case 'issued': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
+      case 'overdue': return 'bg-red-500/20 text-red-400 border-red-500/50';
+      default: return 'bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/50';
+    }
+  };
+
+  const getPaymentStatusColor = (method: string) => {
+    const colors: { [key: string]: string } = {
+      'online': 'bg-blue-500/20 text-blue-400 border-blue-500/50',
+      'card': 'bg-purple-500/20 text-purple-400 border-purple-500/50',
+      'cash': 'bg-green-500/20 text-green-400 border-green-500/50',
+      'bank': 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50'
+    };
+    return colors[method?.toLowerCase()] || 'bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/50';
+  };
 
   return (
-    <DashboardLayout userType="customer" userName={customerName}>
-      <div className="h-full flex flex-col overflow-hidden">
-        {/* Header - Compact */}
-        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10 mb-4 flex-shrink-0">
+    <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
+      <div className="space-y-6">
+        {/* Welcome Header */}
+        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                Welcome back, {customerName}!
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                Welcome back, {session?.user?.name || 'Customer'}!
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Account: ELX-2024-001234 • Meter: MTR-485729
+              <p className="text-gray-600 dark:text-gray-400">
+                Account Number: {accountNumber} • Connection Type: Residential
               </p>
             </div>
-            <div className="mt-3 sm:mt-0">
-              <button 
-                onClick={handlePayNow}
-                className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all text-sm"
+            <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+              <button
+                onClick={fetchDashboardData}
+                className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-all flex items-center space-x-2"
               >
-                Pay Now
+                <RefreshCw className="w-4 h-4" />
+                <span>Refresh</span>
+              </button>
+              {parseFloat(outstandingBalance) > 0 && (
+                <button
+                  onClick={handlePayNow}
+                  className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all font-semibold"
+                >
+                  Pay Now
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {summaryCards.map((card, index) => (
+            <div key={index} className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity"></div>
+              <div className="relative bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10 hover:border-white/20 transition-all">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`w-12 h-12 bg-gradient-to-r ${card.color} rounded-xl flex items-center justify-center`}>
+                    <card.icon className="w-6 h-6 text-white" />
+                  </div>
+                  {card.trend === 'up' && <ArrowUp className="w-5 h-5 text-red-400" />}
+                  {card.trend === 'down' && <ArrowDown className="w-5 h-5 text-green-400" />}
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">{card.title}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{card.change}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Consumption Trend Chart */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Consumption Trend</h2>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">Your energy usage over time</p>
+            </div>
+            <Activity className="w-6 h-6 text-orange-400" />
+          </div>
+          <div className="h-64">
+            {consumptionHistory.length > 0 ? (
+              <Line data={usageTrendData} options={chartOptions} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-500">
+                <p>No consumption data available</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Bills */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
+          <div className="p-6 border-b border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recent Bills</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Your billing history</p>
+              </div>
+              <button
+                onClick={() => router.push('/customer/bills')}
+                className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-semibold"
+              >
+                View All →
               </button>
             </div>
           </div>
-        </div>
-
-        {/* Main Content - Scrollable */}
-        <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="space-y-4">
-
-        {/* Summary Cards - Compact */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-  {summaryCards.map((card, index) => (
-    <div key={index} className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
-      <div className="flex items-center justify-between mb-1">
-        <div className={`w-8 h-8 bg-gradient-to-r ${card.color} rounded-lg flex items-center justify-center`}>
-          <card.icon className="w-4 h-4 text-white" />
-        </div>
-        {card.trend !== 'neutral' && (
-          <span className={`text-xs flex items-center space-x-1 ${
-            card.trend === 'up' ? 'text-green-400' : 'text-red-400'
-          }`}>
-            {card.trend === 'up' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-            <span>{card.change}</span>
-          </span>
-        )}
-      </div>
-      <p className="text-gray-600 dark:text-gray-400 text-xs">{card.title}</p>
-      <p className="text-xl font-bold text-gray-900 dark:text-white">{card.value}</p>
-      {card.trend === 'neutral' && (
-        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{card.change}</p>
-      )}
-    </div>
-  ))}
-</div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Usage Trend Chart - Takes 2/3 width */}
-          <div className="lg:col-span-2 bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2 text-orange-500" />
-              Monthly Consumption Trend
-            </h3>
-            <div className="h-80">
-              <Line
-                data={usageTrendData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  interaction: {
-                    mode: 'index',
-                    intersect: false,
-                  },
-                  plugins: {
-                    legend: {
-                      display: true,
-                      position: 'bottom',
-                      labels: {
-                        color: 'rgba(156, 163, 175, 0.8)',
-                        padding: 15,
-                        font: { size: 12 }
-                      }
-                    },
-                    tooltip: {
-                      backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                      titleColor: '#fff',
-                      bodyColor: '#fff',
-                      padding: 12,
-                      borderColor: 'rgba(251, 146, 60, 0.5)',
-                      borderWidth: 1,
-                      callbacks: {
-                        label: function(context: any) {
-                          return `${context.dataset.label}: ${context.parsed.y} kWh`;
-                        }
-                      }
-                    }
-                  },
-                  scales: {
-                    y: {
-                      grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                      ticks: {
-                        color: 'rgba(156, 163, 175, 0.6)',
-                        callback: function(value: any) {
-                          return value + ' kWh';
-                        }
-                      }
-                    },
-                    x: {
-                      grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                      ticks: { color: 'rgba(156, 163, 175, 0.6)' }
-                    }
-                  }
-                }}
-              />
-            </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-white/5 border-b border-white/10">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Bill No</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Period</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Units</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Amount</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Due Date</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10">
+                {recentBills.length > 0 ? (
+                  recentBills.slice(0, 5).map((bill: any) => (
+                    <tr key={bill.id} className="hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="text-gray-900 dark:text-white font-medium">{bill.billNumber}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-gray-700 dark:text-gray-300">{bill.billingPeriod}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-gray-700 dark:text-gray-300">{bill.unitsConsumed} kWh</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-gray-900 dark:text-white font-semibold">${parseFloat(bill.totalAmount).toFixed(2)}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-gray-600 dark:text-gray-400">{new Date(bill.dueDate).toLocaleDateString()}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(bill.status)}`}>
+                          {bill.status === 'paid' && <CheckCircle className="w-3 h-3 mr-1" />}
+                          {bill.status === 'overdue' && <AlertCircle className="w-3 h-3 mr-1" />}
+                          {bill.status === 'issued' && <Clock className="w-3 h-3 mr-1" />}
+                          {bill.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                      No bills available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
+        </div>
 
-          {/* Recent Payments - Takes 1/3 width */}
-          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-              <CreditCard className="w-5 h-5 mr-2 text-blue-500" />
-              Recent Payments
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">October 2024</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Paid on Oct 5</p>
-                </div>
-                <p className="text-sm font-semibold text-green-600 dark:text-green-400">$220.00</p>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">September 2024</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Paid on Sep 8</p>
-                </div>
-                <p className="text-sm font-semibold text-green-600 dark:text-green-400">$198.50</p>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">August 2024</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Paid on Aug 10</p>
-                </div>
-                <p className="text-sm font-semibold text-green-600 dark:text-green-400">$245.00</p>
+        {/* Recent Payments */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
+          <div className="p-6 border-b border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recent Payments</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Your payment history</p>
               </div>
             </div>
           </div>
-        </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-white/5 border-b border-white/10">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Payment ID</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Date</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Amount</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Method</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Bill No</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10">
+                {recentPayments.length > 0 ? (
+                  recentPayments.slice(0, 5).map((payment: any) => (
+                    <tr key={payment.id} className="hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="text-gray-900 dark:text-white font-medium">PAY-{payment.id}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-gray-700 dark:text-gray-300">{new Date(payment.paymentDate).toLocaleDateString()}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-gray-900 dark:text-white font-semibold">${parseFloat(payment.amount).toFixed(2)}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border capitalize ${getPaymentStatusColor(payment.paymentMethod)}`}>
+                          {payment.paymentMethod}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-gray-600 dark:text-gray-400">{payment.billNumber}</p>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                      No payment history available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <button
+            onClick={() => router.push('/customer/bills')}
+            className="p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-xl hover:border-blue-500/40 transition-all"
+          >
+            <FileText className="w-6 h-6 text-blue-400 mb-2" />
+            <p className="text-gray-900 dark:text-white font-semibold">View Bills</p>
+          </button>
+
+          <button
+            onClick={() => router.push('/customer/payment')}
+            className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl hover:border-green-500/40 transition-all"
+          >
+            <CreditCard className="w-6 h-6 text-green-400 mb-2" />
+            <p className="text-gray-900 dark:text-white font-semibold">Make Payment</p>
+          </button>
+
+          <button
+            onClick={() => router.push('/customer/analytics')}
+            className="p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-xl hover:border-purple-500/40 transition-all"
+          >
+            <Activity className="w-6 h-6 text-purple-400 mb-2" />
+            <p className="text-gray-900 dark:text-white font-semibold">Usage Analytics</p>
+          </button>
+
+          <button
+            onClick={() => router.push('/customer/profile')}
+            className="p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl hover:border-orange-500/40 transition-all"
+          >
+            <Zap className="w-6 h-6 text-orange-400 mb-2" />
+            <p className="text-gray-900 dark:text-white font-semibold">My Profile</p>
+          </button>
         </div>
       </div>
     </DashboardLayout>

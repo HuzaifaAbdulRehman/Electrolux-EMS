@@ -1,0 +1,265 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { db } from '@/lib/drizzle/db';
+import { bills, customers, meterReadings, tariffs } from '@/lib/drizzle/schema';
+import { eq, and, desc, gte, lte, or, like, sql } from 'drizzle-orm';
+
+// GET /api/bills - Get bills (filtered by user type)
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const searchParams = request.nextUrl.searchParams;
+    const customerId = searchParams.get('customerId');
+    const status = searchParams.get('status');
+    const fromDate = searchParams.get('fromDate');
+    const toDate = searchParams.get('toDate');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const offset = (page - 1) * limit;
+
+    let query = db
+      .select({
+        id: bills.id,
+        billNumber: bills.billNumber,
+        customerName: customers.fullName,
+        accountNumber: customers.accountNumber,
+        billingMonth: bills.billingMonth,
+        issueDate: bills.issueDate,
+        dueDate: bills.dueDate,
+        unitsConsumed: bills.unitsConsumed,
+        baseAmount: bills.baseAmount,
+        fixedCharges: bills.fixedCharges,
+        electricityDuty: bills.electricityDuty,
+        gstAmount: bills.gstAmount,
+        totalAmount: bills.totalAmount,
+        status: bills.status,
+        paymentDate: bills.paymentDate,
+      })
+      .from(bills)
+      .leftJoin(customers, eq(bills.customerId, customers.id));
+
+    const conditions = [];
+
+    // Filter based on user type
+    if (session.user.userType === 'customer') {
+      conditions.push(eq(bills.customerId, session.user.customerId!));
+    } else if (customerId) {
+      conditions.push(eq(bills.customerId, parseInt(customerId)));
+    }
+
+    if (status) {
+      conditions.push(eq(bills.status, status as any));
+    }
+
+    if (fromDate) {
+      conditions.push(gte(bills.issueDate, fromDate));
+    }
+
+    if (toDate) {
+      conditions.push(lte(bills.issueDate, toDate));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
+    }
+
+    query = query.orderBy(desc(bills.issueDate)).limit(limit).offset(offset);
+
+    const result = await query;
+
+    // Get total count
+    const countQuery = db
+      .select({ count: sql<number>`count(*)` })
+      .from(bills);
+
+    if (conditions.length > 0) {
+      countQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
+    }
+
+    const [{ count }] = await countQuery;
+
+    return NextResponse.json({
+      success: true,
+      data: result,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+      },
+    });
+
+  } catch (error) {
+    console.error('Error fetching bills:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch bills' },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/bills/generate - Generate new bill
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Only admin and employees can generate bills
+    if (session.user.userType === 'customer') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { customerId, billingMonth } = body;
+
+    if (!customerId || !billingMonth) {
+      return NextResponse.json(
+        { error: 'customerId and billingMonth are required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if bill already exists for this month
+    const [existingBill] = await db
+      .select()
+      .from(bills)
+      .where(
+        and(
+          eq(bills.customerId, customerId),
+          eq(bills.billingMonth, billingMonth)
+        )
+      )
+      .limit(1);
+
+    if (existingBill) {
+      return NextResponse.json(
+        { error: 'Bill already exists for this month' },
+        { status: 400 }
+      );
+    }
+
+    // Get latest meter reading for this customer
+    const [latestReading] = await db
+      .select()
+      .from(meterReadings)
+      .where(eq(meterReadings.customerId, customerId))
+      .orderBy(desc(meterReadings.readingDate))
+      .limit(1);
+
+    if (!latestReading) {
+      return NextResponse.json(
+        { error: 'No meter reading found for this customer' },
+        { status: 400 }
+      );
+    }
+
+    // Get customer details
+    const [customer] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, customerId))
+      .limit(1);
+
+    // Get applicable tariff
+    const [tariff] = await db
+      .select()
+      .from(tariffs)
+      .where(eq(tariffs.category, customer.connectionType))
+      .orderBy(desc(tariffs.effectiveDate))
+      .limit(1);
+
+    if (!tariff) {
+      return NextResponse.json(
+        { error: 'No tariff found for customer connection type' },
+        { status: 400 }
+      );
+    }
+
+    // Calculate bill amount using tariff slabs
+    const unitsConsumed = parseFloat(latestReading.unitsConsumed);
+    let baseAmount = 0;
+    let remainingUnits = unitsConsumed;
+
+    // Apply slab rates
+    const slabs = [
+      { start: tariff.slab1Start, end: tariff.slab1End, rate: parseFloat(tariff.slab1Rate) },
+      { start: tariff.slab2Start, end: tariff.slab2End, rate: parseFloat(tariff.slab2Rate) },
+      { start: tariff.slab3Start, end: tariff.slab3End, rate: parseFloat(tariff.slab3Rate) },
+      { start: tariff.slab4Start, end: tariff.slab4End, rate: parseFloat(tariff.slab4Rate) },
+      { start: tariff.slab5Start, end: tariff.slab5End || 999999, rate: parseFloat(tariff.slab5Rate) },
+    ];
+
+    for (const slab of slabs) {
+      if (remainingUnits <= 0) break;
+
+      const slabUnits = Math.min(remainingUnits, slab.end - slab.start);
+      baseAmount += slabUnits * slab.rate;
+      remainingUnits -= slabUnits;
+    }
+
+    const fixedCharges = parseFloat(tariff.fixedCharge);
+    const electricityDuty = baseAmount * (parseFloat(tariff.electricityDutyPercent) / 100);
+    const subtotal = baseAmount + fixedCharges + electricityDuty;
+    const gstAmount = subtotal * (parseFloat(tariff.gstPercent) / 100);
+    const totalAmount = subtotal + gstAmount;
+
+    // Generate bill number
+    const billNumber = `BILL-${new Date().getFullYear()}-${Date.now().toString().slice(-8)}`;
+
+    // Create bill
+    const issueDate = new Date();
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 15); // 15 days payment period
+
+    const [newBill] = await db.insert(bills).values({
+      customerId,
+      billNumber,
+      billingMonth,
+      issueDate: issueDate.toISOString().split('T')[0],
+      dueDate: dueDate.toISOString().split('T')[0],
+      unitsConsumed: unitsConsumed.toString(),
+      meterReadingId: latestReading.id,
+      baseAmount: baseAmount.toFixed(2),
+      fixedCharges: fixedCharges.toFixed(2),
+      electricityDuty: electricityDuty.toFixed(2),
+      gstAmount: gstAmount.toFixed(2),
+      totalAmount: totalAmount.toFixed(2),
+      status: 'issued',
+    });
+
+    // Update customer's last bill amount
+    await db
+      .update(customers)
+      .set({
+        lastBillAmount: totalAmount.toFixed(2),
+        outstandingBalance: sql`${customers.outstandingBalance} + ${totalAmount}`,
+      })
+      .where(eq(customers.id, customerId));
+
+    return NextResponse.json({
+      success: true,
+      message: 'Bill generated successfully',
+      data: {
+        billId: newBill.insertId,
+        billNumber,
+        totalAmount: totalAmount.toFixed(2),
+      },
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error('Error generating bill:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate bill' },
+      { status: 500 }
+    );
+  }
+}

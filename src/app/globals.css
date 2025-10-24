@@ -2,7 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-
+/* Font Variables */
+:root {
+  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-poppins: 'Poppins', 'Inter', sans-serif;
+  --font-jetbrains-mono: 'JetBrains Mono', monospace;
+}
 
 /* Prevent theme flash by setting default background */
 html {
@@ -80,6 +85,16 @@ html {
 /* Base styles */
 body {
   overflow-x: hidden;
+  font-family: var(--font-inter);
+}
+
+/* Font utilities */
+h1, h2 {
+  font-family: var(--font-poppins);
+}
+
+code, pre {
+  font-family: var(--font-jetbrains-mono);
 }
 
 /* Light mode background */

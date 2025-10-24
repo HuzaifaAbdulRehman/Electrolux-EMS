@@ -106,6 +106,7 @@ export const theme = {
     fontFamily: {
       sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       display: ['Poppins', 'Inter', 'sans-serif'],
+      mono: ['JetBrains Mono', 'monospace'],
     },
     fontSize: {
       xs: '0.75rem',      // 12px

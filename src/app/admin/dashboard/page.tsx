@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   DollarSign,
@@ -17,7 +17,8 @@ import {
   CreditCard,
   Activity,
   BarChart3,
-  PieChart
+  PieChart,
+  Loader2
 } from 'lucide-react';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import {
@@ -47,27 +48,65 @@ ChartJS.register(
   Filler
 );
 
-export default function BillingOverview() {
+export default function AdminDashboard() {
+  const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [selectedZone, setSelectedZone] = useState('all');
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Financial Metrics
-  const metrics = {
-    totalRevenue: 2847500,
-    collected: 2456800,
-    outstanding: 285600,
-    overdue: 105100,
-    avgBillAmount: 245.50,
-    collectionRate: 86.3
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/dashboard');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data');
+      }
+
+      const result = await response.json();
+      setDashboardData(result.data);
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Revenue by Category - Professional Bar Chart
+  if (loading) {
+    return (
+      <DashboardLayout userType="admin" userName="Admin">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-red-500" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error || !dashboardData) {
+    return (
+      <DashboardLayout userType="admin" userName="Admin">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+          <p className="text-red-400">{error || 'No data available'}</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  const { metrics, recentBills = [], revenueByCategory = {}, monthlyRevenue = [], paymentMethods = {} } = dashboardData;
+
+  // Chart data from API
   const categoryData = {
-    labels: ['Residential', 'Commercial', 'Industrial', 'Agricultural'],
+    labels: Object.keys(revenueByCategory),
     datasets: [
       {
         label: 'Revenue ($)',
-        data: [1281375, 854250, 569500, 142375], // 45%, 30%, 20%, 5% of 2847500
+        data: Object.values(revenueByCategory),
         backgroundColor: [
           'rgba(239, 68, 68, 0.85)',
           'rgba(236, 72, 153, 0.85)',
@@ -86,39 +125,28 @@ export default function BillingOverview() {
     ]
   };
 
-  const categoryPercentages = [45, 30, 20, 5];
-
-  // Monthly Revenue Trend
+  // Monthly Revenue Trend from actual data
   const revenueData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
+    labels: monthlyRevenue.map((item: any) => item.month),
     datasets: [
       {
         label: 'Revenue',
-        data: [2100000, 2250000, 2180000, 2350000, 2420000, 2380000, 2500000, 2650000, 2720000, 2847500],
+        data: monthlyRevenue.map((item: any) => item.revenue),
         borderColor: 'rgba(239, 68, 68, 1)',
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         tension: 0.4,
         fill: true
-      },
-      {
-        label: 'Target',
-        data: [2000000, 2100000, 2200000, 2300000, 2400000, 2500000, 2600000, 2700000, 2800000, 2900000],
-        borderColor: 'rgba(236, 72, 153, 1)',
-        backgroundColor: 'rgba(236, 72, 153, 0.1)',
-        tension: 0.4,
-        borderDash: [5, 5],
-        fill: false
       }
     ]
   };
 
-  // Payment Methods
+  // Payment Methods from actual data
   const paymentMethodsData = {
-    labels: ['Online Banking', 'Credit Card', 'Debit Card', 'Cash', 'Auto Debit', 'Mobile Wallet'],
+    labels: Object.keys(paymentMethods),
     datasets: [
       {
         label: 'Transactions',
-        data: [3500, 2800, 2200, 1500, 1800, 2400],
+        data: Object.values(paymentMethods),
         backgroundColor: [
           'rgba(239, 68, 68, 0.8)',
           'rgba(236, 72, 153, 0.8)',
@@ -178,145 +206,25 @@ export default function BillingOverview() {
     }
   };
 
-  // Recent Transactions
-  const recentTransactions = [
-    {
-      id: 1,
-      customer: '',
-      accountNumber: 'ELX-2024-001234',
-      amount: 245.50,
-      method: 'Online Banking',
-      status: 'completed',
-      date: '2024-10-11 09:23 AM'
-    },
-    {
-      id: 2,
-      customer: 'Jane Smith',
-      accountNumber: 'ELX-2024-002156',
-      amount: 189.00,
-      method: 'Credit Card',
-      status: 'completed',
-      date: '2024-10-11 09:15 AM'
-    },
-    {
-      id: 3,
-      customer: 'Robert Johnson',
-      accountNumber: 'ELX-2024-003789',
-      amount: 320.75,
-      method: 'Mobile Wallet',
-      status: 'pending',
-      date: '2024-10-11 09:08 AM'
-    },
-    {
-      id: 4,
-      customer: 'Emily Davis',
-      accountNumber: 'ELX-2024-004512',
-      amount: 275.25,
-      method: 'Auto Debit',
-      status: 'completed',
-      date: '2024-10-11 08:55 AM'
-    },
-    {
-      id: 5,
-      customer: 'Michael Brown',
-      accountNumber: 'ELX-2024-005234',
-      amount: 198.50,
-      method: 'Debit Card',
-      status: 'failed',
-      date: '2024-10-11 08:42 AM'
-    }
-  ];
-
-  // Outstanding Bills
-  const outstandingBills = [
-    {
-      id: 1,
-      customer: 'Sarah Wilson',
-      accountNumber: 'ELX-2024-006891',
-      amount: 450.00,
-      dueDate: '2024-10-15',
-      daysOverdue: 0,
-      risk: 'low',
-      billMonth: 'October 2024'
-    },
-    {
-      id: 2,
-      customer: 'David Martinez',
-      accountNumber: 'ELX-2024-007234',
-      amount: 380.50,
-      dueDate: '2024-10-10',
-      daysOverdue: 1,
-      risk: 'medium',
-      billMonth: 'October 2024'
-    },
-    {
-      id: 3,
-      customer: 'Lisa Anderson',
-      accountNumber: 'ELX-2024-008567',
-      amount: 525.75,
-      dueDate: '2024-10-05',
-      daysOverdue: 6,
-      risk: 'high',
-      billMonth: 'October 2024'
-    },
-    {
-      id: 4,
-      customer: 'James Taylor',
-      accountNumber: 'ELX-2024-009123',
-      amount: 295.00,
-      dueDate: '2024-09-30',
-      daysOverdue: 11,
-      risk: 'high',
-      billMonth: 'September 2024'
-    },
-    {
-      id: 5,
-      customer: 'Patricia Moore',
-      accountNumber: 'ELX-2024-010456',
-      amount: 410.25,
-      dueDate: '2024-10-12',
-      daysOverdue: 0,
-      risk: 'low',
-      billMonth: 'October 2024'
-    }
-  ];
-
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-500/20 text-green-400 border-green-500/50';
-      case 'pending': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
-      case 'failed': return 'bg-red-500/20 text-red-400 border-red-500/50';
+    switch (status?.toLowerCase()) {
+      case 'paid': return 'bg-green-500/20 text-green-400 border-green-500/50';
+      case 'pending':
+      case 'issued': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
+      case 'overdue': return 'bg-red-500/20 text-red-400 border-red-500/50';
       default: return 'bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/50';
-    }
-  };
-
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case 'low': return 'bg-green-500/20 text-green-400 border-green-500/50';
-      case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
-      case 'high': return 'bg-red-500/20 text-red-400 border-red-500/50';
-      default: return 'bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/50';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed': return <CheckCircle className="w-4 h-4" />;
-      case 'pending': return <Clock className="w-4 h-4" />;
-      case 'failed': return <AlertTriangle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
     }
   };
 
   return (
-    <DashboardLayout userType="admin" userName="Sarah Johnson">
+    <DashboardLayout userType="admin" userName="Admin">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Billing Overview</h1>
-              <p className="text-gray-600 dark:text-gray-400">Comprehensive financial dashboard and billing analytics</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Admin Dashboard</h1>
+              <p className="text-gray-600 dark:text-gray-400">Comprehensive overview of ElectroLux EMS</p>
             </div>
             <div className="mt-4 sm:mt-0 flex items-center space-x-3">
               <select
@@ -324,499 +232,241 @@ export default function BillingOverview() {
                 onChange={(e) => setSelectedPeriod(e.target.value)}
                 className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
               >
-                <option value="week" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Week</option>
-                <option value="month" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Month</option>
-                <option value="quarter" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Quarter</option>
-                <option value="year" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Year</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="quarter">This Quarter</option>
+                <option value="year">This Year</option>
               </select>
-              <button className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-red-500/50 transition-all flex items-center space-x-2">
+              <button
+                onClick={fetchDashboardData}
+                className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-red-500/50 transition-all flex items-center space-x-2"
+              >
                 <Download className="w-5 h-5" />
-                <span>Export</span>
+                <span>Refresh</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Key Financial Metrics */}
+        {/* Key Metrics from API */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-white" />
+                <Users className="w-5 h-5 text-white" />
               </div>
-              <TrendingUp className="w-4 h-4 text-green-400" />
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Total Revenue</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">${(metrics.totalRevenue / 1000000).toFixed(2)}M</p>
-            <p className="text-xs text-green-400 mt-1">+12.5% from last month</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Total Customers</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{metrics?.totalCustomers || 0}</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-white" />
+                <Users className="w-5 h-5 text-white" />
               </div>
-              <TrendingUp className="w-4 h-4 text-green-400" />
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Collected</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">${(metrics.collected / 1000000).toFixed(2)}M</p>
-            <p className="text-xs text-green-400 mt-1">+8.3% from last month</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Total Employees</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{metrics?.totalEmployees || 0}</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
-                <Clock className="w-5 h-5 text-white" />
+                <DollarSign className="w-5 h-5 text-white" />
               </div>
-              <TrendingDown className="w-4 h-4 text-yellow-400" />
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Outstanding</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">${(metrics.outstanding / 1000).toFixed(0)}K</p>
-            <p className="text-xs text-yellow-400 mt-1">-3.2% from last month</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Monthly Revenue</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              ${(parseFloat(metrics?.monthlyRevenue || 0) / 1000).toFixed(1)}K
+            </p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-rose-500 rounded-lg flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-white" />
               </div>
-              <TrendingUp className="w-4 h-4 text-red-400" />
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Overdue</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">${(metrics.overdue / 1000).toFixed(0)}K</p>
-            <p className="text-xs text-red-400 mt-1">+5.7% from last month</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Outstanding</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              ${(parseFloat(metrics?.outstandingAmount || 0) / 1000).toFixed(1)}K
+            </p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
                 <FileText className="w-5 h-5 text-white" />
               </div>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Avg. Bill Amount</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">${metrics.avgBillAmount}</p>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Per customer</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Active Bills</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{metrics?.activeBills || 0}</p>
           </div>
 
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                 <Activity className="w-5 h-5 text-white" />
               </div>
-              <TrendingUp className="w-4 h-4 text-green-400" />
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Collection Rate</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{metrics.collectionRate}%</p>
-            <p className="text-xs text-green-400 mt-1">+2.1% from last month</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              {metrics?.collectionRate || 0}%
+            </p>
           </div>
         </div>
 
         {/* Charts Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Revenue Trend */}
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revenue Trend</h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Monthly performance vs target</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Monthly revenue over time</p>
               </div>
               <BarChart3 className="w-6 h-6 text-red-400" />
             </div>
             <div className="h-64">
-              <Line data={revenueData} options={chartOptions} />
+              {monthlyRevenue.length > 0 ? (
+                <Line data={revenueData} options={chartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p>No revenue data available</p>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Revenue by Category */}
-          <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revenue by Customer Category</h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Connection type revenue breakdown</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revenue by Category</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Connection type breakdown</p>
               </div>
-              <BarChart3 className="w-6 h-6 text-pink-400" />
+              <PieChart className="w-6 h-6 text-pink-400" />
             </div>
             <div className="h-64">
-              <Bar
-                data={categoryData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      display: false
-                    },
-                    tooltip: {
-                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                      padding: 12,
-                      titleFont: { size: 14, weight: 'bold' },
-                      bodyFont: { size: 13 },
-                      callbacks: {
-                        label: function(context: any) {
-                          const index = context.dataIndex;
-                          const revenue = context.parsed.y;
-                          const percentage = categoryPercentages[index];
-                          return [
-                            `Revenue: $${revenue.toLocaleString()}`,
-                            `Market Share: ${percentage}%`
-                          ];
-                        }
-                      }
-                    }
-                  },
-                  scales: {
-                    x: {
-                      ticks: {
-                        color: 'rgba(255, 255, 255, 0.8)',
-                        font: { size: 12 }
-                      },
-                      grid: { display: false }
-                    },
-                    y: {
-                      ticks: {
-                        color: 'rgba(255, 255, 255, 0.8)',
-                        callback: function(value: any) {
-                          return '$' + (value / 1000).toFixed(0) + 'K';
-                        }
-                      },
-                      grid: { color: 'rgba(255, 255, 255, 0.1)' }
-                    }
-                  }
-                }}
-              />
-            </div>
-            <div className="mt-4 grid grid-cols-4 gap-3">
-              {['Residential', 'Commercial', 'Industrial', 'Agricultural'].map((category, index) => (
-                <div key={index} className="text-center p-3 bg-white dark:bg-white dark:bg-white/5 rounded-lg border border-gray-200 dark:border-gray-200 dark:border-white/10">
-                  <div className="flex items-center justify-center space-x-2 mb-1">
-                    <div className={`w-3 h-3 rounded-full`} style={{
-                      backgroundColor: ['#ef4444', '#ec4899', '#a855f7', '#3b82f6'][index]
-                    }}></div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{category}</p>
-                  </div>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white">{categoryPercentages[index]}%</p>
+              {Object.keys(revenueByCategory).length > 0 ? (
+                <Bar data={categoryData} options={chartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p>No category data available</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
 
-        {/* Payment Methods Analytics Table */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-gray-200 dark:border-white/10 overflow-hidden">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
-            <div className="flex items-center justify-between">
+        {/* Payment Methods */}
+        {Object.keys(paymentMethods).length > 0 && (
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Payment Methods Analytics</h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Transaction volume and revenue by payment type</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Payment Methods</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Distribution by payment type</p>
               </div>
               <CreditCard className="w-6 h-6 text-purple-400" />
             </div>
+            <div className="h-64">
+              <Doughnut data={paymentMethodsData} options={doughnutOptions} />
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Payment Method</th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Transactions</th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Total Revenue</th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Avg Transaction</th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Market Share</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/10">
-                <tr className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                      <p className="text-gray-900 dark:text-white font-medium">Online Banking</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-semibold">3,500</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-semibold">$862,500</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-600 dark:text-gray-400">$246.43</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-semibold">24.8%</span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
-                      <p className="text-gray-900 dark:text-white font-medium">Credit Card</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-semibold">2,800</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-semibold">$689,200</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-600 dark:text-gray-400">$246.14</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="px-3 py-1 bg-pink-500/20 text-pink-400 rounded-full text-xs font-semibold">19.8%</span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                      <p className="text-gray-900 dark:text-white font-medium">Mobile Wallet</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-semibold">2,400</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-semibold">$588,000</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-600 dark:text-gray-400">$245.00</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-semibold">17.0%</span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                      <p className="text-gray-900 dark:text-white font-medium">Debit Card</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-semibold">2,200</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-semibold">$539,000</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-600 dark:text-gray-400">$245.00</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-xs font-semibold">15.6%</span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <p className="text-gray-900 dark:text-white font-medium">Auto Debit</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-semibold">1,800</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-semibold">$441,000</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-600 dark:text-gray-400">$245.00</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-semibold">12.7%</span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                      <p className="text-gray-900 dark:text-white font-medium">Cash</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-semibold">1,500</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-semibold">$367,500</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-600 dark:text-gray-400">$245.00</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-semibold">10.6%</span>
-                  </td>
-                </tr>
-                <tr className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 font-bold">
-                  <td className="px-6 py-4">
-                    <p className="text-gray-900 dark:text-white font-bold">TOTAL</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-bold">14,200</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-bold">$3,487,200</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <p className="text-gray-900 dark:text-white font-bold">$245.58</p>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-xs font-semibold">100%</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        )}
 
-        {/* Recent Transactions */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-gray-200 dark:border-white/10 overflow-hidden">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
+        {/* Recent Bills Table */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
+          <div className="p-6 border-b border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recent Transactions</h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Latest payment activities</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recent Bills</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Latest billing activities</p>
               </div>
-              <button className="px-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all text-sm">
+              <button
+                onClick={() => window.location.href = '/admin/bills'}
+                className="px-4 py-2 bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/20 transition-all text-sm"
+              >
                 View All
               </button>
             </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
+              <thead className="bg-white/5 border-b border-white/10">
                 <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Bill No</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Customer</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Account</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Amount</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Method</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/10">
-                {recentTransactions.map((transaction) => (
-                  <tr key={transaction.id} className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
-                    <td className="px-6 py-4">
-                      <p className="text-white font-medium">{transaction.customer}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">{transaction.accountNumber}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-white font-semibold">${transaction.amount.toFixed(2)}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-gray-700 dark:text-gray-300 text-sm">{transaction.method}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(transaction.status)}`}>
-                        {getStatusIcon(transaction.status)}
-                        <span className="capitalize">{transaction.status}</span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">{transaction.date}</p>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Outstanding Bills */}
-        <div className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-gray-200 dark:border-white/10 overflow-hidden">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Outstanding Bills</h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Unpaid bills requiring attention</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button className="px-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all text-sm flex items-center space-x-2">
-                  <Filter className="w-4 h-4" />
-                  <span>Filter</span>
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-white dark:bg-white dark:bg-white dark:bg-white/5 border-b border-gray-200 dark:border-gray-200 dark:border-white/10">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Customer</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Account</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Bill Period</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Amount</th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Due Date</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Days Overdue</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Risk</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
-                {outstandingBills.map((bill) => (
-                  <tr key={bill.id} className="hover:bg-white dark:bg-white dark:bg-white/5 transition-colors">
-                    <td className="px-6 py-4">
-                      <p className="text-white font-medium">{bill.customer}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">{bill.accountNumber}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-gray-700 dark:text-gray-300 text-sm">{bill.billMonth}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-white font-semibold">${bill.amount.toFixed(2)}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">{bill.dueDate}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className={`text-sm font-medium ${
-                        bill.daysOverdue === 0 ? 'text-green-400' :
-                        bill.daysOverdue <= 5 ? 'text-yellow-400' :
-                        'text-red-400'
-                      }`}>
-                        {bill.daysOverdue === 0 ? 'Not due' : `${bill.daysOverdue} days`}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border capitalize ${getRiskColor(bill.risk)}`}>
-                        {bill.risk}
-                      </span>
+                {recentBills.length > 0 ? (
+                  recentBills.slice(0, 5).map((bill: any) => (
+                    <tr key={bill.id} className="hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4">
+                        <p className="text-gray-900 dark:text-white font-medium">{bill.billNumber}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-gray-700 dark:text-gray-300">{bill.customerName}</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">{bill.accountNumber}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-gray-900 dark:text-white font-semibold">${parseFloat(bill.totalAmount).toFixed(2)}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-gray-600 dark:text-gray-400">{new Date(bill.dueDate).toLocaleDateString()}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(bill.status)}`}>
+                          {bill.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                      No recent bills available
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Today's Billing Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-xl p-6 border border-green-500/20">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-white" />
-              </div>
-              <TrendingUp className="w-5 h-5 text-green-400" />
-            </div>
-            <p className="text-gray-700 dark:text-gray-300 mb-1">Bills Generated Today</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">1,247</p>
-            <p className="text-sm text-green-400 mt-2">+18% from yesterday</p>
-            {/* MySQL: SELECT COUNT(*) FROM bills WHERE DATE(created_date) = CURDATE() */}
-          </div>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <button
+            onClick={() => window.location.href = '/admin/customers'}
+            className="p-4 bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/20 rounded-xl hover:border-red-500/40 transition-all"
+          >
+            <Users className="w-6 h-6 text-red-400 mb-2" />
+            <p className="text-gray-900 dark:text-white font-semibold">Manage Customers</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">View and manage customer accounts</p>
+          </button>
 
-          <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-xl p-6 border border-blue-500/20">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-white" />
-              </div>
-              <TrendingUp className="w-5 h-5 text-blue-400" />
-            </div>
-            <p className="text-gray-700 dark:text-gray-300 mb-1">Payments Received Today</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">$86,420</p>
-            <p className="text-sm text-blue-400 mt-2">742 transactions</p>
-            {/* MySQL: SELECT SUM(amount), COUNT(*) FROM payments WHERE DATE(payment_date) = CURDATE() */}
-          </div>
+          <button
+            onClick={() => window.location.href = '/admin/bills'}
+            className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl hover:border-green-500/40 transition-all"
+          >
+            <FileText className="w-6 h-6 text-green-400 mb-2" />
+            <p className="text-gray-900 dark:text-white font-semibold">Generate Bills</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Create new billing cycles</p>
+          </button>
+
+          <button
+            onClick={() => window.location.href = '/admin/reports'}
+            className="p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-xl hover:border-purple-500/40 transition-all"
+          >
+            <BarChart3 className="w-6 h-6 text-purple-400 mb-2" />
+            <p className="text-gray-900 dark:text-white font-semibold">View Reports</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Analytics and insights</p>
+          </button>
         </div>
       </div>
     </DashboardLayout>

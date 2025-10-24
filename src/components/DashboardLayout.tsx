@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { signOut, useSession } from 'next-auth/react';
 import {
   Zap,
   Home,
@@ -32,7 +33,8 @@ import {
   Calculator,
   ZapOff,
   Database,
-  Plus
+  Plus,
+  Loader2
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -41,140 +43,145 @@ interface DashboardLayoutProps {
   userName?: string;
 }
 
-export default function DashboardLayout({ children, userType, userName = 'User' }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, userType, userName }: DashboardLayoutProps) {
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [hasActiveConnection, setHasActiveConnection] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
 
-  // Check if user has active connection
+  // Use session data if available
+  const displayName = session?.user?.name || userName || 'User';
+  const userEmail = session?.user?.email || '';
+
+  // Redirect to login if not authenticated
   useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
+
+  // Get navigation items based on user type
+  const getNavigationItems = () => {
     if (userType === 'customer') {
-      // Check localStorage for connection status
-      const connectionStatus = localStorage.getItem('hasActiveConnection');
-      if (connectionStatus === 'true') {
-        setHasActiveConnection(true);
-      }
-
-      // Listen for connection status changes
-      const handleConnectionChange = (e: CustomEvent) => {
-        setHasActiveConnection(e.detail);
-        localStorage.setItem('hasActiveConnection', e.detail.toString());
-      };
-
-      window.addEventListener('connectionStatusChange' as any, handleConnectionChange);
-
-      return () => {
-        window.removeEventListener('connectionStatusChange' as any, handleConnectionChange);
-      };
+      return [
+        { name: 'Dashboard', href: '/customer/dashboard', icon: Home },
+        { name: 'View Bills', href: '/customer/bill-view', icon: FileText },
+        { name: 'Payment', href: '/customer/payment', icon: DollarSign },
+        { name: 'Analytics', href: '/customer/analytics', icon: BarChart3 },
+        { name: 'New Connection', href: '/customer/new-connection', icon: Plus },
+        { name: 'Services', href: '/customer/services', icon: Activity },
+        { name: 'Complaints', href: '/customer/complaints', icon: MessageSquare },
+        { name: 'Outage Schedule', href: '/customer/outage-schedule', icon: ZapOff },
+        { name: 'Bill Calculator', href: '/customer/bill-calculator', icon: Calculator },
+        { name: 'Profile', href: '/customer/profile', icon: User },
+        { name: 'Settings', href: '/customer/settings', icon: Settings },
+      ];
+    } else if (userType === 'employee') {
+      return [
+        { name: 'Dashboard', href: '/employee/dashboard', icon: Home },
+        { name: 'Meter Reading', href: '/employee/meter-reading', icon: Gauge },
+        { name: 'Work Orders', href: '/employee/work-orders', icon: ClipboardList },
+        { name: 'Customers', href: '/employee/customers', icon: Users },
+        { name: 'Bill Generation', href: '/employee/bill-generation', icon: FileText },
+        { name: 'Profile', href: '/employee/profile', icon: User },
+        { name: 'Settings', href: '/employee/settings', icon: Settings },
+      ];
+    } else if (userType === 'admin') {
+      return [
+        { name: 'Dashboard', href: '/admin/dashboard', icon: Home },
+        { name: 'Customers', href: '/admin/customers', icon: Users },
+        { name: 'Employees', href: '/admin/employees', icon: Building },
+        { name: 'Generate Bills', href: '/admin/bills/generate', icon: FileText },
+        { name: 'Tariffs', href: '/admin/tariffs', icon: DollarSign },
+        { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
+        { name: 'Reports', href: '/admin/reports', icon: Activity },
+        { name: 'Data Import', href: '/admin/data-import', icon: Database },
+        { name: 'Profile', href: '/admin/profile', icon: User },
+        { name: 'Settings', href: '/admin/settings', icon: Settings },
+      ];
     }
-  }, [userType]);
+    return [];
+  };
 
-  // Initialize theme on component mount
+  const navigationItems = getNavigationItems();
+
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      const isDark = savedTheme === 'dark';
-      setIsDarkMode(isDark);
-      applyTheme(isDark);
+    const isDark = localStorage.getItem('theme') === 'dark';
+    setIsDarkMode(isDark);
+    if (isDark) {
+      document.documentElement.classList.add('dark');
     } else {
-      // Default to dark mode
-      applyTheme(true);
+      document.documentElement.classList.remove('dark');
     }
 
-    // Listen for theme changes from other components (like settings page)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'theme' && e.newValue) {
-        const isDark = e.newValue === 'dark';
-        setIsDarkMode(isDark);
-        applyTheme(isDark);
-      }
+    // Check connection status from event or localStorage
+    const checkConnectionStatus = () => {
+      const connectionStatus = localStorage.getItem('connectionStatus');
+      setHasActiveConnection(connectionStatus === 'active');
     };
 
-    // Custom event listener for same-tab changes
-    const handleThemeChange = (e: CustomEvent) => {
-      const isDark = e.detail === 'dark';
-      setIsDarkMode(isDark);
-      applyTheme(isDark);
+    checkConnectionStatus();
+
+    // Listen for connection status changes
+    const handleConnectionChange = (e: CustomEvent) => {
+      setHasActiveConnection(e.detail.status === 'active');
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('themeChange' as any, handleThemeChange);
+    window.addEventListener('connectionStatusChange' as any, handleConnectionChange);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('themeChange' as any, handleThemeChange);
+      window.removeEventListener('connectionStatusChange' as any, handleConnectionChange);
     };
   }, []);
 
-  // Apply theme to the document
-  const applyTheme = (isDark: boolean) => {
-    if (isDark) {
+  const toggleTheme = () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    if (newTheme) {
       document.documentElement.classList.add('dark');
-      document.documentElement.style.colorScheme = 'dark';
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      document.documentElement.style.colorScheme = 'light';
+      localStorage.setItem('theme', 'light');
+    }
+
+    // Dispatch custom event for theme change
+    window.dispatchEvent(new CustomEvent('themeChange', { detail: { isDark: newTheme } }));
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await signOut({
+        redirect: true,
+        callbackUrl: '/login'
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      setIsLoggingOut(false);
     }
   };
 
-  // Toggle dark mode
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    const newTheme = newDarkMode ? 'dark' : 'light';
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem('theme', newTheme);
-    applyTheme(newDarkMode);
+  // Sample notifications
+  const notifications = [
+    { id: 1, title: 'Bill Generated', message: 'Your monthly bill is ready', time: '2 hours ago', type: 'info' as const },
+    { id: 2, title: 'Payment Received', message: 'Payment of $150 received', time: '1 day ago', type: 'success' as const },
+    { id: 3, title: 'High Usage Alert', message: 'Your usage is 20% higher than last month', time: '3 days ago', type: 'warning' as const },
+  ];
 
-    // Dispatch custom event to notify settings page and other components
-    window.dispatchEvent(new CustomEvent('themeChange', { detail: newTheme }));
-  };
-
-  // Define navigation items based on user type
-  const getNavItems = () => {
-    switch (userType) {
-      case 'customer':
-        return [
-          { icon: Home, label: 'Dashboard', href: '/customer/dashboard' },
-          { icon: Plus, label: 'New Connection', href: '/customer/new-connection', highlight: !hasActiveConnection },
-          { icon: FileText, label: 'View Bills', href: '/customer/view-bills' },
-          { icon: Calculator, label: 'Bill Calculator', href: '/customer/bill-calculator' },
-          { icon: BarChart3, label: 'Analytics', href: '/customer/analytics' },
-          { icon: DollarSign, label: 'Payment', href: '/customer/payment' },
-          { icon: ZapOff, label: 'Outage Schedule', href: '/customer/outage-schedule' },
-          { icon: MessageSquare, label: 'Support Tickets', href: '/customer/complaints' },
-          { icon: Bell, label: 'Service Center', href: '/customer/services' },
-          { icon: Settings, label: 'Settings', href: '/customer/settings' },
-        ];
-      case 'employee':
-        return [
-          { icon: Home, label: 'Dashboard', href: '/employee/dashboard' },
-          { icon: Gauge, label: 'Meter Reading', href: '/employee/meter-reading' },
-          { icon: Users, label: 'Customers', href: '/employee/customers' },
-          { icon: FileText, label: 'Bill Generation', href: '/employee/bill-generation' },
-          { icon: ClipboardList, label: 'Work Orders', href: '/employee/work-orders' },
-          { icon: Settings, label: 'Settings', href: '/employee/settings' },
-        ];
-      case 'admin':
-        return [
-          { icon: Home, label: 'Dashboard', href: '/admin/dashboard' },
-          { icon: Database, label: 'Import Data', href: '/admin/data-import' },
-          { icon: Users, label: 'Customers', href: '/admin/customers' },
-          { icon: Building, label: 'Employees', href: '/admin/employees' },
-          { icon: FileText, label: 'Generate Bills', href: '/admin/bills/generate' },
-          { icon: DollarSign, label: 'Tariffs', href: '/admin/tariffs' },
-          { icon: BarChart3, label: 'Reports', href: '/admin/reports' },
-          { icon: Activity, label: 'Analytics', href: '/admin/analytics' },
-          { icon: Settings, label: 'Settings', href: '/admin/settings' },
-        ];
-      default:
-        return [];
+  const getNotificationIcon = (type: 'info' | 'success' | 'warning' | 'error') => {
+    switch (type) {
+      case 'success': return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'warning': return <AlertCircle className="h-5 w-5 text-yellow-500" />;
+      case 'error': return <AlertCircle className="h-5 w-5 text-red-500" />;
+      default: return <Info className="h-5 w-5 text-blue-500" />;
     }
   };
-
-  const navItems = getNavItems();
 
   const getUserTypeColor = () => {
     switch (userType) {
@@ -184,442 +191,273 @@ export default function DashboardLayout({ children, userType, userName = 'User' 
     }
   };
 
-  const getUserTypeBadge = () => {
+  const getUserTypeLabel = () => {
     switch (userType) {
-      case 'admin': return 'Admin';
+      case 'admin': return 'Administrator';
       case 'employee': return 'Employee';
       default: return 'Customer';
     }
   };
 
-  // Mock notifications data
-  const getNotifications = () => {
-    const baseNotifications = [
-      {
-        id: 1,
-        type: 'success',
-        icon: CheckCircle,
-        title: 'Payment Successful',
-        message: 'Your bill payment of ₹2,450 has been processed',
-        time: '5 min ago',
-        read: false
-      },
-      {
-        id: 2,
-        type: 'info',
-        icon: Info,
-        title: 'New Bill Generated',
-        message: 'Your electricity bill for January 2025 is ready',
-        time: '2 hours ago',
-        read: false
-      },
-      {
-        id: 3,
-        type: 'warning',
-        icon: AlertCircle,
-        title: 'Scheduled Maintenance',
-        message: 'Power outage scheduled for tomorrow 10 AM - 2 PM',
-        time: '1 day ago',
-        read: true
-      },
-      {
-        id: 4,
-        type: 'info',
-        icon: Clock,
-        title: 'Meter Reading Update',
-        message: 'Your meter reading has been recorded: 1,234 kWh',
-        time: '2 days ago',
-        read: true
-      }
-    ];
-
-    if (userType === 'employee') {
-      return [
-        {
-          id: 1,
-          type: 'warning',
-          icon: AlertCircle,
-          title: 'New Work Order',
-          message: '5 new meter reading assignments in your area',
-          time: '10 min ago',
-          read: false
-        },
-        {
-          id: 2,
-          type: 'info',
-          icon: Info,
-          title: 'Customer Query',
-          message: 'Customer #12345 has raised a billing query',
-          time: '1 hour ago',
-          read: false
-        },
-        ...baseNotifications.slice(2)
-      ];
-    }
-
-    if (userType === 'admin') {
-      return [
-        {
-          id: 1,
-          type: 'warning',
-          icon: AlertCircle,
-          title: 'System Alert',
-          message: 'High load detected in Zone-A. Immediate attention required',
-          time: '15 min ago',
-          read: false
-        },
-        {
-          id: 2,
-          type: 'info',
-          icon: Info,
-          title: 'Monthly Report Ready',
-          message: 'Revenue report for January 2025 is available',
-          time: '3 hours ago',
-          read: false
-        },
-        {
-          id: 3,
-          type: 'success',
-          icon: CheckCircle,
-          title: 'Employee Added',
-          message: 'New employee "Huzaifa" has been successfully onboarded',
-          time: '1 day ago',
-          read: true
-        },
-        ...baseNotifications.slice(2)
-      ];
-    }
-
-    return baseNotifications;
-  };
-
-  const notifications = getNotifications();
-  const unreadCount = notifications.filter(n => !n.read).length;
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-yellow-400 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`min-h-screen transition-colors duration-500 ${
-      isDarkMode
-        ? 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900'
-        : 'bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100'
-    }`}>
-      {/* Background Effects */}
-      <div className="fixed inset-0 overflow-hidden">
-        <div className={`absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-bl rounded-full blur-3xl transition-opacity duration-500 ${
-          isDarkMode ? 'from-yellow-400/5 to-transparent' : 'from-yellow-400/10 to-transparent'
-        }`}></div>
-        <div className={`absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-tr rounded-full blur-3xl transition-opacity duration-500 ${
-          isDarkMode ? 'from-orange-500/5 to-transparent' : 'from-orange-500/10 to-transparent'
-        }`}></div>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      {/* Sidebar for desktop */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 transform ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      } lg:translate-x-0 transition-transform bg-white dark:bg-gray-800 shadow-xl`}>
+        <div className="h-full flex flex-col">
+          {/* Logo */}
+          <div className="p-4 border-b dark:border-gray-700">
+            <Link href="/" className="flex items-center space-x-3">
+              <div className="p-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg">
+                <Zap className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">ElectroLux</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Energy Management</p>
+              </div>
+            </Link>
+          </div>
 
-      {/* Top Navigation Bar */}
-      <nav className={`fixed top-0 left-0 right-0 z-40 backdrop-blur-xl border-b transition-colors duration-300 ${
-        isDarkMode
-          ? 'bg-white dark:bg-black/20 border-gray-200 dark:border-white/10'
-          : 'bg-white/60 border-gray-200'
-      }`}>
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Left Section */}
-            <div className="flex items-center">
-              <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className={`lg:hidden p-2 rounded-lg transition-all ${
-                  isDarkMode
-                    ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-                }`}
-              >
-                <Menu className="h-6 w-6" />
-              </button>
+          {/* User type badge */}
+          <div className="px-4 py-3 border-b dark:border-gray-700">
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white bg-gradient-to-r ${getUserTypeColor()}`}>
+              {getUserTypeLabel()}
+            </span>
+          </div>
 
-              <div className="flex items-center space-x-3 ml-4 lg:ml-0">
-                <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <span className={`text-xl font-bold transition-colors ${
-                  isDarkMode ? 'text-gray-900 dark:text-white' : 'text-gray-900'
-                }`}>Electrolux</span>
-                <span className={`px-2 py-1 bg-gradient-to-r ${getUserTypeColor()} text-white text-xs rounded-full font-semibold`}>
-                  {getUserTypeBadge()}
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto p-4">
+            <ul className="space-y-1">
+              {navigationItems.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <li key={item.name}>
+                    <Link
+                      href={item.href}
+                      className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.name}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+
+          {/* Connection Status (for customers) */}
+          {userType === 'customer' && (
+            <div className="p-4 border-t dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Connection</span>
+                <span className={`flex items-center space-x-1 text-sm ${
+                  hasActiveConnection ? 'text-green-500' : 'text-gray-500'
+                }`}>
+                  <span className={`h-2 w-2 rounded-full ${
+                    hasActiveConnection ? 'bg-green-500' : 'bg-gray-500'
+                  }`}></span>
+                  <span>{hasActiveConnection ? 'Active' : 'Inactive'}</span>
                 </span>
               </div>
             </div>
+          )}
 
-            {/* Right Section */}
-            <div className="flex items-center space-x-4">
-              {/* Search Bar */}
-              <div className="hidden md:block relative">
-                <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${
-                  isDarkMode ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600 dark:text-gray-500'
-                }`} />
+          {/* Logout button */}
+          <div className="p-4 border-t dark:border-gray-700">
+            <button
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoggingOut ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Logging out...</span>
+                </>
+              ) : (
+                <>
+                  <LogOut className="h-5 w-5" />
+                  <span>Logout</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main content area */}
+      <div className="lg:ml-64">
+        {/* Top navigation */}
+        <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
+          <div className="flex items-center justify-between px-4 py-3">
+            {/* Mobile menu button */}
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+
+            {/* Search bar */}
+            <div className="hidden md:block flex-1 max-w-xl">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search..."
-                  className={`pl-10 pr-4 py-2 backdrop-blur-sm border rounded-lg focus:outline-none focus:border-yellow-400 transition-colors w-64 ${
-                    isDarkMode
-                      ? 'bg-gray-50 dark:bg-white/10 border-gray-300 dark:border-white/20 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400'
-                      : 'bg-white/80 border-gray-300 text-gray-900 placeholder-gray-500'
-                  }`}
+                  className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
                 />
               </div>
+            </div>
 
-              {/* Dark Mode Toggle */}
+            {/* Right side buttons */}
+            <div className="flex items-center space-x-2">
+              {/* Theme toggle */}
               <button
-                onClick={toggleDarkMode}
-                className={`p-2 rounded-lg transition-all ${
-                  isDarkMode
-                    ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-                }`}
-                title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                onClick={toggleTheme}
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                title="Toggle theme"
               >
-                {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                {isDarkMode ? (
+                  <Sun className="h-5 w-5 text-yellow-400" />
+                ) : (
+                  <Moon className="h-5 w-5 text-gray-600" />
+                )}
               </button>
 
               {/* Notifications */}
               <div className="relative">
                 <button
-                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                  className={`relative p-2 rounded-lg transition-all ${
-                    isDarkMode
-                      ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-                  }`}
+                  onClick={() => {
+                    setIsNotificationOpen(!isNotificationOpen);
+                    setIsProfileOpen(false);
+                  }}
+                  className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                   <Bell className="h-5 w-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 flex items-center justify-center w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full">
-                      {unreadCount}
-                    </span>
-                  )}
+                  <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
                 </button>
 
                 {isNotificationOpen && (
-                  <div className={`absolute right-0 mt-2 w-96 max-h-[500px] overflow-y-auto backdrop-blur-xl rounded-lg shadow-lg border ${
-                    isDarkMode
-                      ? 'bg-white dark:bg-black/80 border-gray-200 dark:border-white/10'
-                      : 'bg-white/90 border-gray-200'
-                  }`}>
-                    {/* Header */}
-                    <div className={`px-4 py-3 border-b ${isDarkMode ? 'border-gray-200 dark:border-white/10' : 'border-gray-200'}`}>
-                      <div className="flex items-center justify-between">
-                        <h3 className={`font-semibold ${isDarkMode ? 'text-gray-900 dark:text-white' : 'text-gray-900'}`}>
-                          Notifications
-                        </h3>
-                        {unreadCount > 0 && (
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            isDarkMode
-                              ? 'bg-yellow-400/20 text-yellow-400'
-                              : 'bg-yellow-400/30 text-yellow-600'
-                          }`}>
-                            {unreadCount} new
-                          </span>
-                        )}
-                      </div>
+                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl border dark:border-gray-700 z-50">
+                    <div className="p-4 border-b dark:border-gray-700">
+                      <h3 className="font-semibold">Notifications</h3>
                     </div>
-
-                    {/* Notifications List */}
-                    <div className="py-2">
-                      {notifications.length === 0 ? (
-                        <div className={`px-4 py-8 text-center ${
-                          isDarkMode ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600'
-                        }`}>
-                          <Bell className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                          <p>No notifications</p>
-                        </div>
-                      ) : (
-                        notifications.map((notification) => {
-                          const NotificationIcon = notification.icon;
-                          const iconColor =
-                            notification.type === 'success' ? 'text-green-500' :
-                            notification.type === 'warning' ? 'text-yellow-500' :
-                            'text-blue-500';
-
-                          return (
-                            <div
-                              key={notification.id}
-                              className={`px-4 py-3 transition-colors border-l-2 ${
-                                !notification.read
-                                  ? isDarkMode
-                                    ? 'bg-yellow-400/5 border-yellow-400'
-                                    : 'bg-yellow-400/10 border-yellow-400'
-                                  : 'border-transparent'
-                              } ${
-                                isDarkMode
-                                  ? 'hover:bg-white/5'
-                                  : 'hover:bg-gray-50'
-                              }`}
-                            >
-                              <div className="flex items-start space-x-3">
-                                <div className={`mt-0.5 ${iconColor}`}>
-                                  <NotificationIcon className="h-5 w-5" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between">
-                                    <p className={`font-medium text-sm ${
-                                      isDarkMode ? 'text-gray-900 dark:text-white' : 'text-gray-900'
-                                    }`}>
-                                      {notification.title}
-                                    </p>
-                                    {!notification.read && (
-                                      <span className="ml-2 w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5"></span>
-                                    )}
-                                  </div>
-                                  <p className={`text-sm mt-1 ${
-                                    isDarkMode ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600'
-                                  }`}>
-                                    {notification.message}
-                                  </p>
-                                  <p className={`text-xs mt-1 ${
-                                    isDarkMode ? 'text-gray-500 dark:text-gray-500' : 'text-gray-500'
-                                  }`}>
-                                    {notification.time}
-                                  </p>
-                                </div>
-                              </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {notifications.map((notification) => (
+                        <div key={notification.id} className="p-4 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                          <div className="flex items-start space-x-3">
+                            {getNotificationIcon(notification.type)}
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{notification.title}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{notification.message}</p>
+                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 flex items-center">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {notification.time}
+                              </p>
                             </div>
-                          );
-                        })
-                      )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-
-                    {/* Footer */}
-                    {notifications.length > 0 && (
-                      <div className={`px-4 py-3 border-t ${isDarkMode ? 'border-gray-200 dark:border-white/10' : 'border-gray-200'}`}>
-                        <button className={`text-sm font-medium transition-colors ${
-                          isDarkMode
-                            ? 'text-yellow-400 hover:text-yellow-300'
-                            : 'text-yellow-600 hover:text-yellow-700'
-                        }`}>
-                          View all notifications
-                        </button>
-                      </div>
-                    )}
+                    <div className="p-3 text-center">
+                      <Link href="/notifications" className="text-sm text-yellow-500 hover:text-yellow-600">
+                        View all notifications
+                      </Link>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Profile Dropdown */}
+              {/* Profile dropdown */}
               <div className="relative">
                 <button
-                  onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className={`flex items-center space-x-3 p-2 rounded-lg transition-all ${
-                    isDarkMode ? 'hover:bg-gray-50 dark:bg-white/10' : 'hover:bg-gray-200'
-                  }`}
+                  onClick={() => {
+                    setIsProfileOpen(!isProfileOpen);
+                    setIsNotificationOpen(false);
+                  }}
+                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-white" />
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center">
+                    <span className="text-white font-semibold">
+                      {displayName.charAt(0).toUpperCase()}
+                    </span>
                   </div>
-                  <span className={`hidden md:block transition-colors ${
-                    isDarkMode ? 'text-gray-900 dark:text-white' : 'text-gray-900'
-                  }`}>{userName}</span>
-                  <ChevronDown className={`hidden md:block h-4 w-4 ${
-                    isDarkMode ? 'text-gray-600 dark:text-gray-400' : 'text-gray-600'
-                  }`} />
+                  <span className="hidden md:block text-sm font-medium">{displayName}</span>
+                  <ChevronDown className="h-4 w-4" />
                 </button>
 
                 {isProfileOpen && (
-                  <div className={`absolute right-0 mt-2 w-48 backdrop-blur-xl rounded-lg shadow-lg border py-2 ${
-                    isDarkMode
-                      ? 'bg-white dark:bg-black/80 border-gray-200 dark:border-white/10'
-                      : 'bg-white/90 border-gray-200'
-                  }`}>
-                    <Link href={`/${userType}/profile`} className={`flex items-center px-4 py-2 transition-colors ${
-                      isDarkMode
-                        ? 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
-                        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
-                    }`}>
-                      <User className="h-4 w-4 mr-2" />
-                      Profile
-                    </Link>
-                    <Link href={`/${userType}/settings`} className={`flex items-center px-4 py-2 transition-colors ${
-                      isDarkMode
-                        ? 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
-                        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
-                    }`}>
-                      <Settings className="h-4 w-4 mr-2" />
-                      Settings
-                    </Link>
-                    <hr className={`my-2 ${isDarkMode ? 'border-gray-200 dark:border-white/10' : 'border-gray-200'}`} />
-                    <button className={`flex items-center w-full px-4 py-2 transition-colors ${
-                      isDarkMode
-                        ? 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
-                        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
-                    }`}>
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
-                    </button>
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border dark:border-gray-700 z-50">
+                    <div className="p-4 border-b dark:border-gray-700">
+                      <p className="font-semibold">{displayName}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{userEmail}</p>
+                    </div>
+                    <div className="p-2">
+                      <Link
+                        href={`/${userType}/profile`}
+                        className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <User className="h-4 w-4" />
+                        <span>Profile</span>
+                      </Link>
+                      <Link
+                        href={`/${userType}/settings`}
+                        className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span>Settings</span>
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        disabled={isLoggingOut}
+                        className="w-full flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-red-600 dark:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isLoggingOut ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <LogOut className="h-4 w-4" />
+                        )}
+                        <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
             </div>
           </div>
-        </div>
-      </nav>
+        </header>
 
-      {/* Sidebar */}
-      <aside className={`fixed left-0 top-16 bottom-0 z-30 w-64 backdrop-blur-xl border-r transform transition-all duration-300 lg:translate-x-0 ${
-        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } ${
-        isDarkMode
-          ? 'bg-white dark:bg-black/20 border-gray-200 dark:border-white/10'
-          : 'bg-white/60 border-gray-200'
-      }`}>
-        <div className="p-4">
-          <nav className="space-y-2">
-            {navItems.map((item: any) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
-              const isHighlight = item.highlight;
+        {/* Page content */}
+        <main className="p-4 md:p-6">
+          {children}
+        </main>
+      </div>
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? isDarkMode
-                        ? 'bg-gradient-to-r from-yellow-400/20 to-orange-500/20 text-white border border-yellow-400/50'
-                        : 'bg-gradient-to-r from-yellow-400/30 to-orange-500/30 text-gray-900 border border-yellow-400/60'
-                      : isHighlight
-                      ? isDarkMode
-                        ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 text-green-400 border border-green-500/30 hover:from-green-500/20 hover:to-emerald-500/20'
-                        : 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-700 border border-green-500/40 hover:from-green-500/30 hover:to-emerald-500/30'
-                      : isDarkMode
-                      ? 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10'
-                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
-                >
-                  <Icon className={`h-5 w-5 ${isHighlight && !isActive ? 'animate-pulse' : ''}`} />
-                  <span className={isHighlight && !isActive ? 'font-semibold' : ''}>{item.label}</span>
-                  {isActive && (
-                    <div className="ml-auto w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
-                  )}
-                  {isHighlight && !isActive && (
-                    <span className="ml-auto text-xs px-2 py-0.5 bg-green-500 text-white rounded-full">New</span>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      </aside>
-
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-20 lg:hidden"
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
-        />
+        ></div>
       )}
-
-      {/* Main Content */}
-      <main className={`pt-16 transition-all duration-300 lg:pl-64`}>
-        <div className="p-6">
-          {children}
-        </div>
-      </main>
     </div>
   );
 }

@@ -18,8 +18,8 @@ export const connectionApplications = mysqlTable('connection_applications', {
   idNumber: varchar('id_number', { length: 100 }).notNull(),
 
   // Connection details
-  propertyType: mysqlEnum('property_type', ['Residential', 'Commercial', 'Industrial', 'Agricultural']).notNull(),
-  connectionType: mysqlEnum('connection_type', ['single_phase', 'three_phase', 'industrial']).notNull(),
+  propertyType: mysqlEnum('property_type', ['residential', 'commercial', 'industrial', 'agricultural']).notNull(),
+  connectionType: mysqlEnum('connection_type', ['single-phase', 'three-phase', 'industrial']).notNull(),
   loadRequired: decimal('load_required', { precision: 10, scale: 2 }).notNull(), // kW
 
   // Address
@@ -32,6 +32,8 @@ export const connectionApplications = mysqlTable('connection_applications', {
   // Application details
   preferredConnectionDate: date('preferred_connection_date'),
   purposeOfConnection: mysqlEnum('purpose_of_connection', ['domestic', 'business', 'industrial', 'agricultural']).notNull(),
+  existingConnection: int('existing_connection').default(0).notNull(), // 0 = no, 1 = yes
+  existingAccountNumber: varchar('existing_account_number', { length: 50 }),
   status: mysqlEnum('status', ['pending', 'approved', 'rejected', 'under_inspection', 'connected']).default('pending').notNull(),
 
   // Financial

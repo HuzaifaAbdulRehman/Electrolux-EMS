@@ -124,7 +124,7 @@ export default function CustomerProfile() {
     averageMonthly: '410 kWh',
     peakMonth: 'July 2024',
     lowestMonth: 'March 2024',
-    totalPayments: '$12,450',
+    totalPayments: 'Rs 1,245,000',
     onTimePayments: '98%'
     // Removed: savedAmount, co2Reduced (not calculable from billing data)
   };
@@ -138,7 +138,7 @@ export default function CustomerProfile() {
 
   // Recent activities
   const recentActivities = [
-    { date: '2024-10-10', activity: 'Bill payment completed', amount: '$245.50', status: 'success' },
+    { date: '2024-10-10', activity: 'Bill payment completed', amount: 'Rs 24,550', status: 'success' },
     { date: '2024-10-08', activity: 'Meter reading submitted', amount: '460 kWh', status: 'info' },
     { date: '2024-10-05', activity: 'Service request resolved', amount: 'SR-2024-001', status: 'success' },
     { date: '2024-09-15', activity: 'Profile updated', amount: 'Email changed', status: 'info' }

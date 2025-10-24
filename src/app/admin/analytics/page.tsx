@@ -65,7 +65,7 @@ export default function AdminAnalytics() {
 
   // Key Performance Indicators - Only realistic DB-driven metrics
   const kpis = {
-    revenue: { value: '$2.45M', change: '+12.5%', trend: 'up' },
+    revenue: { value: 'Rs 245M', change: '+12.5%', trend: 'up' },
     customers: { value: '15,234', change: '+8.2%', trend: 'up' },
     consumption: { value: '145,000 kWh', change: '+5.7%', trend: 'up' }, // Total kWh This Month
     collections: { value: '96.8%', change: '+2.1%', trend: 'up' }
@@ -328,7 +328,7 @@ export default function AdminAnalytics() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-gray-600 dark:text-gray-400 text-sm">Average Bill Amount</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">$245.50</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">Rs 24,550</p>
                   </div>
                   <DollarSign className="w-8 h-8 text-green-400" />
                 </div>

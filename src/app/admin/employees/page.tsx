@@ -133,7 +133,7 @@ export default function EmployeeManagement() {
             { label: 'Active Staff', value: '172', icon: CheckCircle, color: 'from-green-500 to-emerald-500' },
             { label: 'On Leave', value: '8', icon: XCircle, color: 'from-yellow-400 to-orange-500' },
             { label: 'Avg Performance', value: '89%', icon: Activity, color: 'from-purple-500 to-pink-500' },
-            { label: 'Payroll/Month', value: '$485K', icon: Award, color: 'from-red-500 to-rose-500' }
+            { label: 'Payroll/Month', value: 'Rs 48.5M', icon: Award, color: 'from-red-500 to-rose-500' }
           ].map((stat, index) => (
             <div key={index} className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
               <div className="flex items-center justify-between mb-2">

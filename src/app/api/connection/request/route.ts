@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Connection request submitted successfully!',
       applicationNumber: applicationNumber,
-      estimatedCharges: estimatedCharges > 0 ? `$${estimatedCharges}` : 'Custom Quote',
+      estimatedCharges: estimatedCharges > 0 ? `Rs ${estimatedCharges}` : 'Custom Quote',
       estimatedDays: estimatedDays,
       nextSteps: [
         'Your application has been received and is under review',

@@ -215,11 +215,15 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Registration failed');
       }
 
-      setSuccessMessage('Registration successful! Redirecting to login...');
+      setSuccessMessage('Registration successful! Redirecting to email verification...');
 
-      // Redirect to login after 2 seconds
+      // Redirect to verification page with email and code
       setTimeout(() => {
-        window.location.href = '/login';
+        const params = new URLSearchParams({
+          email: formData.email,
+          code: data.verificationCode || '', // For development mode
+        });
+        window.location.href = `/verify-email?${params.toString()}`;
       }, 2000);
     } catch (error: any) {
       setErrorMessage(error.message || 'Registration failed. Please try again.');

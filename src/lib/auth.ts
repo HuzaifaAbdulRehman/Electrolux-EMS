@@ -70,6 +70,11 @@ export const authOptions: NextAuthOptions = {
             throw new Error('User not found or inactive');
           }
 
+          // Check email verification
+          if (user.emailVerified !== 1) {
+            throw new Error('Please verify your email before logging in. Check your email for the verification code.');
+          }
+
           // Verify password
           const isPasswordValid = await bcrypt.compare(
             credentials.password,

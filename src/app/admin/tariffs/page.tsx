@@ -228,7 +228,7 @@ export default function TariffManagement() {
                     />
                   </div>
                 ) : (
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">${displayTariff.fixedCharge}</p>
+                  <p className="text-3xl font-bold text-gray-900 dark:text-white">Rs {displayTariff.fixedCharge}</p>
                 )}
               </div>
               <DollarSign className="w-10 h-10 text-yellow-400" />
@@ -241,7 +241,7 @@ export default function TariffManagement() {
             <div className="space-y-4">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Current Monthly Revenue</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">$2.84M</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">Rs 284M</p>
               </div>
               <div className="flex items-center space-x-2">
                 <TrendingUp className="w-5 h-5 text-green-400" />

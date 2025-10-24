@@ -3,15 +3,17 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Zap, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { Zap, Mail, Lock, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showResendLink, setShowResendLink] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +28,13 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError('Invalid email or password');
+        setError(result.error); // Show actual error from NextAuth
+
+        // Check if error is about email verification
+        if (result.error.toLowerCase().includes('verify your email')) {
+          setShowResendLink(true);
+        }
+
         setIsLoading(false);
       } else if (result?.ok) {
         // Fetch session to get user type
@@ -129,9 +137,21 @@ export default function LoginPage() {
           {/* Login Form */}
           <div className="p-8">
             {error && (
-              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-red-500" />
-                <span className="text-sm text-red-600 dark:text-red-400">{error}</span>
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  <span className="text-sm text-red-600 dark:text-red-400">{error}</span>
+                </div>
+                {showResendLink && (
+                  <div className="mt-2 pl-6">
+                    <Link
+                      href={`/verify-email?email=${email}`}
+                      className="text-sm text-orange-500 hover:text-orange-600 font-medium"
+                    >
+                      Resend verification code →
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 
@@ -149,7 +169,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="Enter your email"
+                    placeholder="huzaifa@test.com"
                     required
                     disabled={isLoading}
                   />
@@ -165,22 +185,26 @@ export default function LoginPage() {
                     <Lock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="Enter your password"
                     required
                     disabled={isLoading}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    disabled={isLoading}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <label className="flex items-center">
-                  <input type="checkbox" className="rounded border-gray-300 text-orange-500 focus:ring-orange-500" />
-                  <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">Remember me</span>
-                </label>
+              <div className="flex items-center justify-end">
                 <Link href="/forgot-password" className="text-sm text-orange-500 hover:text-orange-600">
                   Forgot password?
                 </Link>
@@ -208,25 +232,25 @@ export default function LoginPage() {
             {/* Demo Accounts */}
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
               <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">
-                Demo Accounts (Password: password123)
+                Demo Accounts
               </p>
               <div className="space-y-2">
                 <button
-                  onClick={() => quickLogin('admin@electrolux.com', 'password123')}
+                  onClick={() => quickLogin('admin@electrolux.com', 'Admin@123')}
                   disabled={isLoading}
                   className="w-full py-2 px-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Login as Admin
                 </button>
                 <button
-                  onClick={() => quickLogin('employee1@electrolux.com', 'password123')}
+                  onClick={() => quickLogin('employee1@electrolux.com', 'Employee@123')}
                   disabled={isLoading}
                   className="w-full py-2 px-3 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Login as Employee
                 </button>
                 <button
-                  onClick={() => quickLogin('customer1@example.com', 'password123')}
+                  onClick={() => quickLogin('customer1@electrolux.com', 'Customer@123')}
                   disabled={isLoading}
                   className="w-full py-2 px-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >

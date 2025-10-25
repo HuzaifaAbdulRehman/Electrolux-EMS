@@ -19,7 +19,8 @@ import {
   Phone,
   Building,
   ClipboardList,
-  Users
+  Users,
+  X
 } from 'lucide-react';
 
 interface Customer {
@@ -322,26 +323,43 @@ export default function MeterReadingForm() {
 
       // Complete any pending work orders for this customer (meter_reading type)
       try {
-        const woResponse = await fetch(`/api/work-orders?customerId=${selectedCustomer!.id}&workType=meter_reading&status=assigned,in_progress`);
-        if (woResponse.ok) {
-          const woResult = await woResponse.json();
-          if (woResult.success && woResult.data && woResult.data.length > 0) {
-            // Complete all pending meter reading work orders for this customer
-            for (const wo of woResult.data) {
-              await fetch(`/api/work-orders/${wo.id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  status: 'completed',
-                  completionNotes: `Meter reading completed. Reading: ${readingData.currentReading} kWh. ${autoGenerateBill ? 'Bill auto-generated.' : 'Bill not generated.'}`
-                }),
-              });
+        // If modal customer has workOrderId, complete that specific work order
+        if (modalCustomer?.workOrderId) {
+          await fetch(`/api/work-orders/${modalCustomer.workOrderId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              status: 'completed',
+              completionNotes: `Meter reading completed. Reading: ${readingData.currentReading} kWh. ${autoGenerateBill ? 'Bill auto-generated.' : 'Bill not generated.'}`
+            }),
+          });
+        } else {
+          // Otherwise complete all pending work orders for this customer
+          const woResponse = await fetch(`/api/work-orders?customerId=${customer.id}&workType=meter_reading&status=assigned,in_progress`);
+          if (woResponse.ok) {
+            const woResult = await woResponse.json();
+            if (woResult.success && woResult.data && woResult.data.length > 0) {
+              for (const wo of woResult.data) {
+                await fetch(`/api/work-orders/${wo.id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    status: 'completed',
+                    completionNotes: `Meter reading completed. Reading: ${readingData.currentReading} kWh. ${autoGenerateBill ? 'Bill auto-generated.' : 'Bill not generated.'}`
+                  }),
+                });
+              }
             }
           }
         }
       } catch (woError) {
         console.error('Error completing work orders:', woError);
         // Don't fail the whole operation if work order update fails
+      }
+
+      // Refresh work orders list if modal was from work orders
+      if (modalCustomer) {
+        await fetchWorkOrders();
       }
 
     } catch (error: any) {
@@ -1073,9 +1091,254 @@ export default function MeterReadingForm() {
           </div>
         </div>
       </div>
-      
+
+      {/* METER READING MODAL */}
+      {showModal && modalCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-white/10">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-green-500 to-emerald-500 p-5 flex items-center justify-between rounded-t-2xl">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center space-x-2">
+                  <Gauge className="w-6 h-6" />
+                  <span>Enter Meter Reading</span>
+                </h2>
+                <p className="text-white/90 text-sm mt-1">{modalCustomer.fullName}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setModalCustomer(null);
+                  setErrors({});
+                }}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
+            </div>
+
+            {/* Customer Info Banner */}
+            <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b border-blue-500/30 p-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Account Number</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{modalCustomer.accountNumber}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Meter Number</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{modalCustomer.meterNumber}</p>
+                </div>
+                {lastReading !== null && lastReading > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Previous Reading</p>
+                    <p className="text-sm font-semibold text-green-600 dark:text-green-400">{lastReading} kWh</p>
+                    {lastReadingDate && (
+                      <p className="text-xs text-gray-500 dark:text-gray-500">
+                        {new Date(lastReadingDate).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {/* Current Reading */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  Current Reading (kWh) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={readingData.currentReading}
+                  onChange={(e) => setReadingData({ ...readingData, currentReading: e.target.value })}
+                  placeholder={lastReading ? `Must be greater than ${lastReading}` : 'Enter current meter reading'}
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors text-lg font-semibold"
+                />
+                {errors.currentReading && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    {errors.currentReading}
+                  </p>
+                )}
+              </div>
+
+              {/* Reading Date & Time */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    Reading Date
+                  </label>
+                  <input
+                    type="date"
+                    value={readingData.readingDate}
+                    onChange={(e) => setReadingData({ ...readingData, readingDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    Reading Time
+                  </label>
+                  <input
+                    type="time"
+                    value={readingData.readingTime}
+                    onChange={(e) => setReadingData({ ...readingData, readingTime: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400 transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Meter Condition & Accessibility */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    Meter Condition
+                  </label>
+                  <select
+                    value={readingData.meterCondition}
+                    onChange={(e) => setReadingData({ ...readingData, meterCondition: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400 transition-colors"
+                  >
+                    <option value="good">Good</option>
+                    <option value="faulty">Faulty</option>
+                    <option value="damaged">Damaged</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                    Accessibility
+                  </label>
+                  <select
+                    value={readingData.accessibility}
+                    onChange={(e) => setReadingData({ ...readingData, accessibility: e.target.value })}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400 transition-colors"
+                  >
+                    <option value="accessible">Accessible</option>
+                    <option value="restricted">Restricted</option>
+                    <option value="inaccessible">Inaccessible</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                  Notes (Optional)
+                </label>
+                <textarea
+                  value={readingData.notes}
+                  onChange={(e) => setReadingData({ ...readingData, notes: e.target.value })}
+                  rows={3}
+                  placeholder="Any additional observations..."
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors"
+                />
+              </div>
+
+              {/* Auto-generate Bill Checkbox */}
+              <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-lg p-4">
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoGenerateBill}
+                    onChange={(e) => setAutoGenerateBill(e.target.checked)}
+                    className="w-5 h-5 rounded border-gray-300 text-green-500 focus:ring-green-500"
+                  />
+                  <div>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white block">
+                      Auto-generate bill after saving
+                    </span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      Bill will be created automatically for this meter reading
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              {/* Success/Error Messages */}
+              {showSuccess && billGenerated && (
+                <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/50 rounded-lg p-4">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <CheckCircle className="w-6 h-6 text-green-400" />
+                    <div>
+                      <h3 className="text-white font-semibold">Success!</h3>
+                      <p className="text-gray-300 text-xs">Meter reading saved and bill generated</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setModalCustomer(null);
+                      setShowSuccess(false);
+                      setBillGenerated(null);
+                      setReadingData({
+                        currentReading: '',
+                        readingDate: new Date().toISOString().split('T')[0],
+                        readingTime: new Date().toTimeString().slice(0, 5),
+                        meterCondition: 'good',
+                        accessibility: 'accessible',
+                        notes: '',
+                      });
+                    }}
+                    className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white text-sm font-medium transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              {!showSuccess && (
+                <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setModalCustomer(null);
+                      setErrors({});
+                    }}
+                    className="px-5 py-2.5 bg-gray-200 dark:bg-white/10 hover:bg-gray-300 dark:hover:bg-white/20 rounded-lg text-gray-900 dark:text-white font-semibold transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || generatingBill}
+                    className={`px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-semibold flex items-center space-x-2 transition-all ${
+                      isSubmitting || generatingBill
+                        ? 'opacity-70 cursor-not-allowed'
+                        : 'hover:shadow-lg hover:shadow-green-500/50'
+                    }`}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Submitting...</span>
+                      </>
+                    ) : generatingBill ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Generating Bill...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>Submit Reading</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
+      )}
+
   </DashboardLayout >
-      
+
   );
   
 }

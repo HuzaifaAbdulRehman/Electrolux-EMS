@@ -97,26 +97,44 @@ export async function GET(request: NextRequest) {
 
     const result = await query.orderBy(desc(bills.issueDate)).limit(limit).offset(offset);
 
-    // Get total count
+    // Get total count and aggregate stats
     let countQuery = db
-      .select({ count: sql<number>`count(*)` })
+      .select({
+        count: sql<number>`count(*)`,
+        totalAmount: sql<number>`COALESCE(SUM(CAST(${bills.totalAmount} AS DECIMAL(10,2))), 0)`,
+        pending: sql<number>`SUM(CASE WHEN ${bills.status} = 'pending' THEN 1 ELSE 0 END)`,
+        issued: sql<number>`SUM(CASE WHEN ${bills.status} = 'issued' THEN 1 ELSE 0 END)`,
+        paid: sql<number>`SUM(CASE WHEN ${bills.status} = 'paid' THEN 1 ELSE 0 END)`,
+        overdue: sql<number>`SUM(CASE WHEN ${bills.status} = 'overdue' THEN 1 ELSE 0 END)`,
+        cancelled: sql<number>`SUM(CASE WHEN ${bills.status} = 'cancelled' THEN 1 ELSE 0 END)`,
+      })
       .from(bills)
+      .leftJoin(customers, eq(bills.customerId, customers.id))
       .$dynamic();
 
     if (conditions.length > 0) {
       countQuery = countQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
     }
 
-    const [{ count }] = await countQuery;
+    const [aggregateStats] = await countQuery;
 
     return NextResponse.json({
       success: true,
       data: result,
+      stats: {
+        total: Number(aggregateStats.count || 0),
+        totalAmount: Number(aggregateStats.totalAmount || 0),
+        pending: Number(aggregateStats.pending || 0),
+        issued: Number(aggregateStats.issued || 0),
+        paid: Number(aggregateStats.paid || 0),
+        overdue: Number(aggregateStats.overdue || 0),
+        cancelled: Number(aggregateStats.cancelled || 0),
+      },
       pagination: {
         page,
         limit,
-        total: count,
-        totalPages: Math.ceil(count / limit),
+        total: Number(aggregateStats.count || 0),
+        totalPages: Math.ceil(Number(aggregateStats.count || 0) / limit),
       },
     });
 

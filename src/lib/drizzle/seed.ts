@@ -3,14 +3,15 @@ import { db } from './db';
 import { users, customers, employees, tariffs, meterReadings, bills, payments, workOrders, connectionApplications, notifications } from './schema';
 import bcrypt from 'bcryptjs';
 import { subMonths, format, addDays } from 'date-fns';
+import { eq, sql } from 'drizzle-orm';
 
 // Helper function to generate unique account numbers
 function generateAccountNumber(index: number): string {
   return `ELX-2024-${String(index).padStart(6, '0')}`;
 }
 
-function generateMeterNumber(index: number): string {
-  return `MTR-${String(index).padStart(6, '0')}`;
+function generateMeterNumber(index: number, cityCode: string): string {
+  return `MTR-${cityCode}-${String(index).padStart(6, '0')}`;
 }
 
 function generateBillNumber(month: number, customerId: number): string {
@@ -29,6 +30,29 @@ async function seed() {
   console.log('🌱 Starting database seeding...\n');
 
   try {
+    // 0. CLEAR EXISTING DATA (using TRUNCATE to reset AUTO_INCREMENT)
+    console.log('🗑️  Clearing existing data...');
+
+    // Disable foreign key checks temporarily
+    await db.execute(sql`SET FOREIGN_KEY_CHECKS = 0`);
+
+    // Truncate all tables (clears data AND resets AUTO_INCREMENT)
+    await db.execute(sql`TRUNCATE TABLE notifications`);
+    await db.execute(sql`TRUNCATE TABLE connection_applications`);
+    await db.execute(sql`TRUNCATE TABLE work_orders`);
+    await db.execute(sql`TRUNCATE TABLE payments`);
+    await db.execute(sql`TRUNCATE TABLE bills`);
+    await db.execute(sql`TRUNCATE TABLE meter_readings`);
+    await db.execute(sql`TRUNCATE TABLE tariffs`);
+    await db.execute(sql`TRUNCATE TABLE customers`);
+    await db.execute(sql`TRUNCATE TABLE employees`);
+    await db.execute(sql`TRUNCATE TABLE users`);
+
+    // Re-enable foreign key checks
+    await db.execute(sql`SET FOREIGN_KEY_CHECKS = 1`);
+
+    console.log('✅ Cleared all existing data\n');
+
     // 1. SEED USERS (1 Admin + 10 Employees + 50 Customers)
     console.log('👤 Seeding users...');
     const hashedPassword = await bcrypt.hash('password123', 10);
@@ -98,25 +122,72 @@ async function seed() {
     // 3. SEED CUSTOMERS
     console.log('🏠 Seeding customers...');
     const connectionTypes = ['Residential', 'Commercial', 'Industrial', 'Agricultural'] as const;
+
+    // Pakistani cities with realistic distribution
+    const pakistaniCities = [
+      { name: 'Karachi', code: 'KHI', state: 'Sindh', weight: 30 },      // 30% - Largest city
+      { name: 'Lahore', code: 'LHE', state: 'Punjab', weight: 25 },      // 25% - 2nd largest
+      { name: 'Islamabad', code: 'ISB', state: 'Islamabad Capital Territory', weight: 15 }, // 15%
+      { name: 'Rawalpindi', code: 'RWP', state: 'Punjab', weight: 10 },  // 10%
+      { name: 'Faisalabad', code: 'FSD', state: 'Punjab', weight: 10 },  // 10%
+      { name: 'Multan', code: 'MUX', state: 'Punjab', weight: 5 },       // 5%
+      { name: 'Peshawar', code: 'PEW', state: 'Khyber Pakhtunkhwa', weight: 3 }, // 3%
+      { name: 'Quetta', code: 'UET', state: 'Balochistan', weight: 2 },  // 2%
+    ];
+
+    // Helper function to select city based on weighted distribution
+    function selectCity() {
+      const totalWeight = pakistaniCities.reduce((sum, city) => sum + city.weight, 0);
+      let random = Math.random() * totalWeight;
+
+      for (const city of pakistaniCities) {
+        random -= city.weight;
+        if (random <= 0) return city;
+      }
+      return pakistaniCities[0]; // Fallback to Karachi
+    }
+
     const customerRecords = [];
+    const cityCounters: { [key: string]: number } = {}; // Track meter numbers per city
 
     for (let i = 0; i < 50; i++) {
       const connectionType = connectionTypes[Math.floor(Math.random() * connectionTypes.length)];
       const connectionDate = format(faker.date.past({ years: 2 }), 'yyyy-MM-dd');
 
+      // Realistic distribution: 85% active, 10% suspended, 5% inactive
+      const randomValue = Math.random();
+      let customerStatus: 'active' | 'suspended' | 'inactive';
+      if (randomValue < 0.85) {
+        customerStatus = 'active';
+      } else if (randomValue < 0.95) {
+        customerStatus = 'suspended';
+      } else {
+        customerStatus = 'inactive';
+      }
+
+      // Select city based on distribution
+      const selectedCity = selectCity();
+
+      // Initialize or increment city counter
+      if (!cityCounters[selectedCity.code]) {
+        cityCounters[selectedCity.code] = 1;
+      } else {
+        cityCounters[selectedCity.code]++;
+      }
+
       customerRecords.push({
         userId: i + 12, // Customer user IDs start from 12 (1 admin + 10 employees + 1)
         accountNumber: generateAccountNumber(i + 1),
-        meterNumber: generateMeterNumber(i + 1),
+        meterNumber: generateMeterNumber(cityCounters[selectedCity.code], selectedCity.code),
         fullName: customerUsers[i].name,
         email: customerUsers[i].email,
         phone: customerUsers[i].phone,
         address: faker.location.streetAddress(),
-        city: faker.location.city(),
-        state: faker.location.state(),
+        city: selectedCity.name,
+        state: selectedCity.state,
         pincode: faker.location.zipCode(),
         connectionType: connectionType,
-        status: 'active' as const,
+        status: customerStatus,
         connectionDate: connectionDate,
         lastBillAmount: '0.00',
         lastPaymentDate: null,
@@ -286,6 +357,11 @@ async function seed() {
 
         // Insert bill
         const meterReadingId = (customerId - 1) * 6 + (6 - monthOffset);
+
+        // Realistic payment behavior: 95% of old bills get paid, 5% remain unpaid
+        const willPayBill = monthOffset > 0 && Math.random() > 0.05;
+        const billStatus = monthOffset === 0 ? 'issued' : (willPayBill ? 'paid' : 'issued');
+
         await db.insert(bills).values({
           customerId: customerId,
           billNumber: generateBillNumber(6 - monthOffset, customerId),
@@ -299,12 +375,12 @@ async function seed() {
           electricityDuty: electricityDuty.toFixed(2),
           gstAmount: gstAmount.toFixed(2),
           totalAmount: totalAmount.toFixed(2),
-          status: monthOffset === 0 ? 'issued' : 'paid', // Latest month unpaid, others paid
-          paymentDate: monthOffset === 0 ? null : format(addDays(readingDate, faker.number.int({ min: 5, max: 15 })), 'yyyy-MM-dd'),
+          status: billStatus,
+          paymentDate: willPayBill ? format(addDays(readingDate, faker.number.int({ min: 5, max: 15 })), 'yyyy-MM-dd') : null,
         } as any);
 
-        // Insert payment (80% of bills are paid, skip latest month)
-        if (monthOffset > 0 && Math.random() > 0.2) {
+        // Insert payment only if bill was paid
+        if (willPayBill) {
           const paymentMethods = ['credit_card', 'debit_card', 'bank_transfer', 'upi', 'wallet'] as const;
           await db.insert(payments).values({
             customerId: customerId,
@@ -327,6 +403,87 @@ async function seed() {
     console.log('✅ Seeded 300 meter readings\n');
     console.log('✅ Seeded 300 bills\n');
     console.log(`✅ Seeded ~${paymentCounter - 1} payments\n`);
+
+    // UPDATE CUSTOMER BALANCES AND PAYMENT STATUSES
+    console.log('💰 Updating customer balances and payment statuses...');
+    for (let customerId = 1; customerId <= 50; customerId++) {
+      try {
+        // Get all bills for this customer
+        const customerBills = await db
+          .select()
+          .from(bills)
+          .where(eq(bills.customerId, customerId));
+
+        if (!customerBills || customerBills.length === 0) {
+          console.warn(`⚠️ No bills found for customer ${customerId}`);
+          continue;
+        }
+
+        // Get all payments for this customer
+        const customerPayments = await db
+          .select()
+          .from(payments)
+          .where(eq(payments.customerId, customerId));
+
+        // Calculate outstanding balance (unpaid bills)
+        const unpaidBills = customerBills.filter(b => b.status === 'issued' || b.status === 'generated');
+        const outstandingBalance = unpaidBills.reduce((sum, bill) => {
+          return sum + parseFloat(bill.totalAmount || '0');
+        }, 0);
+
+        // Get last bill
+        const lastBill = customerBills.reduce((latest, current) => {
+          return new Date(current.issueDate) > new Date(latest.issueDate) ? current : latest;
+        }, customerBills[0]);
+
+        const lastBillAmount = lastBill ? parseFloat(lastBill.totalAmount || '0') : 0;
+
+        // Get last payment date
+        let lastPaymentDate = null;
+        if (customerPayments && customerPayments.length > 0) {
+          const lastPayment = customerPayments.reduce((latest, current) => {
+            return new Date(current.paymentDate) > new Date(latest.paymentDate) ? current : latest;
+          }, customerPayments[0]);
+          lastPaymentDate = lastPayment?.paymentDate || null;
+        }
+
+        // Calculate average monthly usage
+        const totalUnitsConsumed = customerBills.reduce((sum, bill) => {
+          return sum + parseFloat(bill.unitsConsumed || '0');
+        }, 0);
+        const averageMonthlyUsage = customerBills.length > 0
+          ? (totalUnitsConsumed / customerBills.length)
+          : 0;
+
+        // Determine payment status
+        let paymentStatus: 'paid' | 'pending' | 'overdue' = 'paid';
+        if (outstandingBalance > 0) {
+          // Check if any unpaid bill is overdue
+          const today = new Date();
+          const hasOverdueBill = unpaidBills.some(bill => {
+            return new Date(bill.dueDate) < today;
+          });
+          paymentStatus = hasOverdueBill ? 'overdue' : 'pending';
+        }
+
+        // Update customer record
+        await db
+          .update(customers)
+          .set({
+            outstandingBalance: outstandingBalance.toFixed(2),
+            lastBillAmount: lastBillAmount.toFixed(2),
+            lastPaymentDate: lastPaymentDate,
+            averageMonthlyUsage: averageMonthlyUsage.toFixed(2),
+            paymentStatus: paymentStatus,
+          })
+          .where(eq(customers.id, customerId));
+
+      } catch (error) {
+        console.error(`❌ Error updating customer ${customerId}:`, error);
+        // Continue with next customer instead of failing entire seed
+      }
+    }
+    console.log('✅ Updated customer balances and payment statuses\n');
 
     // 6. SEED WORK ORDERS (20 recent work orders)
     console.log('📋 Seeding work orders...');

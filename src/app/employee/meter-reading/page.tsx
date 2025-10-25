@@ -125,12 +125,18 @@ export default function MeterReadingForm() {
     try {
       setLoadingCustomers(true);
       const response = await fetch(`/api/customers/without-reading?search=${customerSearch}`);
+      console.log('[Frontend] Fetching customers without reading...');
       if (response.ok) {
         const result = await response.json();
+        console.log('[Frontend] API Response:', result);
+        console.log('[Frontend] Customers count:', result.data?.length || 0);
+        console.log('[Frontend] Stats:', result.stats);
         if (result.success) {
           setAllCustomers(result.data || []);
           setCustomerStats(result.stats);
         }
+      } else {
+        console.error('[Frontend] API Error:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching customers without reading:', error);
@@ -591,12 +597,12 @@ export default function MeterReadingForm() {
                           <p className="text-2xl font-bold text-gray-900 dark:text-white">{customerStats.totalCustomers}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">With Reading</p>
-                          <p className="text-2xl font-bold text-green-400">{customerStats.withReading}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">With Bill</p>
+                          <p className="text-2xl font-bold text-green-400">{customerStats.withBill || 0}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">Without Reading</p>
-                          <p className="text-2xl font-bold text-orange-400">{customerStats.withoutReading}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">Without Bill</p>
+                          <p className="text-2xl font-bold text-orange-400">{customerStats.withoutBill || 0}</p>
                         </div>
                       </div>
                     </div>
@@ -625,8 +631,8 @@ export default function MeterReadingForm() {
                   ) : allCustomers.length === 0 ? (
                     <div className="text-center py-12">
                       <Users className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600 dark:text-gray-400 font-medium">All customers have readings for this month!</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Great job! No pending meter readings.</p>
+                      <p className="text-gray-600 dark:text-gray-400 font-medium">All customers have bills for this month!</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Great job! All bills have been generated.</p>
                     </div>
                   ) : (
                     <div className="space-y-3">

@@ -11,8 +11,7 @@ import {
   CheckCircle,
   TrendingUp,
   Download,
-  PlayCircle,
-  Eye
+  PlayCircle
 } from 'lucide-react';
 
 export default function BulkBillGeneration() {

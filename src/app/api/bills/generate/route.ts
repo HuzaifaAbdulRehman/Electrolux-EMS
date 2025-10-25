@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { bills, meterReadings, customers } from '@/lib/drizzle/schema';
+import { bills, meterReadings, customers, billRequests } from '@/lib/drizzle/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
@@ -142,6 +142,23 @@ export async function POST(request: NextRequest) {
 
     console.log('[Bills Generate POST] Bill generated successfully:', newBill.insertId);
 
+    // Update bill_request status to 'completed' if exists
+    await db
+      .update(billRequests)
+      .set({
+        status: 'completed',
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(billRequests.customerId, customerId),
+          eq(billRequests.billingMonth, billingMonth),
+          eq(billRequests.status, 'pending')
+        )
+      );
+
+    console.log('[Bills Generate POST] Bill request marked as completed');
+
     // Fetch the created bill
     const [createdBill] = await db
       .select()
@@ -152,7 +169,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Bill generated successfully',
-      bill: createdBill
+      bill: {
+        id: createdBill.id,
+        bill_number: createdBill.billNumber,
+        total_amount: createdBill.totalAmount,
+        billing_month: createdBill.billingMonth,
+        units_consumed: createdBill.unitsConsumed,
+        base_amount: createdBill.baseAmount,
+        fixed_charges: createdBill.fixedCharges,
+        electricity_duty: createdBill.electricityDuty,
+        gst_amount: createdBill.gstAmount,
+        status: createdBill.status,
+        issue_date: createdBill.issueDate,
+        due_date: createdBill.dueDate
+      }
     }, { status: 201 });
 
   } catch (error: any) {

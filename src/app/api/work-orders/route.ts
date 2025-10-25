@@ -15,10 +15,13 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status') || '';
+    const workType = searchParams.get('workType') || '';
+    const customerId = searchParams.get('customerId') || '';
 
     let query = db
       .select({
         id: workOrders.id,
+        customerId: workOrders.customerId,
         title: workOrders.title,
         description: workOrders.description,
         workType: workOrders.workType,
@@ -33,6 +36,7 @@ export async function GET(request: NextRequest) {
         customerPhone: customers.phone,
         customerAddress: customers.address,
         customerCity: customers.city,
+        meterNumber: customers.meterNumber,
         employeeName: employees.employeeName,
       })
       .from(workOrders)
@@ -44,13 +48,38 @@ export async function GET(request: NextRequest) {
 
     // Filter based on user type
     if (session.user.userType === 'employee') {
-      conditions.push(eq(workOrders.employeeId, session.user.employeeId!));
+      // For employees, show ALL unassigned work orders OR work orders assigned to them
+      const { sql } = await import('drizzle-orm');
+      conditions.push(
+        or(
+          eq(workOrders.employeeId, session.user.employeeId!),
+          sql`${workOrders.employeeId} IS NULL`
+        ) as any
+      );
     } else if (session.user.userType === 'customer') {
       conditions.push(eq(workOrders.customerId, session.user.customerId!));
     }
 
+    // Filter by status (can be comma-separated like "assigned,in_progress")
     if (status) {
-      conditions.push(eq(workOrders.status, status as any));
+      const statuses = status.split(',');
+      if (statuses.length > 1) {
+        const { sql } = await import('drizzle-orm');
+        const statusConditions = statuses.map(s => `'${s.trim()}'`).join(',');
+        conditions.push(sql`${workOrders.status} IN (${sql.raw(statusConditions)})` as any);
+      } else {
+        conditions.push(eq(workOrders.status, status as any));
+      }
+    }
+
+    // Filter by work type
+    if (workType) {
+      conditions.push(eq(workOrders.workType, workType as any));
+    }
+
+    // Filter by customer ID
+    if (customerId) {
+      conditions.push(eq(workOrders.customerId, parseInt(customerId)));
     }
 
     if (conditions.length > 0) {
@@ -81,6 +110,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { customerId, employeeId, workType, title, description, priority, dueDate } = body;
 
+    // Sanitize priority: map 'normal' to 'medium' to match schema
+    const sanitizedPriority = priority === 'normal' ? 'medium' : priority;
+
     console.log('[Work Orders POST] Request from:', session.user.userType, 'workType:', workType, 'customerId:', session.user.customerId);
 
     // Customers can create complaint_resolution and meter_reading work orders
@@ -108,7 +140,7 @@ export async function POST(request: NextRequest) {
         workType: workType,
         title,
         description: description || '',
-        priority: priority || 'medium',
+        priority: sanitizedPriority || 'medium',
         status: 'assigned', // 'assigned' status means "awaiting assignment to employee"
         assignedDate: new Date().toISOString().split('T')[0],
         dueDate: dueDate || calculatedDueDate.toISOString().split('T')[0],
@@ -145,7 +177,7 @@ export async function POST(request: NextRequest) {
       workType,
       title,
       description,
-      priority: priority || 'medium',
+      priority: sanitizedPriority || 'medium',
       status: 'assigned',
       assignedDate: new Date().toISOString().split('T')[0],
       dueDate,

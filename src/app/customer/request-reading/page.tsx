@@ -39,12 +39,74 @@ export default function RequestReading() {
   const [previousRequests, setPreviousRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [accountInfo, setAccountInfo] = useState<any>(null);
+  const [canRequestBill, setCanRequestBill] = useState(false);
+  const [canRequestReading, setCanRequestReading] = useState(true);
+  const [requestingBill, setRequestingBill] = useState(false);
+  const [showBillRequestSuccess, setShowBillRequestSuccess] = useState(false);
+  const [eligibilityMessage, setEligibilityMessage] = useState('');
 
   // Fetch customer account info and previous requests
   useEffect(() => {
     fetchAccountInfo();
     fetchPreviousRequests();
+    checkBillEligibility();
   }, []);
+
+  const checkBillEligibility = async () => {
+    try {
+      // Check if customer can request meter reading
+      const response = await fetch('/api/bills/can-request');
+      if (response.ok) {
+        const result = await response.json();
+        setCanRequestBill(result.canRequest || false);
+        setCanRequestReading(result.canRequestReading === true);
+
+        if (result.reason) {
+          setEligibilityMessage(result.reason);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking bill eligibility:', error);
+      // On error, allow request
+      setCanRequestReading(true);
+    }
+  };
+
+  const handleRequestBill = async () => {
+    try {
+      setRequestingBill(true);
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 2); // 2 days to generate bill
+
+      // Create work order instead of bill request (professional workflow)
+      const response = await fetch('/api/work-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workType: 'meter_reading', // Will be used for bill generation
+          title: 'Bill Generation Request - Customer Initiated',
+          description: 'Customer requested bill generation. Meter reading exists for current month.',
+          priority: 'medium',
+          dueDate: dueDate.toISOString().split('T')[0]
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setShowBillRequestSuccess(true);
+        setCanRequestBill(false);
+        setTimeout(() => setShowBillRequestSuccess(false), 5000);
+      } else {
+        alert(`❌ ${result.error || 'Failed to request bill'}`);
+      }
+    } catch (error) {
+      console.error('Error requesting bill:', error);
+      alert('❌ Failed to request bill. Please try again.');
+    } finally {
+      setRequestingBill(false);
+    }
+  };
 
   const fetchAccountInfo = async () => {
     try {
@@ -137,25 +199,21 @@ export default function RequestReading() {
       const result = await response.json();
 
       if (result.success) {
-        const newRequestId = `REQ-${result.data.workOrderId}`;
+        const newRequestId = `WO-${result.data.workOrderId}`;
         setRequestId(newRequestId);
         setShowSuccess(true);
 
-        // Refresh previous requests
+        // Disable future requests (user now has pending request)
+        setCanRequestReading(false);
+        setEligibilityMessage('Your meter reading request has been submitted and is being processed.');
+
+        // Refresh previous requests and eligibility
         await fetchPreviousRequests();
+        await checkBillEligibility();
 
         // Reset form after 5 seconds
         setTimeout(() => {
           setShowSuccess(false);
-          setFormData({
-            requestType: 'regular',
-            preferredDate: '',
-            preferredTimeSlot: 'morning',
-            contactPhone: formData.contactPhone,
-            alternatePhone: formData.alternatePhone,
-            accessInstructions: '',
-            urgency: 'normal'
-          });
         }, 5000);
       } else {
         throw new Error(result.error || 'Failed to submit request');
@@ -251,6 +309,38 @@ export default function RequestReading() {
                 </div>
               )}
 
+              {/* Show appropriate message based on status */}
+              {!canRequestReading && eligibilityMessage && (
+                <div className={`backdrop-blur-xl rounded-2xl p-5 border ${
+                  eligibilityMessage.includes('Bill already exists')
+                    ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/50'
+                    : eligibilityMessage.includes('pending')
+                    ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border-blue-500/50'
+                    : 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-yellow-500/50'
+                }`}>
+                  <div className="flex items-center space-x-3">
+                    {eligibilityMessage.includes('Bill already exists') ? (
+                      <CheckCircle className="w-6 h-6 text-green-400" />
+                    ) : (
+                      <Clock className="w-6 h-6 text-blue-400" />
+                    )}
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                        {eligibilityMessage.includes('Bill already exists')
+                          ? '✅ You\'re All Set!'
+                          : eligibilityMessage.includes('pending')
+                          ? '⏳ Request Pending'
+                          : 'Notice'}
+                      </h3>
+                      <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
+                        {eligibilityMessage}
+                        {eligibilityMessage.includes('Bill already exists') && '. View your bill in "My Bills" section.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Account Information */}
               <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl p-5 border border-purple-500/20">
                 <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3 flex items-center">
@@ -304,8 +394,9 @@ export default function RequestReading() {
               </div>
 
               {/* Request Form */}
-              <form onSubmit={handleSubmit} className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10 space-y-4">
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Reading Request Details</h2>
+              {canRequestReading && (
+                <form onSubmit={handleSubmit} className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10 space-y-4">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Reading Request Details</h2>
 
                 {/* Request Type */}
                 <div>
@@ -464,10 +555,28 @@ export default function RequestReading() {
                   )}
                 </button>
               </form>
+              )}
             </div>
 
             {/* Right Column - Info & History */}
             <div className="space-y-4">
+              {/* Bill Request Success */}
+              {showBillRequestSuccess && (
+                <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-2xl p-5 border border-green-500/50">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="w-6 h-6 text-green-400" />
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 dark:text-white">Bill Request Submitted!</h3>
+                      <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
+                        Your bill generation request has been sent. You'll receive your bill within 24 hours.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* REMOVED: Request Bill Button - Customer only requests meter reading, bill auto-generates */}
+
               {/* Important Notice */}
               <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 backdrop-blur-xl rounded-2xl p-5 border border-blue-500/20">
                 <div className="flex items-center space-x-2 mb-3">

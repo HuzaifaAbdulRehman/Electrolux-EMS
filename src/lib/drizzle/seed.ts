@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { db } from './db';
-import { users, customers, employees, tariffs, meterReadings, bills, payments, workOrders, connectionApplications, notifications } from './schema';
+import { users, customers, employees, tariffs, meterReadings, bills, payments, workOrders, connectionApplications, notifications, billRequests } from './schema';
 import bcrypt from 'bcryptjs';
 import { subMonths, format, addDays } from 'date-fns';
 import { eq, sql } from 'drizzle-orm';
@@ -38,6 +38,7 @@ async function seed() {
 
     // Truncate all tables (clears data AND resets AUTO_INCREMENT)
     await db.execute(sql`TRUNCATE TABLE notifications`);
+    await db.execute(sql`TRUNCATE TABLE bill_requests`);
     await db.execute(sql`TRUNCATE TABLE connection_applications`);
     await db.execute(sql`TRUNCATE TABLE work_orders`);
     await db.execute(sql`TRUNCATE TABLE payments`);
@@ -355,53 +356,56 @@ async function seed() {
         const gstAmount = subtotal * (parseFloat(tariff.gstPercent) / 100);
         const totalAmount = subtotal + gstAmount;
 
-        // Insert bill
+        // Insert bill ONLY for older months (not current month)
+        // This leaves current month with meter reading but no bill (so bill requests can be created)
         const meterReadingId = (customerId - 1) * 6 + (6 - monthOffset);
 
-        // Realistic payment behavior: 95% of old bills get paid, 5% remain unpaid
-        const willPayBill = monthOffset > 0 && Math.random() > 0.05;
-        const billStatus = monthOffset === 0 ? 'issued' : (willPayBill ? 'paid' : 'issued');
+        if (monthOffset > 0) {
+          // Realistic payment behavior: 95% of old bills get paid, 5% remain unpaid
+          const willPayBill = Math.random() > 0.05;
+          const billStatus = willPayBill ? 'paid' : 'issued';
 
-        await db.insert(bills).values({
-          customerId: customerId,
-          billNumber: generateBillNumber(6 - monthOffset, customerId),
-          billingMonth: billingMonth,
-          issueDate: issueDate,
-          dueDate: dueDate,
-          unitsConsumed: monthlyConsumption.toString(),
-          meterReadingId: meterReadingId,
-          baseAmount: baseAmount.toFixed(2),
-          fixedCharges: fixedCharges.toFixed(2),
-          electricityDuty: electricityDuty.toFixed(2),
-          gstAmount: gstAmount.toFixed(2),
-          totalAmount: totalAmount.toFixed(2),
-          status: billStatus,
-          paymentDate: willPayBill ? format(addDays(readingDate, faker.number.int({ min: 5, max: 15 })), 'yyyy-MM-dd') : null,
-        } as any);
-
-        // Insert payment only if bill was paid
-        if (willPayBill) {
-          const paymentMethods = ['credit_card', 'debit_card', 'bank_transfer', 'upi', 'wallet'] as const;
-          await db.insert(payments).values({
+            await db.insert(bills).values({
             customerId: customerId,
-            billId: billCounter,
-            paymentAmount: totalAmount.toFixed(2),
-            paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-            paymentDate: format(addDays(readingDate, faker.number.int({ min: 5, max: 15 })), 'yyyy-MM-dd'),
-            transactionId: generateTransactionId(),
-            receiptNumber: generateReceiptNumber(paymentCounter),
-            status: 'completed',
-            notes: null,
+            billNumber: generateBillNumber(6 - monthOffset, customerId),
+            billingMonth: billingMonth,
+            issueDate: issueDate,
+            dueDate: dueDate,
+            unitsConsumed: monthlyConsumption.toString(),
+            meterReadingId: meterReadingId,
+            baseAmount: baseAmount.toFixed(2),
+            fixedCharges: fixedCharges.toFixed(2),
+            electricityDuty: electricityDuty.toFixed(2),
+            gstAmount: gstAmount.toFixed(2),
+            totalAmount: totalAmount.toFixed(2),
+            status: billStatus,
+            paymentDate: willPayBill ? format(addDays(readingDate, faker.number.int({ min: 5, max: 15 })), 'yyyy-MM-dd') : null,
           } as any);
-          paymentCounter++;
-        }
 
-        billCounter++;
+          // Insert payment only if bill was paid
+          if (willPayBill) {
+            const paymentMethods = ['credit_card', 'debit_card', 'bank_transfer', 'upi', 'wallet'] as const;
+            await db.insert(payments).values({
+              customerId: customerId,
+              billId: billCounter,
+              paymentAmount: totalAmount.toFixed(2),
+              paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
+              paymentDate: format(addDays(readingDate, faker.number.int({ min: 5, max: 15 })), 'yyyy-MM-dd'),
+              transactionId: generateTransactionId(),
+              receiptNumber: generateReceiptNumber(paymentCounter),
+              status: 'completed',
+              notes: null,
+            } as any);
+            paymentCounter++;
+          }
+
+          billCounter++;
+        } // end if (monthOffset > 0)
         previousReading = currentReading;
       }
     }
     console.log('✅ Seeded 300 meter readings\n');
-    console.log('✅ Seeded 300 bills\n');
+    console.log('✅ Seeded 250 bills (5 months per customer, current month left without bills)\n');
     console.log(`✅ Seeded ~${paymentCounter - 1} payments\n`);
 
     // UPDATE CUSTOMER BALANCES AND PAYMENT STATUSES
@@ -485,7 +489,76 @@ async function seed() {
     }
     console.log('✅ Updated customer balances and payment statuses\n');
 
-    // 6. SEED WORK ORDERS (20 recent work orders)
+    // 6. SEED BILL REQUESTS (Pending requests for customers with meter readings but no bills)
+    console.log('📝 Seeding bill requests...');
+    let billRequestCounter = 0;
+
+    // Strategy: Create bill requests for customers who have meter readings but no bills for specific months
+    // We'll create ~15 pending bill requests for realistic testing
+    const billRequestRecords = [];
+
+    for (let customerId = 1; customerId <= 50; customerId++) {
+      // Only create bill requests for ~30% of customers (15 customers)
+      if (Math.random() > 0.3) continue;
+
+      // Get all meter readings for this customer
+      const customerReadings = await db.select()
+        .from(meterReadings)
+        .where(eq(meterReadings.customerId, customerId));
+
+      // Get all bills for this customer
+      const customerBills = await db.select()
+        .from(bills)
+        .where(eq(bills.customerId, customerId));
+
+      // For each meter reading, check if there's a bill for that month
+      for (const reading of customerReadings) {
+        const readingMonth = format(new Date(reading.readingDate), 'yyyy-MM-01');
+
+        // Check if bill exists for this month
+        const billExists = customerBills.some(bill =>
+          format(new Date(bill.billingMonth), 'yyyy-MM-01') === readingMonth
+        );
+
+        // Check if bill request already created for this month
+        const requestExists = billRequestRecords.some(req =>
+          req.customerId === customerId && req.billingMonth === readingMonth
+        );
+
+        // If no bill and no request, create a pending bill request
+        if (!billExists && !requestExists && Math.random() > 0.5) {
+          billRequestCounter++;
+          const requestId = `BREQ-2024-${String(billRequestCounter).padStart(6, '0')}`;
+          const priorities = ['low', 'medium', 'high'] as const;
+          const randomPriority = priorities[Math.floor(Math.random() * 10) % 3]; // 70% medium, 20% high, 10% low
+
+          billRequestRecords.push({
+            requestId: requestId,
+            customerId: customerId,
+            billingMonth: readingMonth,
+            priority: randomPriority,
+            notes: `Auto-generated bill request for billing month ${format(new Date(readingMonth), 'MMMM yyyy')}. Meter reading available.`,
+            status: 'pending' as const,
+            requestDate: format(new Date(reading.readingDate), 'yyyy-MM-dd'),
+            createdBy: null, // System-generated
+          });
+
+          // Limit to 15-20 bill requests for testing
+          if (billRequestCounter >= 15) break;
+        }
+      }
+
+      if (billRequestCounter >= 15) break;
+    }
+
+    if (billRequestRecords.length > 0) {
+      await db.insert(billRequests).values(billRequestRecords as any);
+      console.log(`✅ Seeded ${billRequestRecords.length} bill requests (all pending)\n`);
+    } else {
+      console.log('⚠️  No bill requests created (all meter readings have bills)\n');
+    }
+
+    // 7. SEED WORK ORDERS (20 recent work orders)
     console.log('📋 Seeding work orders...');
     const workOrderTypes = ['meter_reading', 'maintenance', 'complaint_resolution', 'new_connection', 'reconnection'] as const;
     const priorities = ['low', 'medium', 'high', 'urgent'] as const;
@@ -513,7 +586,7 @@ async function seed() {
     await db.insert(workOrders).values(workOrderRecords as any);
     console.log('✅ Seeded 20 work orders\n');
 
-    // 7. SEED CONNECTION APPLICATIONS (10 applications)
+    // 8. SEED CONNECTION APPLICATIONS (10 applications)
     console.log('🔌 Seeding connection applications...');
     const applicationStatuses = ['pending', 'approved', 'under_inspection', 'connected'] as const;
     const connectionAppRecords = [];
@@ -553,7 +626,7 @@ async function seed() {
     await db.insert(connectionApplications).values(connectionAppRecords as any);
     console.log('✅ Seeded 10 connection applications\n');
 
-    // 8. SEED NOTIFICATIONS (50 recent notifications)
+    // 9. SEED NOTIFICATIONS (50 recent notifications)
     console.log('🔔 Seeding notifications...');
     const notificationTypes = ['payment', 'bill', 'maintenance', 'alert', 'info', 'work_order'] as const;
     const notificationRecords = [];

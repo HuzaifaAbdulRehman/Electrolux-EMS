@@ -61,17 +61,29 @@ export default function AdminBills() {
       if (result.success) {
         setBills(result.data);
 
-        // Calculate stats
-        const total = result.data.length;
-        const totalAmount = result.data.reduce((sum: number, bill: any) =>
-          sum + parseFloat(bill.totalAmount || '0'), 0
-        );
-        const pending = result.data.filter((b: any) => b.status === 'pending').length;
-        const issued = result.data.filter((b: any) => b.status === 'issued').length;
-        const paid = result.data.filter((b: any) => b.status === 'paid').length;
-        const overdue = result.data.filter((b: any) => b.status === 'overdue').length;
+        // Use aggregate stats from API response
+        if (result.stats) {
+          setStats({
+            total: result.stats.total,
+            totalAmount: result.stats.totalAmount,
+            pending: result.stats.pending,
+            issued: result.stats.issued,
+            paid: result.stats.paid,
+            overdue: result.stats.overdue
+          });
+        } else {
+          // Fallback to calculating from current page data (shouldn't happen with updated API)
+          const total = result.data.length;
+          const totalAmount = result.data.reduce((sum: number, bill: any) =>
+            sum + parseFloat(bill.totalAmount || '0'), 0
+          );
+          const pending = result.data.filter((b: any) => b.status === 'pending').length;
+          const issued = result.data.filter((b: any) => b.status === 'issued').length;
+          const paid = result.data.filter((b: any) => b.status === 'paid').length;
+          const overdue = result.data.filter((b: any) => b.status === 'overdue').length;
 
-        setStats({ total, totalAmount, pending, issued, paid, overdue });
+          setStats({ total, totalAmount, pending, issued, paid, overdue });
+        }
       } else {
         setError(result.error || 'Failed to fetch bills');
       }

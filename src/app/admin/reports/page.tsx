@@ -28,6 +28,7 @@ export default function ReportGeneration() {
   const [dateRange, setDateRange] = useState('month');
   const [startDate, setStartDate] = useState('2024-10-01');
   const [endDate, setEndDate] = useState('2024-10-31');
+  const [exportFormat, setExportFormat] = useState('csv');
   const [generatingReport, setGeneratingReport] = useState(false);
   const [reportGenerated, setReportGenerated] = useState(false);
 
@@ -118,12 +119,89 @@ export default function ReportGeneration() {
 
   const selectedReportData = reportTypes.find(r => r.id === selectedReport);
 
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
     setGeneratingReport(true);
-    setTimeout(() => {
-      setGeneratingReport(false);
+
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Generate CSV based on report type
+      const reportData = generateReportData(selectedReport);
+      const csvContent = convertToCSV(reportData);
+
+      // Download CSV file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${selectedReport}_report_${dateRange}_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
       setReportGenerated(true);
-    }, 3000);
+    } catch (error) {
+      console.error('Error generating report:', error);
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
+  const generateReportData = (reportType: string) => {
+    // Sample data structure - in production, this would fetch from API
+    const sampleData: any = {
+      revenue: [
+        { metric: 'Total Revenue', value: 'Rs 1,250,000', change: '+12.5%' },
+        { metric: 'Collection Rate', value: '94.2%', change: '+2.3%' },
+        { metric: 'Outstanding Amount', value: 'Rs 75,000', change: '-5.1%' },
+        { metric: 'Payment Methods', value: 'Cash: 45%, Online: 55%', change: '+8%' }
+      ],
+      consumption: [
+        { metric: 'Total kWh', value: '2,450,000 kWh', change: '+8.2%' },
+        { metric: 'Peak Usage', value: '125,000 kWh', change: '+3.5%' },
+        { metric: 'Average per Customer', value: '4,900 kWh', change: '+1.8%' },
+        { metric: 'Time of Use', value: 'Peak: 35%, Off-Peak: 65%', change: '-2%' }
+      ],
+      customer: [
+        { metric: 'Total Customers', value: '500', change: '+25' },
+        { metric: 'New Registrations', value: '25', change: '+5' },
+        { metric: 'Active Users', value: '475', change: '+20' },
+        { metric: 'Churn Rate', value: '2.1%', change: '-0.5%' }
+      ],
+      billing: [
+        { metric: 'Bills Generated', value: '480', change: '+22' },
+        { metric: 'Paid Bills', value: '420', change: '+18' },
+        { metric: 'Pending Bills', value: '45', change: '+3' },
+        { metric: 'Overdue Bills', value: '15', change: '+1' }
+      ],
+      employee: [
+        { metric: 'Meter Readings', value: '1,250', change: '+125' },
+        { metric: 'Bills Generated', value: '480', change: '+45' },
+        { metric: 'Efficiency Score', value: '92.5%', change: '+3.2%' },
+        { metric: 'Work Orders', value: '340', change: '+28' }
+      ],
+      tariff: [
+        { metric: 'Tariff Categories', value: '4', change: '0' },
+        { metric: 'Rate Changes', value: '2', change: '+1' },
+        { metric: 'Revenue Impact', value: 'Rs 125,000', change: '+8.5%' },
+        { metric: 'Usage Distribution', value: 'Residential: 65%', change: '+2%' }
+      ]
+    };
+
+    return sampleData[reportType] || [];
+  };
+
+  const convertToCSV = (data: any[]) => {
+    const headers = ['Metric', 'Value', 'Change'];
+    const rows = data.map(row => [
+      `"${row.metric}"`,
+      `"${row.value}"`,
+      `"${row.change}"`
+    ].join(','));
+
+    return [headers.join(','), ...rows].join('\n');
   };
 
   const getReportIcon = (type: string) => {
@@ -244,7 +322,7 @@ export default function ReportGeneration() {
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 transition-colors"
+                            className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 transition-colors"
                           />
                         </div>
                         <div>
@@ -253,7 +331,7 @@ export default function ReportGeneration() {
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
-                            className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 transition-colors"
+                            className="w-full px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 transition-colors"
                           />
                         </div>
                       </div>
@@ -286,8 +364,15 @@ export default function ReportGeneration() {
                         { value: 'excel', label: 'Excel', icon: FileSpreadsheet },
                         { value: 'csv', label: 'CSV', icon: FileSpreadsheet }
                       ].map((format) => (
-                        <label key={format.value} className="flex items-center space-x-2 p-3 bg-white dark:bg-white/5 rounded-lg cursor-pointer hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10">
-                          <input type="radio" name="format" defaultChecked={format.value === 'pdf'} className="w-4 h-4" />
+                        <label key={format.value} className="flex items-center space-x-2 p-3 bg-white dark:bg-white/5 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-white/10">
+                          <input
+                            type="radio"
+                            name="format"
+                            value={format.value}
+                            checked={exportFormat === format.value}
+                            onChange={(e) => setExportFormat(e.target.value)}
+                            className="w-4 h-4"
+                          />
                           <format.icon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                           <span className="text-gray-900 dark:text-white text-sm">{format.label}</span>
                         </label>

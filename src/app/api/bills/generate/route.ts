@@ -41,7 +41,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if customer exists
+    // Validate billing month format (YYYY-MM-DD)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(billingMonth)) {
+      return NextResponse.json(
+        { error: 'Invalid billing month format. Expected YYYY-MM-DD' },
+        { status: 400 }
+      );
+    }
+
+    // Check if customer exists and is active
     const [customer] = await db
       .select()
       .from(customers)
@@ -50,6 +58,13 @@ export async function POST(request: NextRequest) {
 
     if (!customer) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+    }
+
+    if (customer.status !== 'active') {
+      return NextResponse.json(
+        { error: `Cannot generate bill for ${customer.status} customer` },
+        { status: 400 }
+      );
     }
 
     // Check if bill already exists for this month - use DATE matching (handles timezone)
@@ -142,6 +157,19 @@ export async function POST(request: NextRequest) {
 
     // Calculate bill amounts using tariff slabs
     const unitsConsumed = parseFloat(latestReading.unitsConsumed);
+
+    // Validate consumption
+    if (isNaN(unitsConsumed) || unitsConsumed < 0) {
+      return NextResponse.json(
+        { error: 'Invalid units consumed. Meter reading may be incorrect.' },
+        { status: 400 }
+      );
+    }
+
+    // Warning for zero consumption (still allow but log)
+    if (unitsConsumed === 0) {
+      console.log('[Bill Generation] WARNING: Zero consumption detected for customer', customerId);
+    }
     let baseAmount = 0;
 
     // Parse tariff values once for clarity
@@ -207,8 +235,31 @@ export async function POST(request: NextRequest) {
       totalAmount
     });
 
-    // Generate bill number: BILL-YYYY-XXXXXXXX
-    const billNumber = `BILL-${new Date().getFullYear()}-${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}`;
+    // Generate unique bill number: BILL-YYYY-XXXXXXXX
+    let billNumber: string;
+    let attempts = 0;
+    const maxAttempts = 5;
+
+    while (attempts < maxAttempts) {
+      billNumber = `BILL-${new Date().getFullYear()}-${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}`;
+
+      // Check if bill number already exists
+      const [existingBill] = await db
+        .select()
+        .from(bills)
+        .where(eq(bills.billNumber, billNumber))
+        .limit(1);
+
+      if (!existingBill) break;
+      attempts++;
+    }
+
+    if (attempts >= maxAttempts) {
+      return NextResponse.json(
+        { error: 'Failed to generate unique bill number. Please try again.' },
+        { status: 500 }
+      );
+    }
 
     // Calculate dates
     const issueDate = new Date().toISOString().split('T')[0];

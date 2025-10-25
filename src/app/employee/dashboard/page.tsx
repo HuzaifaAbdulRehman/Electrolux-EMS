@@ -35,7 +35,7 @@ export default function EmployeeDashboard() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('/api/dashboard');
+      const response = await fetch('/api/employee/dashboard');
 
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard data');

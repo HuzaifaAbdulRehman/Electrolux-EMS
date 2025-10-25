@@ -56,18 +56,27 @@ export default function UsageAnalytics() {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/dashboard');
+        const response = await fetch('/api/customer/dashboard');
         const data = await response.json();
-        setAnalyticsData(data);
+
+        console.log('[Analytics] API Response:', data);
+
+        if (data.success) {
+          setAnalyticsData(data);
+        } else {
+          throw new Error(data.error || 'Failed to fetch analytics');
+        }
       } catch (error) {
         console.error('Error fetching analytics:', error);
         // Fallback to basic data
         setAnalyticsData({
-          currentMonthUsage: 0,
-          lastMonthUsage: 0,
-          avgDailyUsage: 0,
-          estimatedBill: 0,
-          monthlyUsage: []
+          success: true,
+          data: {
+            currentBill: null,
+            recentBills: [],
+            consumptionHistory: [],
+            avgConsumption: 0
+          }
         });
       } finally {
         setLoading(false);
@@ -186,26 +195,17 @@ export default function UsageAnalytics() {
     ]
   };
 
-  // Cost Breakdown (Vertical Bar Chart)
+  // Cost Breakdown (Vertical Bar Chart) - Use real bill data
   const costBreakdownData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    labels: consumptionHistory.map((item: any) => {
+      const date = new Date(item.billingPeriod);
+      return date.toLocaleDateString('en-US', { month: 'short' });
+    }).reverse().slice(0, 6),
     datasets: [
       {
-        label: 'Energy Charges',
-        data: [152, 156, 164, 168, 158, 194],
+        label: 'Total Amount (Rs.)',
+        data: consumptionHistory.map((item: any) => item.totalAmount).reverse().slice(0, 6),
         backgroundColor: 'rgba(251, 146, 60, 0.8)',
-        borderRadius: 4,
-      },
-      {
-        label: 'Fixed Charges',
-        data: [50, 50, 50, 50, 50, 50],
-        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-        borderRadius: 4,
-      },
-      {
-        label: 'Taxes & Duties',
-        data: [28, 29, 31, 32, 30, 37],
-        backgroundColor: 'rgba(168, 85, 247, 0.8)',
         borderRadius: 4,
       }
     ]

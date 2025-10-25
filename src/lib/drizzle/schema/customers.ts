@@ -13,6 +13,7 @@ export const customers = mysqlTable('customers', {
   city: varchar('city', { length: 100 }).notNull(),
   state: varchar('state', { length: 100 }).notNull(),
   pincode: varchar('pincode', { length: 10 }).notNull(),
+  zone: varchar('zone', { length: 50 }), // Load shedding zone: Zone A, Zone B, Zone C, etc.
   connectionType: mysqlEnum('connection_type', ['Residential', 'Commercial', 'Industrial', 'Agricultural']).notNull(),
   status: mysqlEnum('status', ['active', 'suspended', 'inactive']).default('active').notNull(),
   connectionDate: date('connection_date').notNull(),

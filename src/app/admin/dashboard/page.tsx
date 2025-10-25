@@ -1,24 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   DollarSign,
-  TrendingUp,
-  TrendingDown,
   Users,
   FileText,
   AlertTriangle,
-  CheckCircle,
-  Clock,
-  Download,
-  Filter,
-  Calendar,
   CreditCard,
   Activity,
   BarChart3,
+  Zap,
   PieChart,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import {
@@ -49,11 +45,11 @@ ChartJS.register(
 );
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
-  const [selectedZone, setSelectedZone] = useState('all');
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     fetchDashboardData();
@@ -62,19 +58,41 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
+      console.log('[Dashboard] Fetching dashboard data...');
       const response = await fetch('/api/dashboard');
 
       if (!response.ok) {
-        throw new Error('Failed to fetch dashboard data');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch dashboard data');
       }
 
       const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'API returned error');
+      }
+
+      if (!result.data) {
+        throw new Error('No dashboard data received');
+      }
+
       setDashboardData(result.data);
-    } catch (err) {
-      console.error('Error fetching dashboard data:', err);
-      setError('Failed to load dashboard data');
+      setRetryCount(0);
+      console.log('[Dashboard] Dashboard data loaded successfully');
+    } catch (err: any) {
+      console.error('[Dashboard] Error fetching dashboard data:', err);
+      setError(err.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRetry = () => {
+    if (retryCount < 3) {
+      setRetryCount(prev => prev + 1);
+      fetchDashboardData();
     }
   };
 
@@ -91,8 +109,27 @@ export default function AdminDashboard() {
   if (error || !dashboardData) {
     return (
       <DashboardLayout userType="admin" userName="Admin">
-        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-          <p className="text-red-400">{error || 'No data available'}</p>
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <AlertTriangle className="w-6 h-6 text-red-400" />
+            <h3 className="text-red-400 font-semibold">Dashboard Error</h3>
+          </div>
+          <p className="text-red-400 mb-4">{error || 'No data available'}</p>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleRetry}
+              disabled={retryCount >= 3}
+              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Retry ({retryCount}/3)
+            </button>
+            <button
+              onClick={() => router.refresh()}
+              className="px-4 py-2 bg-gray-500/20 hover:bg-gray-500/30 text-gray-400 rounded-lg transition-colors"
+            >
+              Refresh Page
+            </button>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -146,7 +183,7 @@ export default function AdminDashboard() {
     datasets: [
       {
         label: 'Transactions',
-        data: Object.values(paymentMethods),
+        data: Object.values(paymentMethods).map((pm: any) => pm.count || 0),
         backgroundColor: [
           'rgba(239, 68, 68, 0.8)',
           'rgba(236, 72, 153, 0.8)',
@@ -227,21 +264,12 @@ export default function AdminDashboard() {
               <p className="text-gray-600 dark:text-gray-400">Comprehensive overview of ElectroLux EMS</p>
             </div>
             <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-              <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
-              >
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-                <option value="quarter">This Quarter</option>
-                <option value="year">This Year</option>
-              </select>
               <button
                 onClick={fetchDashboardData}
-                className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-red-500/50 transition-all flex items-center space-x-2"
+                disabled={loading}
+                className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-red-500/50 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Download className="w-5 h-5" />
+                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
               </button>
             </div>
@@ -258,6 +286,21 @@ export default function AdminDashboard() {
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Total Customers</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{metrics?.totalCustomers || 0}</p>
+            <div className="mt-2 flex flex-wrap gap-2 text-xs">
+              <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
+                Active: {metrics?.activeCustomers || 0}
+              </span>
+              {(metrics?.suspendedCustomers || 0) > 0 && (
+                <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded">
+                  Suspended: {metrics?.suspendedCustomers || 0}
+                </span>
+              )}
+              {(metrics?.inactiveCustomers || 0) > 0 && (
+                <span className="px-2 py-1 bg-gray-100 dark:bg-gray-900/30 text-gray-700 dark:text-gray-400 rounded">
+                  Inactive: {metrics?.inactiveCustomers || 0}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
@@ -440,9 +483,9 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <button
-            onClick={() => window.location.href = '/admin/customers'}
+            onClick={() => router.push('/admin/customers')}
             className="p-4 bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/20 rounded-xl hover:border-red-500/40 transition-all"
           >
             <Users className="w-6 h-6 text-red-400 mb-2" />
@@ -451,7 +494,7 @@ export default function AdminDashboard() {
           </button>
 
           <button
-            onClick={() => window.location.href = '/admin/bills'}
+            onClick={() => router.push('/admin/bills')}
             className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl hover:border-green-500/40 transition-all"
           >
             <FileText className="w-6 h-6 text-green-400 mb-2" />
@@ -460,12 +503,30 @@ export default function AdminDashboard() {
           </button>
 
           <button
-            onClick={() => window.location.href = '/admin/reports'}
+            onClick={() => router.push('/admin/connection-requests')}
             className="p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-xl hover:border-purple-500/40 transition-all"
           >
-            <BarChart3 className="w-6 h-6 text-purple-400 mb-2" />
-            <p className="text-gray-900 dark:text-white font-semibold">View Reports</p>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Analytics and insights</p>
+            <Users className="w-6 h-6 text-purple-400 mb-2" />
+            <p className="text-gray-900 dark:text-white font-semibold">Connection Requests</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Manage new connections</p>
+          </button>
+
+          <button
+            onClick={() => router.push('/admin/outages')}
+            className="p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl hover:border-orange-500/40 transition-all"
+          >
+            <Zap className="w-6 h-6 text-orange-400 mb-2" />
+            <p className="text-gray-900 dark:text-white font-semibold">Outage Management</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Schedule and manage outages</p>
+          </button>
+
+          <button
+            onClick={() => router.push('/admin/complaints')}
+            className="p-4 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/20 rounded-xl hover:border-blue-500/40 transition-all"
+          >
+            <AlertTriangle className="w-6 h-6 text-blue-400 mb-2" />
+            <p className="text-gray-900 dark:text-white font-semibold">Complaint Management</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Manage customer complaints</p>
           </button>
         </div>
       </div>

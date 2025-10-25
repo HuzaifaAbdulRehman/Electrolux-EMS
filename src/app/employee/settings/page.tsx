@@ -43,6 +43,17 @@ export default function EmployeeSettings() {
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || 'dark';
     setCurrentTheme(savedTheme);
+
+    // Load saved settings
+    const savedSettings = localStorage.getItem('employeeSettings');
+    if (savedSettings) {
+      try {
+        setSettings(JSON.parse(savedSettings));
+      } catch (e) {
+        console.error('Failed to parse saved settings');
+      }
+    }
+
     setSettings(prev => ({
       ...prev,
       device: { ...prev.device, theme: savedTheme as 'dark' | 'light' }
@@ -145,9 +156,50 @@ export default function EmployeeSettings() {
     });
   };
 
-  const handleSaveSettings = () => {
-    console.log('Saving settings:', settings);
-    // Save settings logic here
+  const handleSaveSettings = async () => {
+    try {
+      // Save to localStorage
+      localStorage.setItem('employeeSettings', JSON.stringify(settings));
+
+      // Save to API (phone number only for now)
+      await fetch('/api/employee/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: employeeData?.phone
+        })
+      });
+
+      // Show success message
+      setSaveMessage('Settings saved successfully!');
+      setTimeout(() => setSaveMessage(''), 3000);
+    } catch (err) {
+      setSaveMessage('Failed to save settings');
+      console.error('Save error:', err);
+    }
+  };
+
+  const [saveMessage, setSaveMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [employeeData, setEmployeeData] = useState<any>(null);
+
+  // Fetch employee data on mount
+  useEffect(() => {
+    fetchEmployeeSettings();
+  }, []);
+
+  const fetchEmployeeSettings = async () => {
+    try {
+      const response = await fetch('/api/employee/settings');
+      if (response.ok) {
+        const result = await response.json();
+        setEmployeeData(result.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch settings:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -160,7 +212,12 @@ export default function EmployeeSettings() {
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Settings</h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">Manage your work preferences and account settings</p>
             </div>
-            <div className="mt-3 sm:mt-0">
+            <div className="mt-3 sm:mt-0 flex items-center space-x-3">
+              {saveMessage && (
+                <span className={`text-sm ${saveMessage.includes('success') ? 'text-green-400' : 'text-red-400'}`}>
+                  {saveMessage}
+                </span>
+              )}
               <button
                 onClick={handleSaveSettings}
                 className="px-5 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-emerald-500/50 transition-all flex items-center space-x-2 font-semibold text-sm"

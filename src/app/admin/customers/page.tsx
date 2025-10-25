@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Users,
@@ -32,13 +33,122 @@ import {
 // For charts, users should go to Admin Analytics or Admin Dashboard
 
 export default function AdminCustomers() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedCustomer, setSelectedCustomer] = useState<number | null>(null);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  });
+  const [statusStats, setStatusStats] = useState<Record<string, number>>({});
 
-  // Mock customer data
-  const customers = [
+  // Fetch customers from API
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const params = new URLSearchParams({
+        search: searchQuery,
+        status: filterStatus,
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString()
+      });
+
+      console.log('[Admin Customers] Fetching customers with params:', params.toString());
+      const response = await fetch(`/api/admin/customers?${params}`);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch customers');
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'API returned error');
+      }
+
+      setCustomers(result.data.customers);
+      setPagination(result.data.pagination);
+      setStatusStats(result.data.statusStats);
+      
+      console.log('[Admin Customers] Customers fetched successfully:', {
+        count: result.data.customers.length,
+        total: result.data.pagination.total
+      });
+    } catch (err: any) {
+      console.error('[Admin Customers] Error fetching customers:', err);
+      setError(err.message || 'Failed to load customers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [searchQuery, filterStatus, pagination.page]);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (pagination.page !== 1) {
+        setPagination(prev => ({ ...prev, page: 1 }));
+      } else {
+        fetchCustomers();
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
+  const handleAddCustomer = async (customerData: any) => {
+    try {
+      console.log('[Admin Customers] Creating new customer:', customerData);
+      const response = await fetch('/api/admin/customers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(customerData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create customer');
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'API returned error');
+      }
+
+      console.log('[Admin Customers] Customer created successfully');
+      setShowAddCustomer(false);
+      fetchCustomers(); // Refresh the list
+      
+    } catch (err: any) {
+      console.error('[Admin Customers] Error creating customer:', err);
+      setError(err.message || 'Failed to create customer');
+    }
+  };
+
+  // Mock customer data (fallback)
+  const mockCustomers = [
     {
       id: 1,
       accountNumber: 'ELX-2024-001234',

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { bills, meterReadings, customers, billRequests } from '@/lib/drizzle/schema';
+import { bills, meterReadings, customers, billRequests, notifications, tariffs } from '@/lib/drizzle/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
@@ -23,6 +23,15 @@ export async function POST(request: NextRequest) {
     const { customerId, billingMonth } = body;
 
     console.log('[Bills Generate POST] Request data:', { customerId, billingMonth });
+    
+    // Debug: Check existing bills for this customer
+    const allBills = await db
+      .select()
+      .from(bills)
+      .where(eq(bills.customerId, customerId))
+      .orderBy(desc(bills.createdAt));
+    
+    console.log('[Bills Generate POST] All bills for customer:', allBills);
 
     // Validate inputs
     if (!customerId || !billingMonth) {
@@ -43,21 +52,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    // Check if bill already exists for this month
+    // Check if bill already exists for this month - use DATE matching (handles timezone)
+    console.log('[Bills Generate POST] Checking for existing bill...');
+    console.log('[Bills Generate POST] Customer ID:', customerId);
+    console.log('[Bills Generate POST] Billing Month (requested):', billingMonth);
+
     const [existingBill] = await db
       .select()
       .from(bills)
       .where(
         and(
           eq(bills.customerId, customerId),
-          eq(bills.billingMonth, billingMonth)
+          sql`DATE(${bills.billingMonth}) = ${billingMonth}` // ✅ Compare DATE only, ignore time/timezone
         )
       )
       .limit(1);
 
+    console.log('[Bills Generate POST] Existing bill check result:', existingBill ? 'FOUND' : 'NOT FOUND');
+
     if (existingBill) {
+      console.log('[Bills Generate POST] ❌ Bill already exists - preventing duplicate');
+      console.log('[Bills Generate POST] Existing bill ID:', existingBill.id);
+      console.log('[Bills Generate POST] Existing bill month:', existingBill.billingMonth);
+      console.log('[Bills Generate POST] Requested month:', billingMonth);
+
       return NextResponse.json(
-        { error: 'Bill already exists for this billing month' },
+        {
+          success: false,
+          error: 'Bill already exists for this billing month',
+          details: `Customer ${customerId} already has a bill for ${existingBill.billingMonth}`,
+          existingBillId: existingBill.id
+        },
         { status: 400 }
       );
     }
@@ -87,15 +112,100 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate bill amounts based on Pakistani electricity tariff (simplified)
-    const unitsConsumed = parseFloat(latestReading.unitsConsumed);
-    const tariffRate = 5.50; // PKR per kWh (simplified - real system has slabs)
-    const fixedCharges = 100.00; // PKR
+    // Get customer's tariff category
+    const customerCategory = customer.connectionType || 'Residential';
+    console.log('[Bill Generation] Customer category:', customerCategory);
 
-    const baseAmount = unitsConsumed * tariffRate;
-    const electricityDuty = baseAmount * 0.16; // 16% electricity duty
-    const gstAmount = (baseAmount + fixedCharges + electricityDuty) * 0.18; // 18% GST
+    // Fetch active tariff for this category
+    const [activeTariff] = await db
+      .select()
+      .from(tariffs)
+      .where(
+        and(
+          eq(tariffs.category, customerCategory),
+          sql`${tariffs.effectiveDate} <= ${billingMonth}`,
+          sql`(${tariffs.validUntil} IS NULL OR ${tariffs.validUntil} >= ${billingMonth})`
+        )
+      )
+      .orderBy(desc(tariffs.effectiveDate))
+      .limit(1);
+
+    if (!activeTariff) {
+      console.error('[Bill Generation] No active tariff found for category:', customerCategory);
+      return NextResponse.json(
+        { error: `No active tariff found for ${customerCategory} customers` },
+        { status: 400 }
+      );
+    }
+
+    console.log('[Bill Generation] Using tariff:', activeTariff.id, 'for category:', customerCategory);
+
+    // Calculate bill amounts using tariff slabs
+    const unitsConsumed = parseFloat(latestReading.unitsConsumed);
+    let baseAmount = 0;
+
+    // Parse tariff values once for clarity
+    const slab1End = parseFloat(activeTariff.slab1End);
+    const slab2End = parseFloat(activeTariff.slab2End);
+    const slab3End = parseFloat(activeTariff.slab3End);
+    const slab4End = parseFloat(activeTariff.slab4End);
+
+    const slab1Rate = parseFloat(activeTariff.slab1Rate);
+    const slab2Rate = parseFloat(activeTariff.slab2Rate);
+    const slab3Rate = parseFloat(activeTariff.slab3Rate);
+    const slab4Rate = parseFloat(activeTariff.slab4Rate);
+    const slab5Rate = parseFloat(activeTariff.slab5Rate);
+
+    // Progressive slab-based calculation
+    // Each slab charges only for units within that specific range
+    if (unitsConsumed <= slab1End) {
+      // All units in slab 1 (e.g., 0-100 @ Rs 4.50/unit)
+      baseAmount = unitsConsumed * slab1Rate;
+    } else if (unitsConsumed <= slab2End) {
+      // Slab 1 full + partial slab 2 (e.g., 100@4.50 + 50@6.00 for 150 units)
+      baseAmount = (slab1End * slab1Rate) +
+                   ((unitsConsumed - slab1End) * slab2Rate);
+    } else if (unitsConsumed <= slab3End) {
+      // Slab 1 full + Slab 2 full + partial slab 3
+      baseAmount = (slab1End * slab1Rate) +
+                   ((slab2End - slab1End) * slab2Rate) +
+                   ((unitsConsumed - slab2End) * slab3Rate);
+    } else if (unitsConsumed <= slab4End) {
+      // Slab 1 + Slab 2 + Slab 3 + partial slab 4
+      baseAmount = (slab1End * slab1Rate) +
+                   ((slab2End - slab1End) * slab2Rate) +
+                   ((slab3End - slab2End) * slab3Rate) +
+                   ((unitsConsumed - slab3End) * slab4Rate);
+    } else {
+      // All slabs full + slab 5 for excess (500+ units)
+      baseAmount = (slab1End * slab1Rate) +
+                   ((slab2End - slab1End) * slab2Rate) +
+                   ((slab3End - slab2End) * slab3Rate) +
+                   ((slab4End - slab3End) * slab4Rate) +
+                   ((unitsConsumed - slab4End) * slab5Rate);
+    }
+
+    const fixedCharges = parseFloat(activeTariff.fixedCharge);
+    const electricityDuty = baseAmount * (parseFloat(activeTariff.electricityDutyPercent) / 100);
+    const gstAmount = (baseAmount + fixedCharges + electricityDuty) * (parseFloat(activeTariff.gstPercent) / 100);
     const totalAmount = baseAmount + fixedCharges + electricityDuty + gstAmount;
+
+    console.log('[Bill Generation] Calculation:', {
+      unitsConsumed,
+      tariffCategory: customerCategory,
+      slabBreakdown: {
+        slab1: unitsConsumed <= slab1End ? unitsConsumed * slab1Rate : slab1End * slab1Rate,
+        slab2: unitsConsumed > slab1End && unitsConsumed <= slab2End ? (unitsConsumed - slab1End) * slab2Rate : unitsConsumed > slab2End ? (slab2End - slab1End) * slab2Rate : 0,
+        slab3: unitsConsumed > slab2End && unitsConsumed <= slab3End ? (unitsConsumed - slab2End) * slab3Rate : unitsConsumed > slab3End ? (slab3End - slab2End) * slab3Rate : 0,
+        slab4: unitsConsumed > slab3End && unitsConsumed <= slab4End ? (unitsConsumed - slab3End) * slab4Rate : unitsConsumed > slab4End ? (slab4End - slab3End) * slab4Rate : 0,
+        slab5: unitsConsumed > slab4End ? (unitsConsumed - slab4End) * slab5Rate : 0,
+      },
+      baseAmount,
+      fixedCharges,
+      electricityDuty,
+      gstAmount,
+      totalAmount
+    });
 
     // Generate bill number: BILL-YYYY-XXXXXXXX
     const billNumber = `BILL-${new Date().getFullYear()}-${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}`;
@@ -113,7 +223,8 @@ export async function POST(request: NextRequest) {
       totalAmount
     });
 
-    // Insert bill
+    // Insert bill into database
+    console.log('[Bills Generate POST] ✅ Inserting bill into database...');
     const [newBill] = await db.insert(bills).values({
       customerId,
       billNumber,
@@ -128,7 +239,14 @@ export async function POST(request: NextRequest) {
       gstAmount: gstAmount.toFixed(2),
       totalAmount: totalAmount.toFixed(2),
       status: 'generated',
+      // Add tariff reference for audit trail
+      tariffId: activeTariff.id,
     } as any);
+
+    console.log('[Bills Generate POST] ✅ Bill inserted successfully - ID:', newBill.insertId);
+    console.log('[Bills Generate POST] Customer ID:', customerId);
+    console.log('[Bills Generate POST] Billing Month:', billingMonth);
+    console.log('[Bills Generate POST] Total Amount:', totalAmount.toFixed(2));
 
     // Update customer's outstanding balance and last bill amount
     const newOutstandingBalance = parseFloat(customer.outstandingBalance || '0') + totalAmount;
@@ -140,7 +258,7 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(customers.id, customerId));
 
-    console.log('[Bills Generate POST] Bill generated successfully:', newBill.insertId);
+    console.log('[Bills Generate POST] ✅ Customer balance updated');
 
     // Update bill_request status to 'completed' if exists
     await db
@@ -158,6 +276,20 @@ export async function POST(request: NextRequest) {
       );
 
     console.log('[Bills Generate POST] Bill request marked as completed');
+
+    // Create notification for customer about new bill
+    if (customer.userId) {
+      await db.insert(notifications).values({
+        userId: customer.userId,
+        notificationType: 'billing',
+        title: 'New Bill Generated',
+        message: `Your bill for ${billingMonth} has been generated. Amount: Rs ${totalAmount.toFixed(2)}. Due date: ${new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString()}`,
+        priority: 'high',
+        actionUrl: '/customer/view-bills',
+        actionText: 'View Bill',
+        isRead: 0,
+      } as any);
+    }
 
     // Fetch the created bill
     const [createdBill] = await db

@@ -67,45 +67,73 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
     }
   }, [status, router]);
 
-  // Get navigation items based on user type
+  // Get navigation items with professional grouping
   const getNavigationItems = () => {
     if (userType === 'customer') {
       return [
-        { name: 'Dashboard', href: '/customer/dashboard', icon: Home },
-        { name: 'My Bills', href: '/customer/view-bills', icon: FileText },
-        { name: 'Payment', href: '/customer/payment', icon: DollarSign },
-        { name: 'Analytics', href: '/customer/analytics', icon: BarChart3 },
-        { name: 'New Connection', href: '/customer/new-connection', icon: Plus },
-        { name: 'Request Reading', href: '/customer/request-reading', icon: Gauge },
-        { name: 'Services', href: '/customer/services', icon: Activity },
-        { name: 'Complaints', href: '/customer/complaints', icon: MessageSquare },
-        { name: 'Outage Schedule', href: '/customer/outage-schedule', icon: ZapOff },
-        { name: 'Bill Calculator', href: '/customer/bill-calculator', icon: Calculator },
-        { name: 'Profile', href: '/customer/profile', icon: User },
-        { name: 'Settings', href: '/customer/settings', icon: Settings },
+        { section: 'OVERVIEW', items: [
+          { name: 'Dashboard', href: '/customer/dashboard', icon: Home, description: 'Overview & quick stats' },
+        ]},
+        { section: 'BILLING & PAYMENTS', items: [
+          { name: 'My Bills', href: '/customer/view-bills', icon: FileText, description: 'View & download bills' },
+          { name: 'Make Payment', href: '/customer/payment', icon: DollarSign, description: 'Pay your bills online' },
+          { name: 'Usage Analytics', href: '/customer/analytics', icon: BarChart3, description: 'Track consumption patterns' },
+          { name: 'Bill Calculator', href: '/customer/bill-calculator', icon: Calculator, description: 'Estimate your bill' },
+        ]},
+        { section: 'SERVICES', items: [
+          { name: 'New Connection', href: '/customer/new-connection', icon: Plus, description: 'Apply for new connection' },
+          { name: 'Request Reading', href: '/customer/request-reading', icon: Gauge, description: 'Request meter reading' },
+          { name: 'Services', href: '/customer/services', icon: Activity, description: 'Additional services' },
+          { name: 'Complaints', href: '/customer/complaints', icon: MessageSquare, description: 'Report issues' },
+          { name: 'Outage Schedule', href: '/customer/outage-schedule', icon: ZapOff, description: 'Planned power outages' },
+        ]},
+        { section: 'ACCOUNT', items: [
+          { name: 'Profile', href: '/customer/profile', icon: User, description: 'Manage your profile' },
+          { name: 'Settings', href: '/customer/settings', icon: Settings, description: 'Account preferences' },
+        ]},
       ];
     } else if (userType === 'employee') {
       return [
-        { name: 'Dashboard', href: '/employee/dashboard', icon: Home },
-        { name: 'Meter Reading', href: '/employee/meter-reading', icon: Gauge },
-        { name: 'Work Orders', href: '/employee/work-orders', icon: ClipboardList },
-        { name: 'Customers', href: '/employee/customers', icon: Users },
-        { name: 'Bill Generation', href: '/employee/bill-generation', icon: FileText },
-        { name: 'Profile', href: '/employee/profile', icon: User },
-        { name: 'Settings', href: '/employee/settings', icon: Settings },
+        { section: 'OVERVIEW', items: [
+          { name: 'Dashboard', href: '/employee/dashboard', icon: Home, description: 'Tasks & performance' },
+        ]},
+        { section: 'CORE OPERATIONS', items: [
+          { name: 'Meter Reading', href: '/employee/meter-reading', icon: Gauge, description: 'Record customer readings' },
+          { name: 'Work Orders', href: '/employee/work-orders', icon: ClipboardList, description: 'Manage assigned tasks' },
+          { name: 'Bill Generation', href: '/employee/bill-generation', icon: FileText, description: 'Generate customer bills' },
+        ]},
+        { section: 'CUSTOMER MANAGEMENT', items: [
+          { name: 'Customers', href: '/employee/customers', icon: Users, description: 'View customer details' },
+        ]},
+        { section: 'ACCOUNT', items: [
+          { name: 'Profile', href: '/employee/profile', icon: User, description: 'Your employee profile' },
+          { name: 'Settings', href: '/employee/settings', icon: Settings, description: 'Preferences' },
+        ]},
       ];
     } else if (userType === 'admin') {
       return [
-        { name: 'Dashboard', href: '/admin/dashboard', icon: Home },
-        { name: 'Customers', href: '/admin/customers', icon: Users },
-        { name: 'Employees', href: '/admin/employees', icon: Building },
-        { name: 'Generate Bills', href: '/admin/bills/generate', icon: FileText },
-        { name: 'Tariffs', href: '/admin/tariffs', icon: DollarSign },
-        { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-        { name: 'Reports', href: '/admin/reports', icon: Activity },
-        { name: 'Data Import', href: '/admin/data-import', icon: Database },
-        { name: 'Profile', href: '/admin/profile', icon: User },
-        { name: 'Settings', href: '/admin/settings', icon: Settings },
+        { section: 'OVERVIEW', items: [
+          { name: 'Dashboard', href: '/admin/dashboard', icon: Home, description: 'System overview & stats' },
+        ]},
+        { section: 'USER MANAGEMENT', items: [
+          { name: 'Customers', href: '/admin/customers', icon: Users, description: 'Manage all customers' },
+          { name: 'Employees', href: '/admin/employees', icon: Building, description: 'Manage staff members' },
+        ]},
+        { section: 'BILLING & FINANCE', items: [
+          { name: 'Generate Bills', href: '/admin/bills/generate', icon: FileText, description: 'Bulk bill generation' },
+          { name: 'Tariffs', href: '/admin/tariffs', icon: DollarSign, description: 'Manage pricing plans' },
+        ]},
+        { section: 'REPORTS & ANALYTICS', items: [
+          { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, description: 'System analytics' },
+          { name: 'Reports', href: '/admin/reports', icon: Activity, description: 'Generate reports' },
+        ]},
+        { section: 'SYSTEM', items: [
+          { name: 'Data Import', href: '/admin/data-import', icon: Database, description: 'Import bulk data' },
+          { name: 'Settings', href: '/admin/settings', icon: Settings, description: 'System configuration' },
+        ]},
+        { section: 'ACCOUNT', items: [
+          { name: 'Profile', href: '/admin/profile', icon: User, description: 'Admin profile' },
+        ]},
       ];
     }
     return [];
@@ -256,28 +284,55 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
             </span>
           </div>
 
-          {/* Navigation */}
+          {/* Navigation with Grouped Sections */}
           <nav className="flex-1 overflow-y-auto p-4">
-            <ul className="space-y-1">
-              {navigationItems.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                        isActive
-                          ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.name}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="space-y-6">
+              {navigationItems.map((section, sectionIndex) => (
+                <div key={section.section}>
+                  {/* Section Header */}
+                  <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 px-3">
+                    {section.section}
+                  </h3>
+
+                  {/* Section Items */}
+                  <ul className="space-y-1">
+                    {section.items.map((item) => {
+                      const isActive = pathname === item.href;
+                      return (
+                        <li key={item.name}>
+                          <Link
+                            href={item.href}
+                            className={`group flex items-center space-x-3 px-3 py-2 rounded-lg transition-all ${
+                              isActive
+                                ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg shadow-yellow-500/30'
+                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                            title={item.description}
+                          >
+                            <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? '' : 'group-hover:scale-110 transition-transform'}`} />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{item.name}</p>
+                              <p className={`text-xs truncate ${
+                                isActive
+                                  ? 'text-white/80'
+                                  : 'text-gray-500 dark:text-gray-400'
+                              }`}>
+                                {item.description}
+                              </p>
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  {/* Divider (except for last section) */}
+                  {sectionIndex < navigationItems.length - 1 && (
+                    <div className="mt-4 border-t border-gray-200 dark:border-gray-700"></div>
+                  )}
+                </div>
+              ))}
+            </div>
           </nav>
 
           {/* Connection Status (for customers) */}

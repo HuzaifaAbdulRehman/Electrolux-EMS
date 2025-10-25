@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   User,
@@ -28,67 +28,142 @@ import {
 export default function EmployeeProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [employeeData, setEmployeeData] = useState<any>(null);
 
   const [profileData, setProfileData] = useState({
-    fullName: 'Mike Johnson',
-    email: 'mike.johnson@electrolux.com',
-    phone: '(555) 234-5678',
-    address: '456 Oak Street, City 12345',
-    emergencyContact: '(555) 876-5432',
-    dateOfBirth: '1990-03-25',
-    department: 'Field Operations',
-    position: 'Senior Technician'
+    fullName: '',
+    email: '',
+    phone: '',
+    address: '',
+    emergencyContact: '',
+    dateOfBirth: '',
+    department: '',
+    position: ''
   });
 
-  // Employee information
-  const employeeInfo = {
-    employeeId: 'EMP-2024-0156',
-    department: 'Field Operations',
-    position: 'Senior Technician',
-    joinDate: '2019-06-15',
-    experience: '5 years 4 months',
-    supervisor: 'Robert Williams',
-    workZone: 'North & East',
-    status: 'Active',
-    certifications: ['Meter Installation', 'Safety Protocol', 'Customer Service'],
-    performanceScore: 92
+  // Fetch employee profile data
+  useEffect(() => {
+    fetchEmployeeProfile();
+  }, []);
+
+  const fetchEmployeeProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/employee/profile');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        setEmployeeData(result.data);
+        setProfileData({
+          fullName: result.data.fullName,
+          email: result.data.email,
+          phone: result.data.phone,
+          address: '',
+          emergencyContact: '',
+          dateOfBirth: '',
+          department: result.data.department,
+          position: result.data.designation
+        });
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Work statistics
-  const workStats = {
-    totalTasks: 1250,
-    completedThisMonth: 67,
-    avgDaily: 3.2,
-    successRate: '98.5%',
-    customerRating: 4.8,
-    onTimeCompletion: '96%',
-    overtimeHours: 12,
-    leavesTaken: 5
+  // Extract data with fallbacks
+  const employeeInfo = employeeData ? {
+    employeeId: employeeData.employeeId,
+    department: employeeData.department,
+    designation: employeeData.designation,
+    email: employeeData.email,
+    phone: employeeData.phone,
+    hireDate: employeeData.hireDate,
+    experience: employeeData.experience,
+    assignedZone: employeeData.assignedZone,
+    status: employeeData.status,
+    workStats: employeeData.workStats,
+    performanceScore: Math.round(parseFloat(employeeData.workStats?.successRate || '0'))
+  } : null;
+
+  const workStats = employeeData?.workStats || {
+    totalTasks: 0,
+    completedThisMonth: 0,
+    avgDaily: 0,
+    successRate: '0',
+    inProgressTasks: 0,
+    pendingTasks: 0
   };
 
-  // Achievements
-  const achievements = [
-    { icon: Award, title: 'Employee of the Month', date: 'September 2024', color: 'from-yellow-400 to-orange-500' },
-    { icon: Star, title: '5-Star Rating', date: 'August 2024', color: 'from-blue-500 to-cyan-500' },
-    { icon: Target, title: '1000 Tasks Milestone', date: 'July 2024', color: 'from-green-500 to-emerald-500' },
-    { icon: TrendingUp, title: 'Performance Leader', date: 'June 2024', color: 'from-purple-500 to-pink-500' }
-  ];
-
-  // Recent performance
-  const recentPerformance = [
-    { month: 'October', score: 92, tasks: 67, rating: 4.8 },
-    { month: 'September', score: 95, tasks: 89, rating: 4.9 },
-    { month: 'August', score: 88, tasks: 78, rating: 4.7 },
-    { month: 'July', score: 90, tasks: 85, rating: 4.8 }
-  ];
-
-  const handleSave = () => {
-    setIsEditing(false);
-    // Save logic here
+  // Add placeholder fields for UI
+  const displayStats = {
+    ...workStats,
+    customerRating: '4.8',
+    onTimeCompletion: '95%'
   };
+
+  // Achievements based on real data
+  const achievements = [];
+  if (workStats.totalTasks >= 100) {
+    achievements.push({ icon: Target, title: `${workStats.totalTasks} Tasks Milestone`, date: 'Achievement', color: 'from-green-500 to-emerald-500' });
+  }
+  if (parseFloat(workStats.successRate) >= 90) {
+    achievements.push({ icon: Star, title: `${workStats.successRate} Success Rate`, date: 'High Performance', color: 'from-blue-500 to-cyan-500' });
+  }
+  if (workStats.completedThisMonth >= 20) {
+    achievements.push({ icon: Award, title: 'Productive Month', date: `${workStats.completedThisMonth} tasks completed`, color: 'from-yellow-400 to-orange-500' });
+  }
+
+  const handleSave = async () => {
+    try {
+      const response = await fetch('/api/employee/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: profileData.phone,
+          email: profileData.email
+        })
+      });
+
+      if (response.ok) {
+        setIsEditing(false);
+        fetchEmployeeProfile();
+      }
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout userType="employee" userName="Employee">
+        <div className="flex items-center justify-center h-64">
+          <Activity className="w-8 h-8 animate-spin text-green-500" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error || !employeeData) {
+    return (
+      <DashboardLayout userType="employee" userName="Employee">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+          <p className="text-red-400">{error || 'Failed to load profile'}</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
-    <DashboardLayout userType="employee" userName="Mike Johnson">
+    <DashboardLayout userType="employee" userName={profileData.fullName || 'Employee'}>
       <div className="space-y-6">
         {/* Header */}
         <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
@@ -104,12 +179,12 @@ export default function EmployeeProfile() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{profileData.fullName}</h1>
-                <p className="text-gray-600 dark:text-gray-400">{employeeInfo.position} • {employeeInfo.department}</p>
+                <p className="text-gray-600 dark:text-gray-400">{employeeInfo?.position || 'N/A'} • {employeeInfo?.department || 'N/A'}</p>
                 <div className="flex items-center space-x-4 mt-2">
                   <span className="px-3 py-1 bg-green-500/20 text-green-400 text-sm rounded-full font-semibold border border-green-500/50">
-                    {employeeInfo.status}
+                    {employeeInfo?.status || 'Active'}
                   </span>
-                  <span className="text-gray-600 dark:text-gray-400 text-sm">ID: {employeeInfo.employeeId}</span>
+                  <span className="text-gray-600 dark:text-gray-400 text-sm">ID: {employeeInfo?.employeeId || 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -144,7 +219,7 @@ export default function EmployeeProfile() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Performance</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{employeeInfo.performanceScore}%</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{employeeInfo?.performanceScore || 0}%</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-white" />
@@ -155,7 +230,7 @@ export default function EmployeeProfile() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Total Tasks</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{workStats.totalTasks}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{displayStats.totalTasks}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-white" />
@@ -165,19 +240,19 @@ export default function EmployeeProfile() {
           <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Customer Rating</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">⭐ {workStats.customerRating}</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Completed</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{displayStats.completedThisMonth}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                <Star className="w-5 h-5 text-white" />
+                <CheckCircle className="w-5 h-5 text-white" />
               </div>
             </div>
           </div>
           <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">On-Time Rate</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{workStats.onTimeCompletion}</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">In Progress</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{displayStats.inProgressTasks}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                 <Clock className="w-5 h-5 text-white" />
@@ -295,48 +370,59 @@ export default function EmployeeProfile() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Employee ID</p>
-                    <p className="text-white font-semibold">{employeeInfo.employeeId}</p>
+                    <p className="text-white font-semibold">{employeeInfo?.employeeId || 'N/A'}</p>
                   </div>
                   <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Department</p>
-                    <p className="text-white font-semibold">{employeeInfo.department}</p>
+                    <p className="text-white font-semibold">{employeeInfo?.department || 'N/A'}</p>
                   </div>
                   <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Position</p>
-                    <p className="text-white font-semibold">{employeeInfo.position}</p>
-                  </div>
-                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Supervisor</p>
-                    <p className="text-white font-semibold">{employeeInfo.supervisor}</p>
-                  </div>
-                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Join Date</p>
-                    <p className="text-white font-semibold">{employeeInfo.joinDate}</p>
-                  </div>
-                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Experience</p>
-                    <p className="text-white font-semibold">{employeeInfo.experience}</p>
+                    <p className="text-white font-semibold">{employeeInfo?.designation || 'N/A'}</p>
                   </div>
                   <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Work Zone</p>
-                    <p className="text-white font-semibold">{employeeInfo.workZone}</p>
+                    <p className="text-white font-semibold">{employeeInfo?.assignedZone || 'N/A'}</p>
+                  </div>
+                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Join Date</p>
+                    <p className="text-white font-semibold">{employeeInfo?.hireDate || 'N/A'}</p>
+                  </div>
+                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Experience</p>
+                    <p className="text-white font-semibold">{employeeInfo?.experience || 'N/A'}</p>
+                  </div>
+                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Email</p>
+                    <p className="text-white font-semibold">{employeeInfo?.email || 'N/A'}</p>
                   </div>
                   <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Status</p>
                     <span className="px-2 py-1 bg-green-500/20 text-green-400 text-sm rounded-full">
-                      {employeeInfo.status}
+                      {employeeInfo?.status || 'N/A'}
                     </span>
                   </div>
                 </div>
 
                 <div className="mt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Certifications</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {employeeInfo.certifications.map((cert, index) => (
-                      <span key={index} className="px-3 py-1 bg-gradient-to-r from-green-500/20 to-emerald-500/20 text-green-400 rounded-full text-sm border border-green-500/30">
-                        {cert}
-                      </span>
-                    ))}
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Work Statistics</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl border border-blue-500/30">
+                      <p className="text-gray-400 text-sm mb-1">Total Tasks</p>
+                      <p className="text-2xl font-bold text-white">{employeeInfo?.workStats?.totalTasks || 0}</p>
+                    </div>
+                    <div className="p-4 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-xl border border-green-500/30">
+                      <p className="text-gray-400 text-sm mb-1">Completed</p>
+                      <p className="text-2xl font-bold text-white">{employeeInfo?.workStats?.completedThisMonth || 0}</p>
+                    </div>
+                    <div className="p-4 bg-gradient-to-br from-yellow-500/20 to-yellow-600/20 rounded-xl border border-yellow-500/30">
+                      <p className="text-gray-400 text-sm mb-1">In Progress</p>
+                      <p className="text-2xl font-bold text-white">{employeeInfo?.workStats?.inProgressTasks || 0}</p>
+                    </div>
+                    <div className="p-4 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-xl border border-purple-500/30">
+                      <p className="text-gray-400 text-sm mb-1">Success Rate</p>
+                      <p className="text-2xl font-bold text-white">{employeeInfo?.workStats?.successRate || 0}%</p>
+                    </div>
                   </div>
                 </div>
               </div>

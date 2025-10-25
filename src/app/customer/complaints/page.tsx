@@ -45,6 +45,18 @@ export default function ComplaintsFeedback() {
     priority: 'medium'
   });
 
+  // Complaint categories for better organization
+  const complaintCategories = [
+    { value: 'billing', label: 'Billing Issues', icon: '💳' },
+    { value: 'service', label: 'Service Quality', icon: '⚡' },
+    { value: 'technical', label: 'Technical Problems', icon: '🔧' },
+    { value: 'outage', label: 'Power Outage', icon: '⚡' },
+    { value: 'connection', label: 'Connection Issues', icon: '🔌' },
+    { value: 'meter', label: 'Meter Reading', icon: '📊' },
+    { value: 'payment', label: 'Payment Problems', icon: '💰' },
+    { value: 'other', label: 'Other', icon: '📝' }
+  ];
+
   // Fetch complaints (work orders with type='complaint_resolution') from API
   useEffect(() => {
     fetchComplaints();
@@ -481,12 +493,11 @@ export default function ComplaintsFeedback() {
                     className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-yellow-400 font-medium"
                   >
                     <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Select Category</option>
-                    <option value="billing" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Billing Issues</option>
-                    <option value="service" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Service Disruption</option>
-                    <option value="technical" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Technical Problems</option>
-                    <option value="meter" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Meter Reading</option>
-                    <option value="payment" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Payment Issues</option>
-                    <option value="other" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Other</option>
+                    {complaintCategories.map((category) => (
+                      <option key={category.value} value={category.value} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">
+                        {category.icon} {category.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

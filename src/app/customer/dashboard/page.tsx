@@ -60,14 +60,20 @@ export default function CustomerDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/dashboard');
+      const response = await fetch('/api/customer/dashboard');
 
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard data');
       }
 
       const result = await response.json();
-      setDashboardData(result.data);
+
+      if (result.success) {
+        setDashboardData(result.data);
+        setError(null);
+      } else {
+        throw new Error(result.error || 'Failed to load dashboard data');
+      }
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data');
@@ -108,7 +114,12 @@ export default function CustomerDashboard() {
     recentBills = [],
     recentPayments = [],
     consumptionHistory = [],
-    outstandingBalance = '0'
+    outstandingBalance = '0',
+    avgConsumption = 0,
+    avgMonthlyCost = 0,
+    consumptionTrend = 'stable',
+    trendPercentage = 0,
+    totalPaid = '0'
   } = dashboardData;
 
   const handlePayNow = () => {
@@ -117,9 +128,6 @@ export default function CustomerDashboard() {
 
   // Calculate summary cards from real data
   const lastPayment = recentPayments[0];
-  const avgConsumption = consumptionHistory.length > 0
-    ? Math.round(consumptionHistory.reduce((acc: number, item: any) => acc + safeNumber(item.unitsConsumed, 0), 0) / consumptionHistory.length)
-    : 0;
 
   const summaryCards = [
     {
@@ -141,8 +149,12 @@ export default function CustomerDashboard() {
     {
       title: 'Avg Monthly Usage',
       value: formatUnits(avgConsumption),
-      change: 'last 6 months',
-      trend: 'neutral',
+      change: consumptionTrend === 'increasing'
+        ? `↑ ${Math.abs(trendPercentage)}% vs last month`
+        : consumptionTrend === 'decreasing'
+        ? `↓ ${Math.abs(trendPercentage)}% vs last month`
+        : 'Stable',
+      trend: consumptionTrend === 'increasing' ? 'up' : consumptionTrend === 'decreasing' ? 'down' : 'neutral',
       icon: Activity,
       color: 'from-purple-500 to-pink-500'
     },

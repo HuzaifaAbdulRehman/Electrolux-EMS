@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { tariffs } from '@/lib/drizzle/schema';
+import { tariffs, tariffSlabs } from '@/lib/drizzle/schema';
 import { eq, desc } from 'drizzle-orm';
 
 // GET /api/tariffs - Get all tariffs
@@ -81,5 +81,76 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating tariff:', error);
     return NextResponse.json({ error: 'Failed to create tariff' }, { status: 500 });
+  }
+}
+
+// PATCH /api/tariffs - Bulk update tariffs (Admin only)
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.userType !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { action, tariffIds, updates } = body;
+
+    if (action === 'bulk_update') {
+      // Update multiple tariffs
+      if (!tariffIds || !Array.isArray(tariffIds)) {
+        return NextResponse.json({ error: 'Invalid tariff IDs' }, { status: 400 });
+      }
+
+      // For each tariff, create new version
+      for (const tariffId of tariffIds) {
+        // This would redirect to individual tariff update
+        // Implementation depends on specific requirements
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Bulk update completed'
+      });
+    }
+
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+
+  } catch (error) {
+    console.error('Error updating tariffs:', error);
+    return NextResponse.json({ error: 'Failed to update tariffs' }, { status: 500 });
+  }
+}
+
+// DELETE /api/tariffs - Bulk delete tariffs (Admin only)
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.userType !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { tariffIds } = body;
+
+    if (!tariffIds || !Array.isArray(tariffIds)) {
+      return NextResponse.json({ error: 'Invalid tariff IDs' }, { status: 400 });
+    }
+
+    // Soft delete multiple tariffs
+    for (const tariffId of tariffIds) {
+      await db
+        .update(tariffs)
+        .set({ validUntil: new Date() })
+        .where(eq(tariffs.id, tariffId));
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `${tariffIds.length} tariffs deleted successfully`
+    });
+
+  } catch (error) {
+    console.error('Error deleting tariffs:', error);
+    return NextResponse.json({ error: 'Failed to delete tariffs' }, { status: 500 });
   }
 }

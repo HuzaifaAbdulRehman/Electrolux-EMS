@@ -73,7 +73,7 @@ export default function AdminSettings() {
       backupFrequency: 'daily'
     },
     system: {
-      apiKey: 'sk_live_4eC39HqLyjWDarjtT1zdp7dc',
+      apiKey: '••••••••••••••••••••••••••••••••',
       databaseBackup: 'daily',
       logRetention: '90',
       cacheEnabled: true,

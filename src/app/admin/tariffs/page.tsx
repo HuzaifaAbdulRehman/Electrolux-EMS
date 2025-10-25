@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   DollarSign,
@@ -15,13 +15,22 @@ import {
   Building,
   Factory,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  Loader2,
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
 
 export default function TariffManagement() {
   const [selectedCategory, setSelectedCategory] = useState('residential');
   const [isEditing, setIsEditing] = useState(false);
   const [editedTariffs, setEditedTariffs] = useState<any>(null);
+  
+  // Real data state management
+  const [tariffs, setTariffs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const categories = [
     { id: 'residential', name: 'Residential', icon: Home, color: 'from-blue-500 to-cyan-500' },
@@ -30,6 +39,83 @@ export default function TariffManagement() {
     { id: 'agricultural', name: 'Agricultural', icon: CloudRain, color: 'from-yellow-400 to-orange-500' }
   ];
 
+  // Fetch tariffs from database
+  useEffect(() => {
+    fetchTariffs();
+  }, []);
+
+  const fetchTariffs = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch('/api/tariffs');
+      const result = await response.json();
+      
+      if (result.success) {
+        setTariffs(result.data);
+      } else {
+        setError(result.error || 'Failed to fetch tariffs');
+      }
+    } catch (err) {
+      setError('Network error while fetching tariffs');
+      console.error('Error fetching tariffs:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getCurrentTariff = () => {
+    return tariffs.find(t => t.category.toLowerCase() === selectedCategory && !t.validUntil);
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      const currentTariff = getCurrentTariff();
+      
+      if (currentTariff) {
+        // Update existing tariff (creates new version)
+        const response = await fetch(`/api/tariffs/${currentTariff.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editedTariffs)
+        });
+        
+        if (response.ok) {
+          await fetchTariffs(); // Refresh data
+          setIsEditing(false);
+        } else {
+          const error = await response.json();
+          setError(error.error || 'Failed to update tariff');
+        }
+      } else {
+        // Create new tariff
+        const response = await fetch('/api/tariffs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...editedTariffs,
+            category: selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)
+          })
+        });
+        
+        if (response.ok) {
+          await fetchTariffs(); // Refresh data
+          setIsEditing(false);
+        } else {
+          const error = await response.json();
+          setError(error.error || 'Failed to create tariff');
+        }
+      }
+    } catch (err) {
+      setError('Network error while saving tariff');
+      console.error('Error saving tariff:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Fallback hardcoded data for demo purposes
   const tariffStructure = {
     residential: {
       fixedCharge: 50,
@@ -93,11 +179,10 @@ export default function TariffManagement() {
     }
   };
 
-  const currentTariff = tariffStructure[selectedCategory as keyof typeof tariffStructure] || tariffStructure.residential;
-
   const handleEditToggle = () => {
     if (!isEditing) {
       // Enter edit mode - copy current tariff to editedTariffs
+      const currentTariff = getCurrentTariff();
       setEditedTariffs(JSON.parse(JSON.stringify(currentTariff)));
     }
     setIsEditing(!isEditing);
@@ -137,6 +222,7 @@ export default function TariffManagement() {
     });
   };
 
+  const currentTariff = getCurrentTariff();
   const displayTariff = isEditing ? editedTariffs : currentTariff;
 
   return (
@@ -148,6 +234,12 @@ export default function TariffManagement() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Tariff Management</h1>
               <p className="text-gray-600 dark:text-gray-400">Configure electricity rates and pricing structures</p>
+              {error && (
+                <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 text-red-500" />
+                  <span className="text-red-700 dark:text-red-400 text-sm">{error}</span>
+                </div>
+              )}
             </div>
             <div className="mt-4 sm:mt-0 flex items-center space-x-3">
               {isEditing ? (
@@ -159,11 +251,16 @@ export default function TariffManagement() {
                     <span>Cancel</span>
                   </button>
                   <button
-                    onClick={handleSaveChanges}
-                    className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-emerald-500/50 transition-all flex items-center space-x-2"
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-emerald-500/50 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Save className="w-5 h-5" />
-                    <span>Save Changes</span>
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-5 h-5" />
+                    )}
+                    <span>{saving ? 'Saving...' : 'Save Changes'}</span>
                   </button>
                 </>
               ) : (
@@ -202,9 +299,15 @@ export default function TariffManagement() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Basic Charges */}
-          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-green-500" />
+            <span className="ml-3 text-gray-600 dark:text-gray-400">Loading tariffs...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Basic Charges */}
+            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Basic Charges</h2>
               {isEditing && (
@@ -380,18 +483,20 @@ export default function TariffManagement() {
           </div>
         </div>
 
-        {/* Coming Soon Notice */}
-        <div className="bg-gradient-to-r from-yellow-400/10 to-orange-500/10 backdrop-blur-xl rounded-2xl p-8 border border-yellow-400/20 text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <BarChart3 className="w-8 h-8 text-white" />
+            {/* Coming Soon Notice */}
+            <div className="bg-gradient-to-r from-yellow-400/10 to-orange-500/10 backdrop-blur-xl rounded-2xl p-8 border border-yellow-400/20 text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <BarChart3 className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                Advanced Tariff Analytics Coming Soon
+              </h3>
+              <p className="text-gray-700 dark:text-gray-300">
+                Revenue projections, seasonal adjustments, and detailed consumption analytics will be available soon.
+              </p>
+            </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Advanced Tariff Analytics Coming Soon
-          </h3>
-          <p className="text-gray-700 dark:text-gray-300">
-            Revenue projections, seasonal adjustments, and detailed consumption analytics will be available soon.
-          </p>
-        </div>
+        )}
       </div>
     </DashboardLayout>
   );

@@ -11,7 +11,9 @@ import {
   CheckCircle,
   TrendingUp,
   Download,
-  PlayCircle
+  PlayCircle,
+  Eye,
+  Loader2
 } from 'lucide-react';
 
 export default function BulkBillGeneration() {
@@ -22,10 +24,12 @@ export default function BulkBillGeneration() {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [generationResult, setGenerationResult] = useState<any>(null);
   const [previewData, setPreviewData] = useState<any>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   // Load preview data when month changes
   const handleLoadPreview = async () => {
     try {
+      setLoadingPreview(true);
       const response = await fetch(`/api/bills/preview?month=${selectedMonth}-01`);
       const result = await response.json();
 
@@ -50,6 +54,8 @@ export default function BulkBillGeneration() {
     } catch (error) {
       console.error('Preview load error:', error);
       setPreviewData(null);
+    } finally {
+      setLoadingPreview(false);
     }
   };
 
@@ -163,8 +169,8 @@ export default function BulkBillGeneration() {
               <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block font-medium">
                 Billing Month
               </label>
-              <div className="relative">
-                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <div className="relative cursor-pointer group">
+                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 dark:text-gray-400 pointer-events-none z-10" />
                 <input
                   type="month"
                   value={selectedMonth}
@@ -174,7 +180,7 @@ export default function BulkBillGeneration() {
                     setPreviewData(null);
                   }}
                   max={new Date().toISOString().slice(0, 7)}
-                  className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-red-400 transition-colors font-medium"
+                  className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all font-medium cursor-pointer hover:border-blue-400 group-hover:border-blue-400"
                 />
               </div>
             </div>
@@ -183,11 +189,24 @@ export default function BulkBillGeneration() {
             <div className="flex items-end">
               <button
                 onClick={handleLoadPreview}
-                disabled={isGenerating}
-                className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/50 transition-all font-semibold flex items-center justify-center space-x-2"
+                disabled={isGenerating || loadingPreview}
+                className={`w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl transition-all font-semibold flex items-center justify-center space-x-2 ${
+                  isGenerating || loadingPreview
+                    ? 'opacity-70 cursor-not-allowed'
+                    : 'hover:shadow-lg hover:shadow-blue-500/50 cursor-pointer'
+                }`}
               >
-                <TrendingUp className="w-5 h-5" />
-                <span>Load Preview</span>
+                {loadingPreview ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Loading...</span>
+                  </>
+                ) : (
+                  <>
+                    <TrendingUp className="w-5 h-5" />
+                    <span>Load Preview</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -250,7 +269,7 @@ export default function BulkBillGeneration() {
                     <div className="text-right">
                       <p className="text-sm text-gray-600 dark:text-gray-400">Total Amount</p>
                       <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                        ₹{previewData.existing_bills.totalAmount.toLocaleString()}
+                        Rs {previewData.existing_bills.totalAmount.toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -279,10 +298,19 @@ export default function BulkBillGeneration() {
                     </div>
                   </div>
 
-                  {/* Confirmation Message */}
-                  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 bg-green-500/10 border border-green-500/20 rounded-lg p-3">
-                    <CheckCircle className="w-4 h-4 text-green-500" />
-                    <span>Bills have been generated for this billing period</span>
+                  {/* Confirmation Message and Actions */}
+                  <div className="flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                    <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>Bills have been generated for this billing period</span>
+                    </div>
+                    <button
+                      onClick={() => window.open(`/admin/bills?month=${selectedMonth}`, '_blank')}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all flex items-center space-x-2 text-sm font-medium"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>View Bills</span>
+                    </button>
                   </div>
                 </div>
               )}
@@ -298,7 +326,7 @@ export default function BulkBillGeneration() {
                           : 'Estimated Revenue'
                         }
                       </p>
-                      <p className="text-3xl font-bold text-gray-900 dark:text-white">₹{previewData.estimated_revenue.toLocaleString()}</p>
+                      <p className="text-3xl font-bold text-gray-900 dark:text-white">Rs {previewData.estimated_revenue.toLocaleString()}</p>
                     </div>
                     <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
                       <TrendingUp className="w-6 h-6 text-white" />
@@ -391,20 +419,22 @@ export default function BulkBillGeneration() {
 
         {/* Generation Result */}
         {generationResult && (
-          <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl rounded-2xl p-6 border border-green-500/50">
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-4">
-                <CheckCircle className="w-10 h-10 text-green-400" />
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
                 <div>
-                  <h3 className="text-white font-bold text-xl">Bills Generated Successfully!</h3>
-                  <p className="text-gray-700 dark:text-gray-300 text-sm">
+                  <h3 className="text-gray-900 dark:text-white font-bold text-xl">Bills Generated Successfully!</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
                     Generation completed for {selectedMonth}
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleDownloadReport}
-                className="px-6 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white hover:bg-white/20 transition-all font-semibold flex items-center space-x-2"
+                className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:shadow-lg hover:shadow-green-500/50 transition-all font-semibold flex items-center space-x-2"
               >
                 <Download className="w-5 h-5" />
                 <span>Download Report</span>
@@ -413,24 +443,24 @@ export default function BulkBillGeneration() {
 
             {/* Result Statistics */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                <p className="text-gray-400 text-xs mb-1">Total Processed</p>
-                <p className="text-white font-bold text-2xl">{generationResult.totalProcessed || 0}</p>
+              <div className="bg-blue-500/20 backdrop-blur-sm rounded-xl p-4 border border-blue-500/30">
+                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Total Processed</p>
+                <p className="text-gray-900 dark:text-white font-bold text-2xl">{generationResult.totalProcessed || 0}</p>
               </div>
 
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                <p className="text-gray-400 text-xs mb-1">Bills Generated</p>
-                <p className="text-green-400 font-bold text-2xl">{generationResult.billsGenerated || 0}</p>
+              <div className="bg-green-500/20 backdrop-blur-sm rounded-xl p-4 border border-green-500/30">
+                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Bills Generated</p>
+                <p className="text-gray-900 dark:text-white font-bold text-2xl">{generationResult.billsGenerated || 0}</p>
               </div>
 
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                <p className="text-gray-400 text-xs mb-1">Failed</p>
-                <p className="text-red-400 font-bold text-2xl">{generationResult.failedCount || 0}</p>
+              <div className="bg-red-500/20 backdrop-blur-sm rounded-xl p-4 border border-red-500/30">
+                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Failed</p>
+                <p className="text-gray-900 dark:text-white font-bold text-2xl">{generationResult.failedCount || 0}</p>
               </div>
 
-              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                <p className="text-gray-400 text-xs mb-1">Success Rate</p>
-                <p className="text-blue-400 font-bold text-2xl">
+              <div className="bg-purple-500/20 backdrop-blur-sm rounded-xl p-4 border border-purple-500/30">
+                <p className="text-gray-600 dark:text-gray-400 text-xs mb-1">Success Rate</p>
+                <p className="text-gray-900 dark:text-white font-bold text-2xl">
                   {generationResult.totalProcessed > 0
                     ? ((generationResult.billsGenerated / generationResult.totalProcessed) * 100).toFixed(1)
                     : '0.0'}%
@@ -440,9 +470,9 @@ export default function BulkBillGeneration() {
 
             {/* Details */}
             {generationResult.details && (
-              <div className="mt-4 bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
-                <h4 className="text-white font-semibold mb-2">Generation Details</h4>
-                <ul className="space-y-1 text-sm text-gray-300">
+              <div className="mt-4 bg-gray-50 dark:bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                <h4 className="text-gray-900 dark:text-white font-semibold mb-2">Generation Details</h4>
+                <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                   {Object.entries(generationResult.details).map(([key, value]: [string, any]) => (
                     <li key={key}>
                       • {key.replace(/_/g, ' ')}: {value}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   User,
@@ -27,25 +27,61 @@ import {
 export default function AdminProfile() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [profileData, setProfileData] = useState({
-    fullName: 'Sarah Johnson',
-    email: 'sarah.johnson@electrolux-admin.com',
-    phone: '+1 (555) 234-5678',
+    fullName: '',
+    email: '',
+    phone: '',
     position: 'System Administrator',
-    department: 'IT Operations',
-    employeeId: 'ADM-2024-001',
-    joinDate: '2020-03-15',
-    location: 'New York, NY',
-    bio: 'Senior system administrator with 8 years of experience managing enterprise electricity management systems.'
+    department: 'Administration',
+    employeeId: 'ADMIN001',
+    joinDate: '',
+    location: 'Head Office',
+    bio: 'System Administrator with full access to all system functions and data management capabilities.'
   });
 
-  const adminInfo = {
+  const [adminInfo, setAdminInfo] = useState({
     accessLevel: 'Super Admin',
     lastLogin: '2024-10-11 09:23 AM',
     accountStatus: 'Active',
     twoFactorEnabled: true,
     sessionsActive: 3
-  };
+  });
+
+  // Fetch profile data on component mount
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/admin/profile');
+        const result = await response.json();
+        
+        if (result.success) {
+          const data = result.data;
+          setProfileData({
+            fullName: data.name || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            position: 'System Administrator',
+            department: 'Administration',
+            employeeId: 'ADMIN001',
+            joinDate: new Date(data.createdAt).toLocaleDateString(),
+            location: 'Head Office',
+            bio: 'System Administrator with full access to all system functions and data management capabilities.'
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+        setError('Failed to load profile data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfileData();
+  }, []);
+
 
   const permissions = [
     { module: 'User Management', access: ['Create', 'Read', 'Update', 'Delete'], enabled: true },
@@ -126,9 +162,78 @@ export default function AdminProfile() {
     }
   ];
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // Save logic would go here
+  // Fetch admin profile data
+  useEffect(() => {
+    fetchAdminProfile();
+  }, []);
+
+  const fetchAdminProfile = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/profile');
+      const result = await response.json();
+
+      if (result.success) {
+        const userData = result.data;
+
+        // Load additional data from localStorage if available
+        const storedLocation = localStorage.getItem('admin_location');
+        const storedBio = localStorage.getItem('admin_bio');
+
+        setProfileData({
+          fullName: userData.name || '',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          position: 'System Administrator',
+          department: 'Administration',
+          employeeId: `ADM-${userData.id}`,
+          joinDate: userData.createdAt ? new Date(userData.createdAt).toISOString().split('T')[0] : '',
+          location: storedLocation || '',
+          bio: storedBio || ''
+        });
+      } else {
+        setError(result.error || 'Failed to fetch profile');
+      }
+    } catch (err) {
+      console.error('Error fetching admin profile:', err);
+      setError('Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setError('');
+
+      // Save to database
+      const response = await fetch('/api/admin/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: profileData.fullName,
+          phone: profileData.phone
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Save location and bio to localStorage
+        localStorage.setItem('admin_location', profileData.location);
+        localStorage.setItem('admin_bio', profileData.bio);
+
+        setIsEditing(false);
+        // Show success message (you can add a toast notification here)
+      } else {
+        setError(result.error || 'Failed to update profile');
+      }
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setError('Failed to save changes');
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -157,10 +262,24 @@ export default function AdminProfile() {
   ];
 
   return (
-    <DashboardLayout userType="admin" userName={profileData.fullName}>
+    <DashboardLayout userType="admin" userName={profileData.fullName || 'Admin'}>
       <div className="space-y-6">
-        {/* Header with Profile Overview */}
-        <div className="bg-gradient-to-r from-red-500/20 to-pink-500/20 backdrop-blur-xl rounded-2xl p-6 border border-red-500/30">
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+          </div>
+        ) : (
+          <>
+            {/* Header with Profile Overview */}
+            <div className="bg-gradient-to-r from-red-500/20 to-pink-500/20 backdrop-blur-xl rounded-2xl p-6 border border-red-500/30">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center space-x-6">
               <div className="w-24 h-24 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center text-white text-3xl font-bold">
@@ -553,6 +672,8 @@ export default function AdminProfile() {
             )}
           </div>
         </div>
+          </>
+        )}
       </div>
     </DashboardLayout>
   );

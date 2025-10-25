@@ -253,36 +253,73 @@ export default function CustomerDashboard() {
   return (
     <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
       <div className="space-y-6">
-        {/* Welcome Header */}
-        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Welcome back, {session?.user?.name || 'Customer'}!
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Account Number: {accountNumber} • Connection Type: Residential
-              </p>
-            </div>
-            <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-              <button
-                onClick={fetchDashboardData}
-                className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-all flex items-center space-x-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span>Refresh</span>
-              </button>
-              {parseFloat(outstandingBalance) > 0 && (
-                <button
-                  onClick={handlePayNow}
-                  className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all font-semibold"
-                >
-                  Pay Now
-                </button>
-              )}
+        {/* Status-based Welcome Header */}
+        {dashboardData?.customer?.status === 'pending_installation' ? (
+          <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 backdrop-blur-xl rounded-2xl p-6 border border-yellow-500/20">
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Installation Pending
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 mb-3">
+                  Your meter has been assigned and installation is in progress.
+                </p>
+                <div className="bg-white/10 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Meter Number:</span>
+                    <span className="font-mono text-gray-900 dark:text-white">{dashboardData.customer.meterNumber}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Account Number:</span>
+                    <span className="font-mono text-gray-900 dark:text-white">{dashboardData.customer.accountNumber}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Status:</span>
+                    <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-medium">
+                      Pending Installation
+                    </span>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+                  ⚠️ Limited access until installation is complete. An employee will contact you soon.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  Welcome back, {session?.user?.name || 'Customer'}!
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Account Number: {accountNumber} • Connection Type: Residential
+                </p>
+              </div>
+              <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+                <button
+                  onClick={fetchDashboardData}
+                  className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-all flex items-center space-x-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Refresh</span>
+                </button>
+                {parseFloat(outstandingBalance) > 0 && (
+                  <button
+                    onClick={handlePayNow}
+                    className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all font-semibold"
+                  >
+                    Pay Now
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

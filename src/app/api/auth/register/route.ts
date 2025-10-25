@@ -4,6 +4,7 @@ import { users, customers } from '@/lib/drizzle/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import { generateMeterNumber, isValidMeterNumber, isMeterNumberAvailable } from '@/lib/utils/meterNumberGenerator';
 
 // Registration schema validation
 const registrationSchema = z.object({
@@ -16,7 +17,7 @@ const registrationSchema = z.object({
   city: z.string().min(2, 'City is required'),
   state: z.string().min(2, 'State is required'),
   pincode: z.string().regex(/^\d{6}$/, 'Pincode must be 6 digits'),
-  meterNumber: z.string().regex(/^MTR-[A-Z]{3}-\d{6}$/, 'Meter number must be in format MTR-XXX-XXXXXX (e.g., MTR-KHI-000001)'),
+  meterNumber: z.string().optional(), // Optional - will be auto-generated if not provided
   connectionType: z.enum(['Residential', 'Commercial', 'Industrial', 'Agricultural']).optional().default('Residential'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -69,18 +70,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if meter number is already assigned
-    const existingMeter = await db
-      .select()
-      .from(customers)
-      .where(eq(customers.meterNumber, data.meterNumber))
-      .limit(1);
+    // Handle meter number logic (auto-assign or validate existing)
+    let finalMeterNumber: string;
+    let customerStatus: 'pending_installation' | 'active' = 'active';
 
-    if (existingMeter.length > 0) {
-      return NextResponse.json(
-        { error: 'Meter number is already assigned to another customer' },
-        { status: 409 }
-      );
+    if (data.meterNumber && data.meterNumber.trim()) {
+      // Existing customer flow - validate provided meter number
+      if (!isValidMeterNumber(data.meterNumber)) {
+        return NextResponse.json(
+          { error: 'Invalid meter number format. Must be MTR-XXX-XXXXXX (e.g., MTR-KHI-000001)' },
+          { status: 400 }
+        );
+      }
+
+      const isAvailable = await isMeterNumberAvailable(data.meterNumber);
+      if (!isAvailable) {
+        return NextResponse.json(
+          { error: 'This meter number is already registered to another customer' },
+          { status: 409 }
+        );
+      }
+
+      finalMeterNumber = data.meterNumber;
+      customerStatus = 'active'; // Existing meter = active connection
+    } else {
+      // New customer flow - auto-generate meter number
+      finalMeterNumber = await generateMeterNumber(data.city);
+      customerStatus = 'pending_installation'; // New meter = pending installation
     }
 
     // Generate secure password hash
@@ -112,7 +128,7 @@ export async function POST(request: NextRequest) {
       const customerData: any = {
         userId: newUser.id,
         accountNumber,
-        meterNumber: data.meterNumber, // Use customer's meter number from input
+        meterNumber: finalMeterNumber, // Use auto-generated or validated meter number
         fullName: data.fullName,
         email: data.email,
         phone: data.phone,
@@ -121,7 +137,7 @@ export async function POST(request: NextRequest) {
         state: data.state,
         pincode: data.pincode,
         connectionType: data.connectionType || 'Residential',
-        status: 'active',
+        status: customerStatus, // 'pending_installation' or 'active'
         connectionDate: new Date().toISOString().split('T')[0],
         lastBillAmount: '0',
         outstandingBalance: '0',
@@ -131,15 +147,19 @@ export async function POST(request: NextRequest) {
 
       await db.insert(customers).values(customerData);
 
-      // Return success response (without sensitive data)
+      // Return success response with status information
       return NextResponse.json({
         success: true,
-        message: 'Registration successful! You can now login with your email and password.',
+        message: customerStatus === 'pending_installation' 
+          ? 'Registration successful! Your meter has been assigned and installation is pending.'
+          : 'Registration successful! You can now login with your email and password.',
         data: {
           email: data.email,
           accountNumber,
-          meterNumber: data.meterNumber, // Return customer's meter number
+          meterNumber: finalMeterNumber,
           fullName: data.fullName,
+          status: customerStatus,
+          isNewCustomer: !data.meterNumber,
         },
       }, { status: 201 });
 

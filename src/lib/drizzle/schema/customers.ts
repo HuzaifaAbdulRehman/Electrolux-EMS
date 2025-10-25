@@ -5,7 +5,7 @@ export const customers = mysqlTable('customers', {
   id: int('id').primaryKey().autoincrement(),
   userId: int('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   accountNumber: varchar('account_number', { length: 50 }).notNull().unique(), // ELX-2024-XXXXXX
-  meterNumber: varchar('meter_number', { length: 50 }).notNull().unique(), // MTR-XXXXXX
+  meterNumber: varchar('meter_number', { length: 50 }).unique(), // MTR-XXX-XXXXXX (optional for new customers)
   fullName: varchar('full_name', { length: 255 }).notNull(),
   email: varchar('email', { length: 255 }).notNull(),
   phone: varchar('phone', { length: 20 }).notNull(),
@@ -15,7 +15,7 @@ export const customers = mysqlTable('customers', {
   pincode: varchar('pincode', { length: 10 }).notNull(),
   zone: varchar('zone', { length: 50 }), // Load shedding zone: Zone A, Zone B, Zone C, etc.
   connectionType: mysqlEnum('connection_type', ['Residential', 'Commercial', 'Industrial', 'Agricultural']).notNull(),
-  status: mysqlEnum('status', ['active', 'suspended', 'inactive']).default('active').notNull(),
+  status: mysqlEnum('status', ['pending_installation', 'active', 'suspended', 'inactive']).default('active').notNull(),
   connectionDate: date('connection_date').notNull(),
   lastBillAmount: decimal('last_bill_amount', { precision: 10, scale: 2 }).default('0.00'),
   lastPaymentDate: date('last_payment_date'),

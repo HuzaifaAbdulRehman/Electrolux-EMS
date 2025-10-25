@@ -16,7 +16,6 @@ import {
   Menu,
   X,
   ChevronDown,
-  Search,
   Moon,
   Sun,
   Users,
@@ -34,7 +33,8 @@ import {
   ZapOff,
   Database,
   Plus,
-  Loader2
+  Loader2,
+  Eye
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -120,13 +120,14 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
         ]},
         { section: 'BILLING & FINANCE', items: [
           { name: 'Generate Bills', href: '/admin/bills/generate', icon: FileText, description: 'Bulk bill generation' },
+          { name: 'View Bills', href: '/admin/bills', icon: Eye, description: 'View & manage generated bills' },
           { name: 'Tariffs', href: '/admin/tariffs', icon: DollarSign, description: 'Manage pricing plans' },
         ]},
-        { section: 'REPORTS & ANALYTICS', items: [
+        { section: 'ANALYTICS', items: [
           { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, description: 'System analytics' },
-          { name: 'Reports', href: '/admin/reports', icon: Activity, description: 'Generate reports' },
         ]},
         { section: 'SYSTEM', items: [
+          { name: 'Outages', href: '/admin/outages', icon: ZapOff, description: 'Manage power outages' },
           { name: 'Data Import', href: '/admin/data-import', icon: Database, description: 'Import bulk data' },
           { name: 'Settings', href: '/admin/settings', icon: Settings, description: 'System configuration' },
         ]},
@@ -147,11 +148,18 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setNotifications(result.data);
-        setUnreadCount(result.data.length);
+        setNotifications(result.data || []);
+        setUnreadCount(result.data?.length || 0);
+      } else {
+        // If notifications API doesn't exist, set empty state
+        setNotifications([]);
+        setUnreadCount(0);
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      // Set empty state on error
+      setNotifications([]);
+      setUnreadCount(0);
     }
   };
 
@@ -388,20 +396,11 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
               {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
 
-            {/* Search bar */}
-            <div className="hidden md:block flex-1 max-w-xl">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                />
-              </div>
-            </div>
+            {/* Spacer for mobile menu button alignment */}
+            <div className="flex-1 lg:hidden"></div>
 
             {/* Right side buttons */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 ml-auto">
               {/* Theme toggle */}
               <button
                 onClick={toggleTheme}

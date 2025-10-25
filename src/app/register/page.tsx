@@ -160,12 +160,12 @@ export default function RegisterPage() {
       newErrors.pincode = 'Pincode must be 6 digits';
     }
 
-    // Meter Number validation (Format: MTR-XXX-XXXXXX)
-    const meterRegex = /^MTR-[A-Z]{3}-\d{6}$/;
-    if (!formData.meterNumber) {
-      newErrors.meterNumber = 'Meter number is required';
-    } else if (!meterRegex.test(formData.meterNumber)) {
-      newErrors.meterNumber = 'Meter number must be in format MTR-XXX-XXXXXX (e.g., MTR-KHI-000001)';
+    // Meter Number validation (Optional - auto-generated if empty)
+    if (formData.meterNumber && formData.meterNumber.trim()) {
+      const meterRegex = /^MTR-[A-Z]{3}-\d{6}$/;
+      if (!meterRegex.test(formData.meterNumber)) {
+        newErrors.meterNumber = 'Meter number must be in format MTR-XXX-XXXXXX (e.g., MTR-KHI-000001)';
+      }
     }
 
     // Terms validation
@@ -205,7 +205,7 @@ export default function RegisterPage() {
           city: formData.city,
           state: formData.state,
           pincode: formData.pincode,
-          meterNumber: formData.meterNumber.toUpperCase(), // Ensure uppercase
+          meterNumber: formData.meterNumber.trim() || undefined, // Send undefined if empty for auto-generation
         }),
       });
 
@@ -478,7 +478,9 @@ export default function RegisterPage() {
 
                   {/* Meter Number */}
                   <div>
-                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">Meter Number *</label>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">
+                      Meter Number <span className="text-gray-500">(Optional)</span>
+                    </label>
                     <div className="relative">
                       <Gauge className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 dark:text-gray-400" />
                       <input
@@ -486,10 +488,13 @@ export default function RegisterPage() {
                         value={formData.meterNumber}
                         onChange={(e) => setFormData({ ...formData, meterNumber: e.target.value.toUpperCase() })}
                         className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-                        placeholder="MTR-KHI-000001"
+                        placeholder="MTR-KHI-000001 (leave empty for auto-assignment)"
                         maxLength={14}
                       />
                     </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      💡 Leave empty if you don't have a meter yet - we'll assign one for you
+                    </p>
                     {errors.meterNumber && (
                       <p className="text-red-400 text-xs mt-1 flex items-center">
                         <AlertCircle className="w-3 h-3 mr-1" />

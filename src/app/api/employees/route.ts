@@ -25,7 +25,6 @@ export async function GET(request: NextRequest) {
     let query = db
       .select({
         id: employees.id,
-        employeeNumber: employees.employeeNumber,
         employeeName: employees.employeeName,
         email: employees.email,
         phone: employees.phone,
@@ -107,13 +106,9 @@ export async function POST(request: NextRequest) {
       isActive: 1,
     });
 
-    // Generate employee number (like employee1, employee2, etc.)
-    const employeeNumber = `employee${newUser.insertId}`;
-
     // Create employee record
     const [newEmployee] = await db.insert(employees).values({
       userId: newUser.insertId,
-      employeeNumber,
       employeeName,
       email,
       phone,

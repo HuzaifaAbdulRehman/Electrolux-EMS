@@ -383,7 +383,7 @@ export default function AdminComplaints() {
                     <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Select Employee</option>
                     {employees.map((employee) => (
                       <option key={employee.id} value={employee.id} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-                        {employee.employeeNumber || `employee${employee.id}`} - {employee.employeeName} - {employee.department} - {employee.designation} - Work Orders: {employee.workOrdersCount || 0}
+                        {employee.employeeName} - {employee.department} - {employee.designation} - Work Orders: {employee.workOrdersCount || 0}
                       </option>
                     ))}
                   </select>

@@ -83,7 +83,10 @@ export async function GET(request: NextRequest) {
     }, {} as Record<string, any[]>);
 
     const totalExistingBills = existingBills.length;
-    const totalBillAmount = existingBills.reduce((sum, bill) => sum + parseFloat(bill.totalAmount || '0'), 0);
+    const totalBillAmount = existingBills.reduce((sum, bill) => {
+      const amount = parseFloat(String(bill.totalAmount || '0'));
+      return sum + (isNaN(amount) ? 0 : amount);
+    }, 0);
 
     // 4. Get available tariffs
     const availableTariffs = await db

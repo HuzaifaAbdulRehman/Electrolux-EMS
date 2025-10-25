@@ -80,21 +80,6 @@ export async function PATCH(
     } else if (status === 'assigned') {
       updateData.assignedAt = new Date().toISOString();
       updateData.employeeId = parseInt(employeeId);
-      
-      // Create work order
-      const [workOrder] = await db.insert(workOrders).values({
-        employeeId: parseInt(employeeId),
-        customerId: complaintData.customerId,
-        workType: 'complaint_resolution',
-        title: `Complaint: ${complaintData.title}`,
-        description: complaintData.description,
-        status: 'assigned',
-        priority: complaintData.priority,
-        assignedDate: new Date().toISOString().split('T')[0],
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
-      } as any);
-
-      updateData.workOrderId = workOrder.insertId;
     } else if (status === 'in_progress') {
       updateData.assignedAt = new Date().toISOString();
     } else if (status === 'resolved') {
@@ -104,25 +89,18 @@ export async function PATCH(
       updateData.closedAt = new Date().toISOString();
     }
 
+    console.log('Updating complaint with data:', updateData);
+    
     await db
       .update(complaints)
       .set(updateData)
       .where(eq(complaints.id, parseInt(params.id)));
 
-    // Send notifications based on status change
+    console.log('Complaint updated successfully');
+
+    // Send notifications based on status change (simplified)
     try {
-      if (status === 'under_review') {
-        // Notify customer
-        await db.insert(notifications).values({
-          userId: complaintData.customerId,
-          notificationType: 'complaint',
-          title: 'Complaint Under Review',
-          message: `Your complaint "${complaintData.title}" is now under review`,
-          priority: 'medium',
-          actionUrl: '/customer/complaints',
-          isRead: 0,
-        } as any);
-      } else if (status === 'assigned') {
+      if (status === 'assigned' && employeeId) {
         // Get employee user ID for notification
         const employee = await db
           .select({ userId: employees.userId })
@@ -141,39 +119,6 @@ export async function PATCH(
             isRead: 0,
           } as any);
         }
-      } else if (status === 'in_progress') {
-        // Notify customer
-        await db.insert(notifications).values({
-          userId: complaintData.customerId,
-          notificationType: 'complaint',
-          title: 'Complaint In Progress',
-          message: `Your complaint "${complaintData.title}" is now being worked on`,
-          priority: 'medium',
-          actionUrl: '/customer/complaints',
-          isRead: 0,
-        } as any);
-      } else if (status === 'resolved') {
-        // Notify customer
-        await db.insert(notifications).values({
-          userId: complaintData.customerId,
-          notificationType: 'complaint',
-          title: 'Complaint Resolved',
-          message: `Your complaint "${complaintData.title}" has been resolved`,
-          priority: 'medium',
-          actionUrl: '/customer/complaints',
-          isRead: 0,
-        } as any);
-      } else if (status === 'closed') {
-        // Notify employee
-        await db.insert(notifications).values({
-          userId: complaintData.employeeId,
-          notificationType: 'complaint',
-          title: 'Complaint Closed',
-          message: `Complaint "${complaintData.title}" has been closed by customer`,
-          priority: 'low',
-          actionUrl: '/employee/work-orders',
-          isRead: 0,
-        } as any);
       }
     } catch (notificationError) {
       console.error('Error sending notification:', notificationError);

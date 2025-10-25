@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
     const billId = searchParams.get('id');
     const customerId = searchParams.get('customerId');
     const status = searchParams.get('status');
+    const month = searchParams.get('month');
+    const search = searchParams.get('search');
     const fromDate = searchParams.get('fromDate');
     const toDate = searchParams.get('toDate');
     const page = parseInt(searchParams.get('page') || '1');
@@ -38,6 +40,11 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(bills.customerId, parseInt(customerId)));
     }
 
+    // Filter by month if provided (format: YYYY-MM-01)
+    if (month) {
+      conditions.push(sql`DATE(${bills.billingMonth}) = ${month}`);
+    }
+
     if (status) {
       conditions.push(eq(bills.status, status as any));
     }
@@ -50,6 +57,11 @@ export async function GET(request: NextRequest) {
       conditions.push(lte(bills.issueDate, toDate as any));
     }
 
+    // Handle search by account number
+    if (search) {
+      conditions.push(like(customers.accountNumber, `%${search}%`));
+    }
+
     let query = db
       .select({
         id: bills.id,
@@ -57,6 +69,7 @@ export async function GET(request: NextRequest) {
         customerName: customers.fullName,
         accountNumber: customers.accountNumber,
         billingMonth: bills.billingMonth,
+        billingPeriod: bills.billingMonth,
         issueDate: bills.issueDate,
         dueDate: bills.dueDate,
         unitsConsumed: bills.unitsConsumed,

@@ -196,7 +196,6 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (error) {
     console.error('Error creating complaint:', error);
-    console.error('Error details:', JSON.stringify(error, null, 2));
     return NextResponse.json({ 
       error: 'Failed to create complaint', 
       details: error instanceof Error ? error.message : 'Unknown error' 

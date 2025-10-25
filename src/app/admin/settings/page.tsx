@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Settings,
@@ -34,56 +34,70 @@ import {
   EyeOff
 } from 'lucide-react';
 
+const DEFAULT_SETTINGS = {
+  general: {
+    companyName: 'Electrolux Distribution Co.',
+    timezone: 'UTC-5',
+    currency: 'USD',
+    language: 'English',
+    dateFormat: 'MM/DD/YYYY',
+    fiscalYearStart: 'January',
+    autoLogout: '60',
+    maintenanceMode: false
+  },
+  billing: {
+    billingCycle: 'monthly',
+    paymentDueDays: '15',
+    lateFeePercentage: '2',
+    gracePeriod: '5',
+    autoGenerateBills: true,
+    enableAutoPay: true,
+    taxRate: '15',
+    minimumPayment: '10'
+  },
+  security: {
+    passwordMinLength: '8',
+    passwordComplexity: true,
+    twoFactorAuth: 'optional',
+    sessionTimeout: '30',
+    maxLoginAttempts: '5',
+    ipWhitelist: false,
+    apiRateLimit: '100',
+    dataEncryption: true,
+    auditLogging: true,
+    backupFrequency: 'daily'
+  },
+  system: {
+    apiKey: '••••••••••••••••••••••••••••••••',
+    databaseBackup: 'daily',
+    logRetention: '90',
+    cacheEnabled: true,
+    cdnEnabled: true,
+    debugMode: false,
+    performanceMonitoring: true,
+    errorTracking: true,
+    analyticsEnabled: true
+  }
+};
+
 export default function AdminSettings() {
   const [activeSection, setActiveSection] = useState('general');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [showApiKey, setShowApiKey] = useState(false);
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
-  const [settings, setSettings] = useState({
-    general: {
-      companyName: 'Electrolux Distribution Co.',
-      timezone: 'UTC-5',
-      currency: 'USD',
-      language: 'English',
-      dateFormat: 'MM/DD/YYYY',
-      fiscalYearStart: 'January',
-      autoLogout: '60',
-      maintenanceMode: false
-    },
-    billing: {
-      billingCycle: 'monthly',
-      paymentDueDays: '15',
-      lateFeePercentage: '2',
-      gracePeriod: '5',
-      autoGenerateBills: true,
-      enableAutoPay: true,
-      taxRate: '15',
-      minimumPayment: '10'
-    },
-    security: {
-      passwordMinLength: '8',
-      passwordComplexity: true,
-      twoFactorAuth: 'optional',
-      sessionTimeout: '30',
-      maxLoginAttempts: '5',
-      ipWhitelist: false,
-      apiRateLimit: '100',
-      dataEncryption: true,
-      auditLogging: true,
-      backupFrequency: 'daily'
-    },
-    system: {
-      apiKey: '••••••••••••••••••••••••••••••••',
-      databaseBackup: 'daily',
-      logRetention: '90',
-      cacheEnabled: true,
-      cdnEnabled: true,
-      debugMode: false,
-      performanceMonitoring: true,
-      errorTracking: true,
-      analyticsEnabled: true
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const storedSettings = localStorage.getItem('admin_settings');
+    if (storedSettings) {
+      try {
+        const parsed = JSON.parse(storedSettings);
+        setSettings(parsed);
+      } catch (err) {
+        console.error('Error loading settings:', err);
+      }
     }
-  });
+  }, []);
 
   const sections = [
     { id: 'general', name: 'General Settings', icon: Settings },
@@ -94,10 +108,19 @@ export default function AdminSettings() {
 
   const handleSaveSettings = () => {
     setSaveStatus('saving');
-    setTimeout(() => {
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 2000);
-    }, 1500);
+
+    // Save to localStorage
+    try {
+      localStorage.setItem('admin_settings', JSON.stringify(settings));
+
+      setTimeout(() => {
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      }, 1000);
+    } catch (err) {
+      console.error('Error saving settings:', err);
+      setSaveStatus('idle');
+    }
   };
 
   const handleToggle = (section: string, setting: string) => {

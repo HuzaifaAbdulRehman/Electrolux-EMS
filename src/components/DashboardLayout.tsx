@@ -81,9 +81,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
           { name: 'Bill Calculator', href: '/customer/bill-calculator', icon: Calculator, description: 'Estimate your bill' },
         ]},
         { section: 'SERVICES', items: [
-          { name: 'New Connection', href: '/customer/new-connection', icon: Plus, description: 'Apply for new connection' },
           { name: 'Request Reading', href: '/customer/request-reading', icon: Gauge, description: 'Request meter reading' },
-          { name: 'Services', href: '/customer/services', icon: Activity, description: 'Additional services' },
           { name: 'Complaints', href: '/customer/complaints', icon: MessageSquare, description: 'Report issues' },
           { name: 'Outage Schedule', href: '/customer/outage-schedule', icon: ZapOff, description: 'Planned power outages' },
         ]},
@@ -118,6 +116,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
         { section: 'USER MANAGEMENT', items: [
           { name: 'Customers', href: '/admin/customers', icon: Users, description: 'Manage all customers' },
           { name: 'Employees', href: '/admin/employees', icon: Building, description: 'Manage staff members' },
+          { name: 'Complaints', href: '/admin/complaints', icon: MessageSquare, description: 'Review & assign complaints' },
         ]},
         { section: 'BILLING & FINANCE', items: [
           { name: 'Generate Bills', href: '/admin/bills/generate', icon: FileText, description: 'Bulk bill generation' },
@@ -223,6 +222,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
       case 'billing': return <FileText className="h-5 w-5 text-green-500" />;
       case 'payment': return <DollarSign className="h-5 w-5 text-blue-500" />;
       case 'work_order': return <ClipboardList className="h-5 w-5 text-purple-500" />;
+      case 'complaint': return <MessageSquare className="h-5 w-5 text-orange-500" />;
       case 'alert': return <AlertCircle className="h-5 w-5 text-red-500" />;
       case 'reminder': return <Clock className="h-5 w-5 text-yellow-500" />;
       default: return <Info className="h-5 w-5 text-gray-500" />;

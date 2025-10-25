@@ -1,79 +1,35 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   MessageSquare,
-  Search,
-  Filter,
   Eye,
-  User,
+  CheckCircle,
   Clock,
   AlertCircle,
-  CheckCircle,
   XCircle,
-  Calendar,
-  Phone,
-  Mail,
-  MapPin,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  BarChart3,
-  RefreshCw,
-  Assign,
-  MessageCircle,
-  Star,
-  Flag
+  Zap,
+  DollarSign,
+  Wrench,
+  AlertTriangle,
+  Plug,
+  FileText,
+  Loader2,
+  Save,
+  X,
+  User,
+  Calendar
 } from 'lucide-react';
 
-interface Complaint {
-  id: number;
-  title: string;
-  description: string;
-  status: 'assigned' | 'in_progress' | 'completed' | 'cancelled';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  workType: string;
-  customerId: number;
-  employeeId: number | null;
-  assignedDate: string;
-  dueDate: string;
-  completionDate: string | null;
-  completionNotes: string | null;
-  createdAt: string;
-  customerName: string;
-  customerPhone: string;
-  customerEmail: string;
-  customerAddress: string;
-  employeeName: string | null;
-}
-
 export default function AdminComplaints() {
-  const router = useRouter();
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [complaints, setComplaints] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [priorityFilter, setPriorityFilter] = useState('all');
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [selectedComplaint, setSelectedComplaint] = useState<any>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [availableEmployees, setAvailableEmployees] = useState<any[]>([]);
-  const [selectedEmployee, setSelectedEmployee] = useState<number | null>(null);
-  const [completionNotes, setCompletionNotes] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  // Stats
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    inProgress: 0,
-    completed: 0,
-    overdue: 0,
-    avgResolutionTime: 0
-  });
+  const [selectedEmployee, setSelectedEmployee] = useState('');
 
   useEffect(() => {
     fetchComplaints();
@@ -83,22 +39,18 @@ export default function AdminComplaints() {
   const fetchComplaints = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (statusFilter !== 'all') params.append('status', statusFilter);
-      if (priorityFilter !== 'all') params.append('priority', priorityFilter);
-      if (searchQuery) params.append('search', searchQuery);
-
-      const response = await fetch(`/api/work-orders?workType=complaint_resolution&${params.toString()}`);
-      const data = await response.json();
+      setError(null);
+      const response = await fetch('/api/complaints');
+      const result = await response.json();
       
-      if (data.success) {
-        setComplaints(data.data || []);
-        calculateStats(data.data || []);
+      if (result.success) {
+        setComplaints(result.data);
       } else {
-        setError(data.error || 'Failed to fetch complaints');
+        setError(result.error || 'Failed to fetch complaints');
       }
     } catch (err) {
-      setError('Failed to fetch complaints');
+      setError('Network error while fetching complaints');
+      console.error('Error fetching complaints:', err);
     } finally {
       setLoading(false);
     }
@@ -107,553 +59,356 @@ export default function AdminComplaints() {
   const fetchEmployees = async () => {
     try {
       const response = await fetch('/api/employees');
-      const data = await response.json();
-      if (data.success) {
-        setAvailableEmployees(data.data || []);
+      const result = await response.json();
+      if (result.success) {
+        setEmployees(result.data);
       }
     } catch (err) {
       console.error('Error fetching employees:', err);
     }
   };
 
-  const calculateStats = (complaintData: Complaint[]) => {
-    const now = new Date();
-    const total = complaintData.length;
-    const pending = complaintData.filter(c => c.status === 'assigned').length;
-    const inProgress = complaintData.filter(c => c.status === 'in_progress').length;
-    const completed = complaintData.filter(c => c.status === 'completed').length;
-    const overdue = complaintData.filter(c => {
-      if (c.status === 'completed') return false;
-      return new Date(c.dueDate) < now;
-    }).length;
-
-    // Calculate average resolution time for completed complaints
-    const completedComplaints = complaintData.filter(c => c.status === 'completed' && c.completionDate);
-    let avgResolutionTime = 0;
-    if (completedComplaints.length > 0) {
-      const totalHours = completedComplaints.reduce((sum, c) => {
-        const created = new Date(c.createdAt);
-        const completed = new Date(c.completionDate!);
-        return sum + (completed.getTime() - created.getTime()) / (1000 * 60 * 60);
-      }, 0);
-      avgResolutionTime = Math.round(totalHours / completedComplaints.length);
+  const handleStatusUpdate = async (complaintId: number, status: string) => {
+    try {
+      const response = await fetch(`/api/complaints/${complaintId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      
+      if (response.ok) {
+        await fetchComplaints();
+        setSelectedComplaint(null);
+      } else {
+        const error = await response.json();
+        setError(error.error || 'Failed to update complaint');
+      }
+    } catch (err) {
+      setError('Network error while updating complaint');
+      console.error('Error updating complaint:', err);
     }
-
-    setStats({
-      total,
-      pending,
-      inProgress,
-      completed,
-      overdue,
-      avgResolutionTime
-    });
   };
 
   const handleAssignComplaint = async () => {
     if (!selectedComplaint || !selectedEmployee) return;
-
-    setIsProcessing(true);
+    
     try {
-      const response = await fetch(`/api/work-orders/${selectedComplaint.id}`, {
+      setError(null);
+      const response = await fetch(`/api/complaints/${selectedComplaint.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employeeId: selectedEmployee,
-          status: 'assigned'
+        body: JSON.stringify({ 
+          status: 'assigned',
+          employeeId: parseInt(selectedEmployee)
         })
       });
-
+      
       if (response.ok) {
+        await fetchComplaints();
         setShowAssignModal(false);
         setSelectedComplaint(null);
-        setSelectedEmployee(null);
-        fetchComplaints();
+        setSelectedEmployee('');
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to assign complaint');
+        const error = await response.json();
+        console.error('Assignment error:', error);
+        setError(error.error || error.details || 'Failed to assign complaint');
       }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsProcessing(false);
+    } catch (err) {
+      setError('Network error while assigning complaint');
+      console.error('Error assigning complaint:', err);
     }
   };
 
-  const handleCompleteComplaint = async () => {
-    if (!selectedComplaint) return;
-
-    setIsProcessing(true);
-    try {
-      const response = await fetch(`/api/work-orders/${selectedComplaint.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: 'completed',
-          completionNotes: completionNotes
-        })
-      });
-
-      if (response.ok) {
-        setShowDetailsModal(false);
-        setSelectedComplaint(null);
-        setCompletionNotes('');
-        fetchComplaints();
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to complete complaint');
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsProcessing(false);
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'submitted': return <Clock className="w-4 h-4 text-blue-500" />;
+      case 'under_review': return <Eye className="w-4 h-4 text-yellow-500" />;
+      case 'assigned': return <AlertCircle className="w-4 h-4 text-orange-500" />;
+      case 'in_progress': return <Zap className="w-4 h-4 text-purple-500" />;
+      case 'resolved': return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'closed': return <XCircle className="w-4 h-4 text-gray-500" />;
+      default: return <Clock className="w-4 h-4 text-gray-500" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'assigned': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'in_progress': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'submitted': return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
+      case 'under_review': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
+      case 'assigned': return 'bg-orange-500/20 text-orange-400 border-orange-500/50';
+      case 'in_progress': return 'bg-purple-500/20 text-purple-400 border-purple-500/50';
+      case 'resolved': return 'bg-green-500/20 text-green-400 border-green-500/50';
+      case 'closed': return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'urgent': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'urgent': return 'bg-red-500/20 text-red-400 border-red-500/50';
+      case 'high': return 'bg-orange-500/20 text-orange-400 border-orange-500/50';
+      case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
+      case 'low': return 'bg-green-500/20 text-green-400 border-green-500/50';
+      default: return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
     }
   };
 
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case 'urgent': return <Flag className="w-3 h-3" />;
-      case 'high': return <AlertCircle className="w-3 h-3" />;
-      case 'medium': return <Clock className="w-3 h-3" />;
-      case 'low': return <CheckCircle className="w-3 h-3" />;
-      default: return <Clock className="w-3 h-3" />;
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'power_outage': return <Zap className="w-5 h-5 text-red-500" />;
+      case 'billing': return <DollarSign className="w-5 h-5 text-green-500" />;
+      case 'service': return <Wrench className="w-5 h-5 text-blue-500" />;
+      case 'meter_issue': return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
+      case 'connection': return <Plug className="w-5 h-5 text-purple-500" />;
+      default: return <FileText className="w-5 h-5 text-gray-500" />;
     }
   };
 
-  const filteredComplaints = complaints.filter(complaint => {
-    const matchesSearch = complaint.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         complaint.customerName.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
-
-  if (loading) {
-    return (
-      <DashboardLayout userType="admin">
-        <div className="flex items-center justify-center h-64">
-          <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
-        </div>
-      </DashboardLayout>
-    );
-  }
+  const getCategoryName = (category: string) => {
+    switch (category) {
+      case 'power_outage': return 'Power Outage';
+      case 'billing': return 'Billing Issue';
+      case 'service': return 'Service Request';
+      case 'meter_issue': return 'Meter Issue';
+      case 'connection': return 'Connection Issue';
+      default: return 'Other';
+    }
+  };
 
   return (
-    <DashboardLayout userType="admin">
+    <DashboardLayout userType="admin" userName="Admin User">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Complaint Management</h1>
-            <p className="text-gray-600 dark:text-gray-400">Manage customer complaints and feedback</p>
-          </div>
-          <button
-            onClick={fetchComplaints}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span>Refresh</span>
-          </button>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Total Complaints</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-              </div>
-              <MessageSquare className="w-8 h-8 text-blue-500" />
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Pending</p>
-                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-              </div>
-              <Clock className="w-8 h-8 text-yellow-500" />
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">In Progress</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.inProgress}</p>
-              </div>
-              <BarChart3 className="w-8 h-8 text-blue-500" />
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Completed</p>
-                <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-              </div>
-              <CheckCircle className="w-8 h-8 text-green-500" />
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Overdue</p>
-                <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
-              </div>
-              <AlertCircle className="w-8 h-8 text-red-500" />
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Avg Resolution</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.avgResolutionTime}h</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-purple-500" />
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Complaint Management</h1>
+              <p className="text-gray-600 dark:text-gray-400">Review and manage customer complaints</p>
             </div>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-64">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search complaints..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                />
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center space-x-2">
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            <span className="text-red-700 dark:text-red-300">{error}</span>
+          </div>
+        )}
+
+        {/* Statistics */}
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          {[
+            { 
+              label: 'Total Complaints', 
+              value: complaints.length.toString(), 
+              icon: MessageSquare, 
+              color: 'from-blue-500 to-cyan-500' 
+            },
+            { 
+              label: 'Pending Review', 
+              value: complaints.filter(c => c.status === 'submitted').length.toString(), 
+              icon: Clock, 
+              color: 'from-yellow-500 to-orange-500' 
+            },
+            { 
+              label: 'In Progress', 
+              value: complaints.filter(c => ['assigned', 'in_progress'].includes(c.status)).length.toString(), 
+              icon: Zap, 
+              color: 'from-purple-500 to-pink-500' 
+            },
+            { 
+              label: 'Resolved', 
+              value: complaints.filter(c => ['resolved', 'closed'].includes(c.status)).length.toString(), 
+              icon: CheckCircle, 
+              color: 'from-green-500 to-emerald-500' 
+            }
+          ].map((stat, index) => (
+            <div key={index} className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">{stat.label}</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
+                </div>
+                <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center`}>
+                  <stat.icon className="w-6 h-6 text-white" />
+                </div>
               </div>
             </div>
-
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            >
-              <option value="all">All Status</option>
-              <option value="assigned">Assigned</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-            >
-              <option value="all">All Priority</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-              <option value="urgent">Urgent</option>
-            </select>
-          </div>
+          ))}
         </div>
 
-        {/* Complaints Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Complaint
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Priority
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Assigned To
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Due Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredComplaints.length > 0 ? (
-                  filteredComplaints.map((complaint) => (
-                    <tr key={complaint.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {complaint.title}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
-                            {complaint.description}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {complaint.customerName}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {complaint.customerPhone}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getStatusColor(complaint.status)}`}>
-                          {complaint.status.charAt(0).toUpperCase() + complaint.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getPriorityColor(complaint.priority)}`}>
-                          {getPriorityIcon(complaint.priority)}
-                          <span className="ml-1">{complaint.priority.charAt(0).toUpperCase() + complaint.priority.slice(1)}</span>
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-900 dark:text-white">
-                          {complaint.employeeName || 'Unassigned'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-gray-900 dark:text-white">
-                          {new Date(complaint.dueDate).toLocaleDateString()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => {
-                              setSelectedComplaint(complaint);
-                              setShowDetailsModal(true);
-                            }}
-                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          {complaint.status === 'assigned' && !complaint.employeeId && (
-                            <button
-                              onClick={() => {
-                                setSelectedComplaint(complaint);
-                                setShowAssignModal(true);
-                              }}
-                              className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
-                            >
-                              <Assign className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
-                      <div className="flex flex-col items-center justify-center">
-                        <MessageSquare className="w-12 h-12 text-gray-400 mb-3" />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">No Complaints Found</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          No complaints match your search criteria.
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Assign Modal */}
-        {showAssignModal && selectedComplaint && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Assign Complaint
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                {selectedComplaint.title}
+        {/* Complaints List */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+              <span className="ml-3 text-gray-600 dark:text-gray-400">Loading complaints...</span>
+            </div>
+          ) : complaints.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <MessageSquare className="w-16 h-16 text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Complaints</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-center">
+                No complaints have been submitted yet
               </p>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Assign to Employee
-                </label>
-                <select
-                  value={selectedEmployee || ''}
-                  onChange={(e) => setSelectedEmployee(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="">Select Employee</option>
-                  {availableEmployees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.fullName} - {emp.position}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200 dark:divide-white/10">
+              {complaints.map((complaint) => (
+                <div key={complaint.id} className="p-6 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        {getCategoryIcon(complaint.category)}
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {complaint.title}
+                        </h3>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(complaint.status)}`}>
+                          {getStatusIcon(complaint.status)}
+                          <span className="ml-1 capitalize">{complaint.status.replace('_', ' ')}</span>
+                        </span>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(complaint.priority)}`}>
+                          {complaint.priority}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 dark:text-gray-400 mb-3">{complaint.description}</p>
+                      <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                        <span>Category: {getCategoryName(complaint.category)}</span>
+                        <span>Submitted: {new Date(complaint.submittedAt).toLocaleDateString()}</span>
+                        {complaint.resolvedAt && (
+                          <span>Resolved: {new Date(complaint.resolvedAt).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                      {complaint.resolutionNotes && (
+                        <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                          <p className="text-sm text-green-800 dark:text-green-200">
+                            <strong>Resolution:</strong> {complaint.resolutionNotes}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2 ml-4">
+                      {complaint.status === 'submitted' && (
+                        <button
+                          onClick={() => {
+                            setSelectedComplaint(complaint);
+                            setShowAssignModal(true);
+                          }}
+                          className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                        >
+                          Assign
+                        </button>
+                      )}
+                      {complaint.status === 'under_review' && (
+                        <button
+                          onClick={() => {
+                            setSelectedComplaint(complaint);
+                            setShowAssignModal(true);
+                          }}
+                          className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                        >
+                          Assign
+                        </button>
+                      )}
+                      {complaint.status === 'assigned' && (
+                        <button
+                          onClick={() => handleStatusUpdate(complaint.id, 'in_progress')}
+                          className="px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm"
+                        >
+                          Start Work
+                        </button>
+                      )}
+                      {complaint.status === 'in_progress' && (
+                        <button
+                          onClick={() => handleStatusUpdate(complaint.id, 'resolved')}
+                          className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
+                        >
+                          Mark Resolved
+                        </button>
+                      )}
+                      {complaint.status === 'resolved' && (
+                        <button
+                          onClick={() => handleStatusUpdate(complaint.id, 'closed')}
+                          className="px-3 py-1 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                        >
+                          Close
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleAssignComplaint}
-                  disabled={!selectedEmployee || isProcessing}
-                  className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isProcessing ? 'Assigning...' : 'Assign'}
-                </button>
+        {/* Assign Complaint Modal */}
+        {showAssignModal && selectedComplaint && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Assign Complaint</h2>
                 <button
                   onClick={() => {
                     setShowAssignModal(false);
                     setSelectedComplaint(null);
-                    setSelectedEmployee(null);
+                    setSelectedEmployee('');
                   }}
-                  className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
-                  Cancel
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* Details Modal */}
-        {showDetailsModal && selectedComplaint && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Complaint Details
-              </h3>
-              
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Title</label>
-                  <p className="text-sm text-gray-900 dark:text-white">{selectedComplaint.title}</p>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-                  <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">{selectedComplaint.description}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getStatusColor(selectedComplaint.status)}`}>
-                      {selectedComplaint.status.charAt(0).toUpperCase() + selectedComplaint.status.slice(1)}
-                    </span>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getPriorityColor(selectedComplaint.priority)}`}>
-                      {getPriorityIcon(selectedComplaint.priority)}
-                      <span className="ml-1">{selectedComplaint.priority.charAt(0).toUpperCase() + selectedComplaint.priority.slice(1)}</span>
-                    </span>
-                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    {selectedComplaint.title}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    {selectedComplaint.description}
+                  </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Customer Information</label>
-                  <div className="mt-2 space-y-1">
-                    <p className="text-sm text-gray-900 dark:text-white"><strong>Name:</strong> {selectedComplaint.customerName}</p>
-                    <p className="text-sm text-gray-900 dark:text-white"><strong>Phone:</strong> {selectedComplaint.customerPhone}</p>
-                    <p className="text-sm text-gray-900 dark:text-white"><strong>Email:</strong> {selectedComplaint.customerEmail}</p>
-                    <p className="text-sm text-gray-900 dark:text-white"><strong>Address:</strong> {selectedComplaint.customerAddress}</p>
-                  </div>
-                </div>
-
-                {selectedComplaint.employeeName && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Assigned Employee</label>
-                    <p className="text-sm text-gray-900 dark:text-white">{selectedComplaint.employeeName}</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Created Date</label>
-                    <p className="text-sm text-gray-900 dark:text-white">{new Date(selectedComplaint.createdAt).toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Due Date</label>
-                    <p className="text-sm text-gray-900 dark:text-white">{new Date(selectedComplaint.dueDate).toLocaleString()}</p>
-                  </div>
-                </div>
-
-                {selectedComplaint.completionNotes && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Completion Notes</label>
-                    <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">{selectedComplaint.completionNotes}</p>
-                  </div>
-                )}
-
-                {selectedComplaint.status !== 'completed' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Completion Notes
-                    </label>
-                    <textarea
-                      value={completionNotes}
-                      onChange={(e) => setCompletionNotes(e.target.value)}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                      placeholder="Enter resolution details..."
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex space-x-3 mt-6">
-                {selectedComplaint.status !== 'completed' && (
-                  <button
-                    onClick={handleCompleteComplaint}
-                    disabled={isProcessing}
-                    className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Assign to Employee
+                  </label>
+                  <select
+                    value={selectedEmployee}
+                    onChange={(e) => setSelectedEmployee(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-white [&>option]:dark:bg-gray-800 [&>option]:text-gray-900 [&>option]:dark:text-white"
                   >
-                    {isProcessing ? 'Completing...' : 'Mark as Completed'}
+                    <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Select Employee</option>
+                    {employees.map((employee) => (
+                      <option key={employee.id} value={employee.id} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                        {employee.employeeNumber || `employee${employee.id}`} - {employee.employeeName} - {employee.department} - {employee.designation} - Work Orders: {employee.workOrdersCount || 0}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center space-x-3 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowAssignModal(false);
+                      setSelectedComplaint(null);
+                      setSelectedEmployee('');
+                    }}
+                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/10 rounded-lg hover:bg-gray-200 dark:bg-white/20 transition-colors"
+                  >
+                    Cancel
                   </button>
-                )}
-                <button
-                  onClick={() => {
-                    setShowDetailsModal(false);
-                    setSelectedComplaint(null);
-                    setCompletionNotes('');
-                  }}
-                  className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400"
-                >
-                  Close
-                </button>
+                  <button
+                    onClick={handleAssignComplaint}
+                    disabled={!selectedEmployee}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
+                  >
+                    <User className="w-4 h-4" />
+                    <span>Assign Complaint</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

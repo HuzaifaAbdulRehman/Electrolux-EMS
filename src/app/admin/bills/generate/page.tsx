@@ -11,7 +11,8 @@ import {
   CheckCircle,
   TrendingUp,
   Download,
-  PlayCircle
+  PlayCircle,
+  Eye
 } from 'lucide-react';
 
 export default function BulkBillGeneration() {
@@ -28,9 +29,21 @@ export default function BulkBillGeneration() {
     try {
       const response = await fetch(`/api/bills/preview?month=${selectedMonth}-01`);
       const result = await response.json();
-      
-      if (result.success) {
-        setPreviewData(result.data);
+
+      console.log('[Load Preview] API Response:', result);
+
+      if (result.success && result.data) {
+        // Map API response to expected structure
+        setPreviewData({
+          total_customers: result.data.summary.totalActiveCustomers,
+          with_readings: result.data.summary.customersWithReadings,
+          without_readings: result.data.summary.customersWithoutReadings,
+          eligible_for_generation: result.data.summary.eligibleForGeneration,
+          estimated_revenue: result.data.summary.estimatedRevenue,
+          category_breakdown: result.data.categoryBreakdown,
+          issues: result.data.issues,
+          existing_bills: result.data.existingBills
+        });
       } else {
         console.error('Preview error:', result.error);
         setPreviewData(null);
@@ -110,10 +123,10 @@ export default function BulkBillGeneration() {
       ['Billing Month', 'Total Customers', 'Bills Generated', 'Failed', 'Total Amount'],
       [
         selectedMonth,
-        generationResult.total_processed,
-        generationResult.bills_generated,
-        generationResult.failed,
-        generationResult.total_amount || 'N/A'
+        generationResult.totalProcessed,
+        generationResult.billsGenerated,
+        generationResult.failedCount || 0,
+        generationResult.totalAmount || 'N/A'
       ]
     ].map(row => row.join(',')).join('\n');
 
@@ -182,55 +195,161 @@ export default function BulkBillGeneration() {
 
           {/* Preview Statistics */}
           {previewData && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-sm rounded-xl p-4 border border-blue-500/30">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-gray-700 dark:text-gray-300 text-sm">Total Customers</p>
-                  <Users className="w-5 h-5 text-blue-400" />
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-sm rounded-xl p-4 border border-blue-500/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-gray-700 dark:text-gray-300 text-sm">Total Customers</p>
+                    <Users className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{previewData.total_customers}</p>
                 </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{previewData.total_customers}</p>
+
+                <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm rounded-xl p-4 border border-green-500/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-gray-700 dark:text-gray-300 text-sm">With Meter Readings</p>
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{previewData.with_readings}</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-sm rounded-xl p-4 border border-yellow-500/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-gray-700 dark:text-gray-300 text-sm">No Readings</p>
+                    <AlertCircle className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{previewData.without_readings}</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-xl p-4 border border-purple-500/30">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-gray-700 dark:text-gray-300 text-sm">Eligible for Generation</p>
+                    <Zap className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{previewData.eligible_for_generation}</p>
+                </div>
               </div>
 
-              <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-sm rounded-xl p-4 border border-green-500/30">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-gray-700 dark:text-gray-300 text-sm">With Meter Readings</p>
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{previewData.with_readings}</p>
-              </div>
+              {/* Existing Bills Information */}
+              {previewData.existing_bills && previewData.existing_bills.total > 0 && (
+                <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                        <FileText className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">Bills Already Generated</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {previewData.existing_bills.total} bills exist for {selectedMonth}
+                          {previewData.existing_bills.generatedAt && (
+                            <> • Generated on {new Date(previewData.existing_bills.generatedAt).toLocaleDateString()}</>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Total Amount</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        ₹{previewData.existing_bills.totalAmount.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
 
-              <div className="bg-gradient-to-br from-yellow-500/20 to-orange-500/20 backdrop-blur-sm rounded-xl p-4 border border-yellow-500/30">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-gray-700 dark:text-gray-300 text-sm">No Readings</p>
-                  <AlertCircle className="w-5 h-5 text-yellow-400" />
-                </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{previewData.without_readings}</p>
-              </div>
-            </div>
-          )}
+                  {/* Status Breakdown */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                    <div className="bg-yellow-500/20 backdrop-blur-sm rounded-lg p-3 border border-yellow-500/30">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Pending</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{previewData.existing_bills.statusCounts.pending}</p>
+                    </div>
+                    <div className="bg-blue-500/20 backdrop-blur-sm rounded-lg p-3 border border-blue-500/30">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Issued</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{previewData.existing_bills.statusCounts.issued}</p>
+                    </div>
+                    <div className="bg-green-500/20 backdrop-blur-sm rounded-lg p-3 border border-green-500/30">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Paid</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{previewData.existing_bills.statusCounts.paid}</p>
+                    </div>
+                    <div className="bg-red-500/20 backdrop-blur-sm rounded-lg p-3 border border-red-500/30">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Overdue</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{previewData.existing_bills.statusCounts.overdue}</p>
+                    </div>
+                    <div className="bg-gray-500/20 backdrop-blur-sm rounded-lg p-3 border border-gray-500/30">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Cancelled</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{previewData.existing_bills.statusCounts.cancelled}</p>
+                    </div>
+                  </div>
 
-          {/* Warning Message */}
-          {previewData && previewData.without_readings > 0 && (
-            <div className="bg-yellow-500/20 backdrop-blur-sm rounded-xl p-4 border border-yellow-500/50 mb-6">
-              <div className="flex items-start space-x-3">
-                <AlertCircle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="text-white font-semibold mb-1">Warning</h3>
-                  <p className="text-gray-700 dark:text-gray-300 text-sm">
-                    {previewData.without_readings} customers do not have meter readings for {selectedMonth}.
-                    Bills will only be generated for customers with valid meter readings.
-                  </p>
+                  {/* Confirmation Message */}
+                  <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    <span>Bills have been generated for this billing period</span>
+                  </div>
                 </div>
-              </div>
-            </div>
+              )}
+
+              {/* Estimated Revenue */}
+              {previewData.estimated_revenue > 0 && (
+                <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                        {previewData.existing_bills && previewData.existing_bills.total > 0
+                          ? 'Additional Revenue (for remaining customers)'
+                          : 'Estimated Revenue'
+                        }
+                      </p>
+                      <p className="text-3xl font-bold text-gray-900 dark:text-white">₹{previewData.estimated_revenue.toLocaleString()}</p>
+                    </div>
+                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                      <TrendingUp className="w-6 h-6 text-white" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Issues/Warnings Display */}
+              {previewData.issues && previewData.issues.length > 0 && (
+                <div className="space-y-3 mb-6">
+                  {previewData.issues.map((issue: any, index: number) => (
+                    <div
+                      key={index}
+                      className={`bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border ${
+                        issue.type === 'error'
+                          ? 'border-red-500/30 dark:border-red-500/50'
+                          : issue.type === 'warning'
+                          ? 'border-yellow-500/30 dark:border-yellow-500/50'
+                          : 'border-blue-500/30 dark:border-blue-500/50'
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <AlertCircle
+                          className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                            issue.type === 'error'
+                              ? 'text-red-500'
+                              : issue.type === 'warning'
+                              ? 'text-yellow-500'
+                              : 'text-blue-500'
+                          }`}
+                        />
+                        <div>
+                          <h4 className="text-gray-900 dark:text-white font-semibold capitalize mb-1">{issue.type}</h4>
+                          <p className="text-gray-600 dark:text-gray-400 text-sm">{issue.message}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           {/* Generate Button */}
           <button
             onClick={handleGenerateBills}
-            disabled={isGenerating || !previewData}
+            disabled={isGenerating || !previewData || (previewData.eligible_for_generation === 0)}
             className={`w-full px-8 py-4 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl transition-all font-bold text-lg flex items-center justify-center space-x-3 ${
-              isGenerating || !previewData
+              isGenerating || !previewData || (previewData.eligible_for_generation === 0)
                 ? 'opacity-70 cursor-not-allowed'
                 : 'hover:shadow-2xl hover:shadow-red-500/50 transform hover:scale-[1.02]'
             }`}
@@ -239,6 +358,16 @@ export default function BulkBillGeneration() {
               <>
                 <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
                 <span>Generating Bills... {generationProgress}%</span>
+              </>
+            ) : previewData && previewData.existing_bills && previewData.existing_bills.total > 0 && previewData.eligible_for_generation > 0 ? (
+              <>
+                <PlayCircle className="w-6 h-6" />
+                <span>Generate Bills for Remaining {previewData.eligible_for_generation} Customers</span>
+              </>
+            ) : previewData && previewData.eligible_for_generation === 0 ? (
+              <>
+                <CheckCircle className="w-6 h-6" />
+                <span>All Bills Already Generated for {selectedMonth}</span>
               </>
             ) : (
               <>
@@ -287,23 +416,25 @@ export default function BulkBillGeneration() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
                 <p className="text-gray-400 text-xs mb-1">Total Processed</p>
-                <p className="text-white font-bold text-2xl">{generationResult.total_processed}</p>
+                <p className="text-white font-bold text-2xl">{generationResult.totalProcessed || 0}</p>
               </div>
 
               <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
                 <p className="text-gray-400 text-xs mb-1">Bills Generated</p>
-                <p className="text-green-400 font-bold text-2xl">{generationResult.bills_generated}</p>
+                <p className="text-green-400 font-bold text-2xl">{generationResult.billsGenerated || 0}</p>
               </div>
 
               <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
                 <p className="text-gray-400 text-xs mb-1">Failed</p>
-                <p className="text-red-400 font-bold text-2xl">{generationResult.failed}</p>
+                <p className="text-red-400 font-bold text-2xl">{generationResult.failedCount || 0}</p>
               </div>
 
               <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
                 <p className="text-gray-400 text-xs mb-1">Success Rate</p>
                 <p className="text-blue-400 font-bold text-2xl">
-                  {((generationResult.bills_generated / generationResult.total_processed) * 100).toFixed(1)}%
+                  {generationResult.totalProcessed > 0
+                    ? ((generationResult.billsGenerated / generationResult.totalProcessed) * 100).toFixed(1)
+                    : '0.0'}%
                 </p>
               </div>
             </div>

@@ -56,16 +56,34 @@ export async function GET(request: NextRequest) {
         )
       );
 
-    // 3. Get customers who already have bills for this month
-    const customersWithBills = await db
-      .select({ customerId: bills.customerId })
+    // 3. Get customers who already have bills for this month (with detailed info)
+    const existingBills = await db
+      .select({
+        customerId: bills.customerId,
+        billId: bills.id,
+        accountNumber: customers.accountNumber,
+        fullName: customers.fullName,
+        totalAmount: bills.totalAmount,
+        status: bills.status,
+        dueDate: bills.dueDate,
+        generatedAt: bills.createdAt
+      })
       .from(bills)
+      .innerJoin(customers, eq(bills.customerId, customers.id))
       .where(
-        and(
-          sql`DATE(${bills.billingMonth}) = ${billingMonth}`,
-          sql`${bills.status} IN ('issued', 'paid')`
-        )
+        sql`DATE(${bills.billingMonth}) = ${billingMonth}`
       );
+
+    // Separate by status
+    const billsByStatus = existingBills.reduce((acc, bill) => {
+      const status = bill.status;
+      if (!acc[status]) acc[status] = [];
+      acc[status].push(bill);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    const totalExistingBills = existingBills.length;
+    const totalBillAmount = existingBills.reduce((sum, bill) => sum + parseFloat(bill.totalAmount || '0'), 0);
 
     // 4. Get available tariffs
     const availableTariffs = await db
@@ -96,7 +114,7 @@ export async function GET(request: NextRequest) {
     });
 
     // 6. Calculate eligible customers (have reading, no existing bill)
-    const customersWithBillsSet = new Set(customersWithBills.map(b => b.customerId));
+    const customersWithBillsSet = new Set(existingBills.map(b => b.customerId));
     const eligibleCustomers = customersWithReadings.filter(
       customer => !customersWithBillsSet.has(customer.customerId)
     );
@@ -175,9 +193,23 @@ export async function GET(request: NextRequest) {
         totalActiveCustomers: totalActiveCustomers.count,
         customersWithReadings: customersWithReadings.length,
         customersWithoutReadings: customersWithoutReadings,
-        customersWithExistingBills: customersWithBills.length,
+        customersWithExistingBills: totalExistingBills,
         eligibleForGeneration: eligibleCustomers.length,
         estimatedRevenue: Math.round(estimatedRevenue * 100) / 100
+      },
+      existingBills: {
+        total: totalExistingBills,
+        totalAmount: Math.round(totalBillAmount * 100) / 100,
+        byStatus: billsByStatus,
+        statusCounts: {
+          pending: billsByStatus['pending']?.length || 0,
+          issued: billsByStatus['issued']?.length || 0,
+          paid: billsByStatus['paid']?.length || 0,
+          overdue: billsByStatus['overdue']?.length || 0,
+          cancelled: billsByStatus['cancelled']?.length || 0
+        },
+        details: existingBills.slice(0, 10), // First 10 for preview
+        generatedAt: existingBills[0]?.generatedAt || null
       },
       categoryBreakdown: categoryAnalysis,
       issues,

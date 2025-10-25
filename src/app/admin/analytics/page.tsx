@@ -106,6 +106,36 @@ export default function AdminAnalytics() {
     });
   };
 
+  const handleExportAnalytics = () => {
+    if (!dashboardData) {
+      setError('No data available to export');
+      return;
+    }
+
+    // Create comprehensive analytics CSV
+    const headers = ['Metric', 'Value', 'Trend', 'Change'];
+    const csvRows = [
+      headers.join(','),
+      ...Object.entries(kpis).map(([key, data]: [string, any]) => [
+        `"${key.replace('avg', 'Avg ')}"`,
+        `"${data.value}"`,
+        data.trend,
+        `"${data.change}"`
+      ].join(','))
+    ];
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `analytics_${selectedPeriod}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <DashboardLayout userType="admin" userName="Admin User">
@@ -297,13 +327,13 @@ export default function AdminAnalytics() {
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
+                className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium transition-colors"
               >
-                <option value="day">Today</option>
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
-                <option value="quarter">This Quarter</option>
-                <option value="year">This Year</option>
+                <option value="day" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Today</option>
+                <option value="week" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Week</option>
+                <option value="month" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Month</option>
+                <option value="quarter" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Quarter</option>
+                <option value="year" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Year</option>
               </select>
               <button
                 onClick={handleRefresh}
@@ -315,9 +345,13 @@ export default function AdminAnalytics() {
                 <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
               </button>
-              <button className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-pink-500/50 transition-all flex items-center space-x-2">
+              <button
+                onClick={handleExportAnalytics}
+                disabled={!dashboardData || loading}
+                className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-pink-500/50 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <Download className="w-5 h-5" />
-                <span>Export</span>
+                <span>Export CSV</span>
               </button>
             </div>
           </div>
@@ -329,7 +363,7 @@ export default function AdminAnalytics() {
             <div key={key} className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
               <div className="flex items-center justify-between mb-1">
                 <p className="text-gray-600 dark:text-gray-400 text-sm capitalize">{key.replace('avg', 'Avg ')}</p>
-                <Database className="w-4 h-4 text-green-400" title="Real Database Data" />
+                <Database className="w-4 h-4 text-green-400" />
               </div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.value}</p>
               <div className={`flex items-center space-x-1 text-sm ${

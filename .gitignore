@@ -60,3 +60,13 @@ VIVA_SQL_SCRIPTS.sql
 src/app/customer/payment/page.tsx.backup
 .claude/settings.local.json
 .claude/settings.local.json
+CODEBASE_ANALYSIS_REPORT.md
+ANALYSIS_SUMMARY.txt
+CONNECTION_REQUESTS_AND_OUTAGES_ANALYSIS.md
+INCOMPLETE_LOGIC_ANALYSIS.md
+nul
+test-employee-bill-workflow.js
+TESTING_WORKFLOW_GUIDE.md
+TESTING_WORKFLOW.md
+ZONE_BASED_OUTAGES_IMPLEMENTATION.md
+.claude/settings.local.json

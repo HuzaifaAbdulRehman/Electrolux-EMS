@@ -251,7 +251,7 @@ export default function MeterReadingForm() {
   const validateForm = () => {
     const newErrors: any = {};
 
-    if (!selectedCustomer) {
+    if (!selectedCustomer && !modalCustomer) {
       newErrors.customer = 'Please select a customer first';
     }
 
@@ -275,6 +275,12 @@ export default function MeterReadingForm() {
       return;
     }
 
+    const customer = modalCustomer || selectedCustomer;
+    if (!customer) {
+      alert('No customer selected');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setErrors({});
@@ -285,7 +291,7 @@ export default function MeterReadingForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          customerId: selectedCustomer!.id,
+          customerId: customer.id,
           currentReading: readingData.currentReading,
           meterCondition: readingData.meterCondition,
           accessibility: readingData.accessibility,
@@ -483,22 +489,6 @@ export default function MeterReadingForm() {
                       {workOrders.map((wo: any) => (
                         <div
                           key={wo.id}
-                          onClick={() => {
-                            setSelectedCustomer({
-                              id: wo.customerId,
-                              fullName: wo.customerName || 'Unknown',
-                              accountNumber: wo.customerAccount || 'N/A',
-                              meterNumber: wo.meterNumber || 'N/A',
-                              phone: '',
-                              address: '',
-                              city: '',
-                              state: '',
-                              connectionType: '',
-                              averageMonthlyUsage: ''
-                            });
-                            fetchCustomerById(wo.customerId);
-                            setActiveTab('all-customers'); // Switch to form view
-                          }}
                           className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl p-4 cursor-pointer hover:shadow-lg hover:shadow-blue-500/20 transition-all"
                         >
                           <div className="flex items-center justify-between">
@@ -515,12 +505,51 @@ export default function MeterReadingForm() {
                               </div>
                               <p className="text-gray-900 dark:text-white font-semibold">{wo.customerName || 'Unknown Customer'}</p>
                               <p className="text-sm text-gray-600 dark:text-gray-400">Account: {wo.customerAccount || 'N/A'}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">Meter: {wo.meterNumber || 'N/A'}</p>
                               {wo.description && (
                                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{wo.description}</p>
                               )}
                             </div>
                             <div className="text-right">
-                              <button className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all">
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  // Fetch customer details and last reading
+                                  const custResponse = await fetch(`/api/customers?customerId=${wo.customerId}`);
+                                  if (custResponse.ok) {
+                                    const custResult = await custResponse.json();
+                                    if (custResult.success && custResult.data && custResult.data.length > 0) {
+                                      const customer = custResult.data[0];
+
+                                      // Fetch last reading
+                                      const readingResponse = await fetch(`/api/meter-readings?customerId=${wo.customerId}&limit=1`);
+                                      let lastRead = 0;
+                                      let lastDate = null;
+                                      if (readingResponse.ok) {
+                                        const readingResult = await readingResponse.json();
+                                        if (readingResult.success && readingResult.data && readingResult.data.length > 0) {
+                                          lastRead = parseFloat(readingResult.data[0].currentReading);
+                                          lastDate = readingResult.data[0].readingDate;
+                                        }
+                                      }
+
+                                      setModalCustomer({ ...customer, workOrderId: wo.id });
+                                      setLastReading(lastRead);
+                                      setLastReadingDate(lastDate);
+                                      setShowModal(true);
+                                      setReadingData({
+                                        currentReading: '',
+                                        readingDate: new Date().toISOString().split('T')[0],
+                                        readingTime: new Date().toTimeString().slice(0, 5),
+                                        meterCondition: 'good',
+                                        accessibility: 'accessible',
+                                        notes: '',
+                                      });
+                                    }
+                                  }
+                                }}
+                                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all"
+                              >
                                 Enter Reading
                               </button>
                             </div>

@@ -28,18 +28,30 @@ export async function GET(request: NextRequest) {
     const customerId = customer.id;
     const currentMonth = new Date().toISOString().split('T')[0].substring(0, 7) + '-01';
 
-    // Check 1: Does bill already exist for current month?
+    console.log('[API can-request] Customer ID:', customerId);
+    console.log('[API can-request] Current month:', currentMonth);
+
+    // Check 1: Does bill already exist for current month? (use DATE comparison for timezone)
     const [existingBill] = await db
       .select()
       .from(bills)
       .where(and(
         eq(bills.customerId, customerId),
-        eq(bills.billingMonth, currentMonth)
+        sql`DATE(${bills.billingMonth}) = ${currentMonth}` // ✅ Compare DATE only
       ))
       .limit(1);
 
+    console.log('[API can-request] Existing bill found:', !!existingBill);
+    if (existingBill) {
+      console.log('[API can-request] Existing bill details:', {
+        id: existingBill.id,
+        billingMonth: existingBill.billingMonth
+      });
+    }
+
     // SIMPLIFIED LOGIC: Customer can request reading UNLESS bill exists
     if (existingBill) {
+      console.log('[API can-request] Returning: canRequestReading = false (bill exists)');
       return NextResponse.json({
         canRequest: false,
         canRequestReading: false, // Cannot request reading if bill exists
@@ -59,7 +71,10 @@ export async function GET(request: NextRequest) {
       ))
       .limit(1);
 
+    console.log('[API can-request] Pending work order found:', !!pendingWorkOrder);
+
     if (pendingWorkOrder) {
+      console.log('[API can-request] Returning: canRequestReading = false (pending work order)');
       return NextResponse.json({
         canRequest: false,
         canRequestReading: false, // Already has pending request
@@ -68,6 +83,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Customer can request meter reading (no bill exists, no pending request)
+    console.log('[API can-request] Returning: canRequestReading = true (eligible)');
     return NextResponse.json({
       canRequest: false, // Not requesting bill directly
       canRequestReading: true, // CAN request meter reading

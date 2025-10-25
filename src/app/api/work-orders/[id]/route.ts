@@ -28,7 +28,7 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { status, completionNotes } = body;
+    const { status, completionNotes, employeeId } = body;
 
     // Validate status
     const validStatuses = ['assigned', 'in_progress', 'completed', 'cancelled'];
@@ -40,6 +40,7 @@ export async function PATCH(
     const updateData: any = {};
     if (status) updateData.status = status;
     if (completionNotes !== undefined) updateData.completionNotes = completionNotes;
+    if (employeeId) updateData.employeeId = employeeId;
     if (status === 'completed') updateData.completionDate = new Date();
     if (status === 'in_progress' && !updateData.assignedDate) {
       updateData.assignedDate = new Date();

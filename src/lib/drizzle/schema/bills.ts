@@ -1,6 +1,7 @@
 import { mysqlTable, varchar, timestamp, int, decimal, date, mysqlEnum } from 'drizzle-orm/mysql-core';
 import { customers } from './customers';
 import { meterReadings } from './meterReadings';
+import { tariffs } from './tariffs';
 
 export const bills = mysqlTable('bills', {
   id: int('id').primaryKey().autoincrement(),
@@ -24,6 +25,9 @@ export const bills = mysqlTable('bills', {
   // Payment tracking
   status: mysqlEnum('status', ['generated', 'issued', 'paid', 'overdue', 'cancelled']).default('generated').notNull(),
   paymentDate: date('payment_date'),
+
+  // Audit trail - reference to tariff used for this bill
+  tariffId: int('tariff_id').references(() => tariffs.id),
 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),

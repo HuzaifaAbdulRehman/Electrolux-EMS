@@ -26,11 +26,18 @@ export default function BulkBillGeneration() {
   // Load preview data when month changes
   const handleLoadPreview = async () => {
     try {
-      const response = await fetch(`/api/bills/preview?month=${selectedMonth}`);
-      const data = await response.json();
-      setPreviewData(data);
+      const response = await fetch(`/api/bills/preview?month=${selectedMonth}-01`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setPreviewData(result.data);
+      } else {
+        console.error('Preview error:', result.error);
+        setPreviewData(null);
+      }
     } catch (error) {
       console.error('Preview load error:', error);
+      setPreviewData(null);
     }
   };
 
@@ -63,17 +70,31 @@ export default function BulkBillGeneration() {
       });
 
       clearInterval(progressInterval);
-      const data = await response.json();
+      setGenerationProgress(100);
+      
+      const result = await response.json();
 
-      if (response.ok) {
-        setGenerationProgress(100);
-        setGenerationResult(data);
+      if (response.ok && result.success) {
+        setGenerationResult({
+          success: true,
+          ...result.summary,
+          generatedBills: result.generatedBills,
+          failed: result.failed
+        });
       } else {
-        alert(data.error || 'Failed to generate bills');
+        setGenerationResult({
+          success: false,
+          error: result.error || 'Failed to generate bills',
+          details: result.details
+        });
       }
     } catch (error) {
       console.error('Bulk generation error:', error);
-      alert('Failed to generate bills. Please try again.');
+      setGenerationResult({
+        success: false,
+        error: 'Network error during bill generation',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     } finally {
       setTimeout(() => {
         setIsGenerating(false);

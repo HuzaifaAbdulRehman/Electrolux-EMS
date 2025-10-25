@@ -21,7 +21,8 @@ import {
   Phone,
   Navigation,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Gauge
 } from 'lucide-react';
 
 interface WorkOrder {
@@ -482,6 +483,24 @@ export default function WorkOrders() {
                             <Play className="w-4 h-4" />
                           )}
                           <span>Start Work</span>
+                        </button>
+                      )}
+                      {order.status === 'in_progress' && order.workType === 'meter_reading' && (
+                        <button
+                          onClick={() => {
+                            // Redirect to meter reading page with customer info
+                            const params = new URLSearchParams({
+                              customerId: order.customerId?.toString() || '',
+                              customerName: order.customerName || '',
+                              accountNumber: order.customerAccount || '',
+                              workOrderId: order.id.toString()
+                            });
+                            window.location.href = `/employee/meter-reading?${params.toString()}`;
+                          }}
+                          className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all flex items-center space-x-2 text-sm font-medium"
+                        >
+                          <Gauge className="w-4 h-4" />
+                          <span>Take Reading</span>
                         </button>
                       )}
                       {order.status === 'in_progress' && (

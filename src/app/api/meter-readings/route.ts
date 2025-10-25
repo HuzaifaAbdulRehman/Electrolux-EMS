@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { meterReadings, customers, employees } from '@/lib/drizzle/schema';
+import { meterReadings, customers, employees, notifications } from '@/lib/drizzle/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 
 // GET /api/meter-readings - Get meter readings
@@ -125,13 +125,25 @@ export async function POST(request: NextRequest) {
     const previousReadingValue = previousReading ? parseFloat(previousReading.currentReading) : 0;
     const currentReadingValue = parseFloat(currentReading);
 
-    if (currentReadingValue < previousReadingValue) {
+    // Professional validation: Allow any reading value
+    // Lower readings are normal for: meter replacement, rollover, seasonal usage, meter repair
+    if (currentReadingValue < 0) {
       return NextResponse.json({
-        error: 'Current reading cannot be less than previous reading'
+        error: 'Reading cannot be negative'
       }, { status: 400 });
     }
+    
+    // Log warning for lower readings (not blocking)
+    if (currentReadingValue < previousReadingValue) {
+      console.log(`⚠️  WARNING: Customer ${customerId} - Current reading (${currentReadingValue}) is less than previous reading (${previousReadingValue})`);
+      console.log(`This is normal for: meter replacement, rollover, seasonal usage, or meter repair`);
+    }
 
+    // Calculate units consumed (can be negative for meter replacement/rollover)
     const unitsConsumed = currentReadingValue - previousReadingValue;
+    
+    // Log the calculation for transparency
+    console.log(`📊 Units consumed calculation: ${currentReadingValue} - ${previousReadingValue} = ${unitsConsumed} kWh`);
 
     // Create meter reading
     const [reading] = await db.insert(meterReadings).values({
@@ -161,6 +173,20 @@ export async function POST(request: NextRequest) {
           averageMonthlyUsage: Number(avgUsage[0].avg).toFixed(2),
         })
         .where(eq(customers.id, customerId));
+    }
+
+    // Create notification for customer about completed meter reading
+    if (customer.userId) {
+      await db.insert(notifications).values({
+        userId: customer.userId,
+        notificationType: 'work_order',
+        title: 'Meter Reading Completed',
+        message: `Your meter reading has been completed successfully. Units consumed: ${unitsConsumed} kWh. Your bill will be generated shortly.`,
+        priority: 'normal',
+        actionUrl: '/customer/view-bills',
+        actionText: 'View Bills',
+        isRead: 0,
+      } as any);
     }
 
     return NextResponse.json({

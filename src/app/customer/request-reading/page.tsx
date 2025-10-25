@@ -50,25 +50,47 @@ export default function RequestReading() {
     fetchAccountInfo();
     fetchPreviousRequests();
     checkBillEligibility();
+
+    // Auto-refresh eligibility status every 30 seconds
+    // This ensures customer sees updated status when employee completes work order
+    const intervalId = setInterval(() => {
+      checkBillEligibility();
+      fetchPreviousRequests();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(intervalId);
   }, []);
 
   const checkBillEligibility = async () => {
     try {
+      console.log('[Customer] Checking bill eligibility...');
       // Check if customer can request meter reading
       const response = await fetch('/api/bills/can-request');
+      console.log('[Customer] API response status:', response.status);
+
       if (response.ok) {
         const result = await response.json();
+        console.log('[Customer] API result:', result);
+        console.log('[Customer] canRequestReading:', result.canRequestReading);
+        console.log('[Customer] reason:', result.reason);
+
         setCanRequestBill(result.canRequest || false);
         setCanRequestReading(result.canRequestReading === true);
 
         if (result.reason) {
           setEligibilityMessage(result.reason);
+          console.log('[Customer] Setting eligibility message:', result.reason);
+        } else {
+          setEligibilityMessage('');
         }
+
+        console.log('[Customer] State updated - canRequestReading:', result.canRequestReading === true);
       }
     } catch (error) {
-      console.error('Error checking bill eligibility:', error);
-      // On error, allow request
-      setCanRequestReading(true);
+      console.error('[Customer] Error checking bill eligibility:', error);
+      // On error, do NOT allow request (fail secure)
+      setCanRequestReading(false);
+      setEligibilityMessage('Error checking eligibility. Please refresh the page.');
     }
   };
 
@@ -76,16 +98,16 @@ export default function RequestReading() {
     try {
       setRequestingBill(true);
       const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 2); // 2 days to generate bill
+      dueDate.setDate(dueDate.getDate() + 3); // 3 days for meter reading
 
-      // Create work order instead of bill request (professional workflow)
+      // Create work order for meter reading request
       const response = await fetch('/api/work-orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          workType: 'meter_reading', // Will be used for bill generation
-          title: 'Bill Generation Request - Customer Initiated',
-          description: 'Customer requested bill generation. Meter reading exists for current month.',
+          workType: 'meter_reading',
+          title: 'Meter Reading Request',
+          description: 'Customer requested meter reading for bill generation.',
           priority: 'medium',
           dueDate: dueDate.toISOString().split('T')[0]
         })
@@ -95,14 +117,18 @@ export default function RequestReading() {
 
       if (response.ok && result.success) {
         setShowBillRequestSuccess(true);
-        setCanRequestBill(false);
+
+        // Refresh eligibility - API will determine if customer can request again
+        await checkBillEligibility();
+        await fetchPreviousRequests();
+
         setTimeout(() => setShowBillRequestSuccess(false), 5000);
       } else {
-        alert(`❌ ${result.error || 'Failed to request bill'}`);
+        alert(`❌ ${result.error || 'Failed to request meter reading'}`);
       }
     } catch (error) {
-      console.error('Error requesting bill:', error);
-      alert('❌ Failed to request bill. Please try again.');
+      console.error('Error requesting meter reading:', error);
+      alert('❌ Failed to request meter reading. Please try again.');
     } finally {
       setRequestingBill(false);
     }
@@ -203,15 +229,12 @@ export default function RequestReading() {
         setRequestId(newRequestId);
         setShowSuccess(true);
 
-        // Disable future requests (user now has pending request)
-        setCanRequestReading(false);
-        setEligibilityMessage('Your meter reading request has been submitted and is being processed.');
-
         // Refresh previous requests and eligibility
+        // API will determine if customer can request again
         await fetchPreviousRequests();
         await checkBillEligibility();
 
-        // Reset form after 5 seconds
+        // Hide success message after 5 seconds
         setTimeout(() => {
           setShowSuccess(false);
         }, 5000);

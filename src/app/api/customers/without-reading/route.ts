@@ -3,38 +3,37 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
 import { customers, meterReadings, bills } from '@/lib/drizzle/schema';
-import { eq, and, sql, or, desc } from 'drizzle-orm';
+import { eq, and, sql, desc } from 'drizzle-orm';
 
-// GET /api/customers/without-reading - Get customers without bill for current month
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-
-    if (!session || (session.user.userType !== 'employee' && session.user.userType !== 'admin')) {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Only employees and admins can access this endpoint
+    if (session.user.userType !== 'employee' && session.user.userType !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
-    const month = searchParams.get('month') || new Date().toISOString().split('T')[0].substring(0, 7) + '-01';
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = (page - 1) * limit;
 
-    console.log('[API] Starting customer fetch. Month:', month, 'Search:', search);
+    // Current month (October 2025)
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const billingMonth = `${currentYear}-${currentMonth}-01`;
 
-    // Build WHERE condition
-    let whereCondition: any = eq(customers.status, 'active');
+    console.log('[API] ===== Customers Without Bills API =====');
+    console.log('[API] Current billing month:', billingMonth);
+    console.log('[API] Search:', search, 'Page:', page, 'Limit:', limit);
 
-    if (search && search.trim().length > 0) {
-      whereCondition = and(
-        eq(customers.status, 'active'),
-        or(
-          sql`${customers.fullName} LIKE ${`%${search}%`}`,
-          sql`${customers.accountNumber} LIKE ${`%${search}%`}`,
-          sql`${customers.meterNumber} LIKE ${`%${search}%`}`
-        )
-      );
-    }
-
-    // Fetch all active customers
+    // Step 1: Get all active customers
     const allCustomers = await db
       .select({
         id: customers.id,
@@ -46,34 +45,32 @@ export async function GET(request: NextRequest) {
         city: customers.city,
         state: customers.state,
         connectionType: customers.connectionType,
-        tariffType: customers.tariffType,
-        zone: customers.zone,
+        averageMonthlyUsage: customers.averageMonthlyUsage
       })
       .from(customers)
-      .where(whereCondition);
+      .where(eq(customers.status, 'active'));
 
-    console.log('[API] Total customers fetched:', allCustomers.length);
+    console.log('[API] Total active customers:', allCustomers.length);
 
-    // For each customer, check bill status and get last reading
+    // Step 2: Check each customer for bill status and last reading
     const customersWithStatus = [];
 
     for (const customer of allCustomers) {
-      try {
-        // Check if customer has bill for current month
-        const billsForMonth = await db
+      // Check if customer has bill for current month (use DATE comparison for timezone handling)
+      const customerBills = await db
           .select({ id: bills.id })
           .from(bills)
           .where(
             and(
               eq(bills.customerId, customer.id),
-              eq(bills.billingMonth, month)
-            )
+            sql`DATE(${bills.billingMonth}) = ${billingMonth}` // ✅ Compare DATE only
+          )
           )
           .limit(1);
 
-        const hasBill = billsForMonth.length > 0;
+      const hasBill = customerBills.length > 0;
 
-        // Get last meter reading (from any month)
+      // Get last meter reading for this customer (any month)
         const lastReadings = await db
           .select({
             currentReading: meterReadings.currentReading,
@@ -90,42 +87,59 @@ export async function GET(request: NextRequest) {
           ...customer,
           hasBill: hasBill,
           lastReading: lastReading ? parseFloat(lastReading.currentReading) : 0,
-          lastReadingDate: lastReading ? lastReading.readingDate : null,
-        });
-      } catch (customerError: any) {
-        console.error(`[API] Error processing customer ${customer.id}:`, customerError.message);
-        // Continue with next customer
-      }
+        lastReadingDate: lastReading ? lastReading.readingDate : null
+      });
     }
 
-    console.log('[API] Processed customers with status:', customersWithStatus.length);
+    // Step 3: Filter to show only customers WITHOUT bills for current month
+    let customersWithoutBills = customersWithStatus.filter(c => !c.hasBill);
 
-    // Filter to show only customers WITHOUT bills for current month
-    const customersWithoutBills = customersWithStatus.filter(c => !c.hasBill);
-
-    console.log('[API] Customers without bills:', customersWithoutBills.length);
     console.log('[API] Customers with bills:', customersWithStatus.filter(c => c.hasBill).length);
+    console.log('[API] Customers without bills (before search):', customersWithoutBills.length);
 
-    // Get total customer count
-    const totalCount = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(customers)
-      .where(eq(customers.status, 'active'));
+    // ✅ Calculate GLOBAL stats BEFORE search filter (stats should always show totals)
+    const globalStats = {
+      totalCustomers: allCustomers.length,
+      customersWithReading: customersWithStatus.filter(c => c.hasBill).length,
+      customersWithoutReading: customersWithoutBills.length,
+      withBill: customersWithStatus.filter(c => c.hasBill).length, // Keep for backwards compatibility
+      withoutBill: customersWithoutBills.length, // Keep for backwards compatibility
+      currentMonth: billingMonth
+    };
 
-    const totalCustomers = totalCount[0]?.count || 0;
-    const customersWithBill = customersWithStatus.filter(c => c.hasBill).length;
+    // Step 4: Apply search filter if provided (for results only, not stats)
+    if (search && search.trim().length > 0) {
+      const searchLower = search.toLowerCase().trim();
+      customersWithoutBills = customersWithoutBills.filter(customer =>
+        customer.fullName.toLowerCase().includes(searchLower) ||
+        customer.accountNumber.toLowerCase().includes(searchLower) ||
+        customer.meterNumber.toLowerCase().includes(searchLower) ||
+        customer.phone.toLowerCase().includes(searchLower)
+      );
+      console.log('[API] After search filter:', customersWithoutBills.length, '(filtered from', globalStats.customersWithoutReading, ')');
+    }
 
-    console.log('[API] Final stats - Total:', totalCustomers, 'With Bill:', customersWithBill, 'Without Bill:', customersWithoutBills.length);
+    // Step 5: Apply pagination (on search results, not global data)
+    const totalCount = customersWithoutBills.length;
+    const paginatedCustomers = customersWithoutBills.slice(offset, offset + limit);
+
+    console.log('[API] Returning:', paginatedCustomers.length, 'customers (page', page, 'of', Math.ceil(totalCount / limit) + ')');
+    console.log('[API] Stats remain global - not affected by search');
+
+    const pagination = {
+      page,
+      limit,
+      total: totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+      hasNext: page < Math.ceil(totalCount / limit),
+      hasPrev: page > 1
+    };
 
     return NextResponse.json({
       success: true,
-      data: customersWithoutBills,
-      stats: {
-        totalCustomers,
-        withBill: customersWithBill,
-        withoutBill: customersWithoutBills.length,
-        currentMonth: month
-      }
+      data: paginatedCustomers,
+      stats: globalStats, // ✅ Always return global stats, not search-filtered stats
+      pagination
     });
 
   } catch (error: any) {
@@ -133,8 +147,7 @@ export async function GET(request: NextRequest) {
     console.error('[API] Error stack:', error.stack);
     return NextResponse.json({
       error: 'Failed to fetch customers',
-      details: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      details: error.message
     }, { status: 500 });
   }
 }

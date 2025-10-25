@@ -73,16 +73,9 @@ export default function ViewBills() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
-  const [showRequestModal, setShowRequestModal] = useState(false);
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [customerName, setCustomerName] = useState('');
-  const [requestForm, setRequestForm] = useState({
-    billingMonth: '',
-    priority: 'medium',
-    notes: ''
-  });
 
   // Fetch real bills data
   useEffect(() => {
@@ -276,30 +269,6 @@ export default function ViewBills() {
     }
   };
 
-  const handleRequestBill = async () => {
-    // API call to create bill request
-    try {
-      const response = await fetch('/api/bills/request', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestForm),
-      });
-
-      if (response.ok) {
-        alert('Bill request submitted successfully! You will receive your bill within 24 hours.');
-        setShowRequestModal(false);
-        setRequestForm({ billingMonth: '', priority: 'medium', notes: '' });
-      } else {
-        alert('Failed to submit request. Please try again.');
-      }
-    } catch (error) {
-      console.error('Request error:', error);
-      alert('An error occurred. Please try again.');
-    }
-  };
-
   const handleDownloadPDF = async (bill: Bill) => {
     try {
       // In production, this would call API endpoint to generate PDF
@@ -359,7 +328,7 @@ export default function ViewBills() {
             </div>
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setShowRequestModal(true)}
+                onClick={() => router.push('/customer/request-reading')}
                 className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/50 transition-all font-semibold flex items-center space-x-2"
               >
                 <Send className="w-5 h-5" />
@@ -704,106 +673,6 @@ export default function ViewBills() {
           </div>
         )}
 
-        {/* Request Bill Modal */}
-        {showRequestModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-white/10 max-w-2xl w-full">
-              {/* Modal Header */}
-              <div className="bg-gradient-to-r from-blue-500/20 to-cyan-500/20 backdrop-blur-xl border-b border-gray-200 dark:border-white/10 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Request New Bill</h2>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">Your bill will be generated within 24 hours</p>
-                  </div>
-                  <button
-                    onClick={() => setShowRequestModal(false)}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-all"
-                  >
-                    <X className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Modal Content */}
-              <div className="p-6 space-y-6">
-                <div>
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">
-                    Billing Month <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="month"
-                    value={requestForm.billingMonth}
-                    onChange={(e) => setRequestForm({ ...requestForm, billingMonth: e.target.value })}
-                    max={new Date().toISOString().slice(0, 7)}
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Priority</label>
-                  <select
-                    value={requestForm.priority}
-                    onChange={(e) => setRequestForm({ ...requestForm, priority: e.target.value })}
-                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:border-blue-400 font-medium"
-                  >
-                    <option value="low" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Low - Normal processing</option>
-                    <option value="medium" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Medium - Within 24 hours</option>
-                    <option value="high" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">High - Urgent (within 12 hours)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 block">Notes (Optional)</label>
-                  <textarea
-                    value={requestForm.notes}
-                    onChange={(e) => setRequestForm({ ...requestForm, notes: e.target.value })}
-                    rows={3}
-                    placeholder="Add any special instructions or reasons for this request..."
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors resize-none"
-                  />
-                </div>
-
-                {/* Info Box */}
-                <div className="bg-blue-500/10 rounded-xl p-4 border border-blue-500/30">
-                  <div className="flex items-start space-x-3">
-                    <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">What happens next?</h4>
-                      <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                        <li>• Your request will be sent to our billing team</li>
-                        <li>• We'll verify your meter reading for the selected month</li>
-                        <li>• Bill will be generated and sent to your registered email</li>
-                        <li>• You'll receive a notification once it's ready</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={handleRequestBill}
-                    disabled={!requestForm.billingMonth}
-                    className={`flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl transition-all font-semibold flex items-center justify-center space-x-2 ${
-                      !requestForm.billingMonth
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:shadow-lg hover:shadow-blue-500/50'
-                    }`}
-                  >
-                    <Send className="w-5 h-5" />
-                    <span>Submit Request</span>
-                  </button>
-                  <button
-                    onClick={() => setShowRequestModal(false)}
-                    className="px-6 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-xl text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-white/20 transition-all font-semibold"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </DashboardLayout>
   );

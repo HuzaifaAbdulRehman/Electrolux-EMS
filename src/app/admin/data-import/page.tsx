@@ -17,7 +17,9 @@ import {
   X,
   FileCheck,
   TrendingUp,
-  Info
+  Info,
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 
 interface DataType {
@@ -54,6 +56,15 @@ export default function DataImport() {
   } | null>(null);
   const [importProgress, setImportProgress] = useState(0);
   const [importComplete, setImportComplete] = useState(false);
+  
+  // New features for enhanced functionality
+  const [demoMode, setDemoMode] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isGeneratingSample, setIsGeneratingSample] = useState(false);
+  const [exportType, setExportType] = useState<'csv' | 'json'>('csv');
+  const [sampleCount, setSampleCount] = useState(10);
+  const [backupStatus, setBackupStatus] = useState<'idle' | 'creating' | 'created' | 'error'>('idle');
 
   // Define data types with their configurations
   const dataTypes: DataType[] = [
@@ -246,6 +257,107 @@ export default function DataImport() {
     setImportProgress(0);
   };
 
+  // Enhanced functionality handlers
+  const handleExport = async (dataType: string) => {
+    try {
+      setIsExporting(true);
+      console.log(`[Data Import] Exporting ${dataType} as ${exportType}`);
+      
+      const response = await fetch(`/api/admin/data-export?type=${dataType}&format=${exportType}`);
+      
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${dataType}_export.${exportType}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      console.log(`[Data Import] Export completed: ${dataType}`);
+    } catch (error) {
+      console.error('[Data Import] Export error:', error);
+      alert('Export failed. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleBackup = async () => {
+    try {
+      setIsBackingUp(true);
+      setBackupStatus('creating');
+      console.log('[Data Import] Creating database backup...');
+      
+      const response = await fetch('/api/admin/database-backup', {
+        method: 'POST'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Backup failed');
+      }
+      
+      const result = await response.json();
+      setBackupStatus('created');
+      console.log('[Data Import] Backup created successfully');
+      
+      // Auto-download backup file
+      const blob = new Blob([JSON.stringify(result.data)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `database_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+    } catch (error) {
+      console.error('[Data Import] Backup error:', error);
+      setBackupStatus('error');
+      alert('Backup failed. Please try again.');
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
+  const handleGenerateSample = async () => {
+    try {
+      setIsGeneratingSample(true);
+      console.log(`[Data Import] Generating ${sampleCount} sample records...`);
+      
+      const response = await fetch('/api/admin/generate-sample-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          count: sampleCount,
+          dataType: selectedDataType
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Sample generation failed');
+      }
+      
+      const result = await response.json();
+      console.log(`[Data Import] Generated ${result.count} sample records`);
+      alert(`Successfully generated ${result.count} sample records!`);
+      
+    } catch (error) {
+      console.error('[Data Import] Sample generation error:', error);
+      alert('Sample generation failed. Please try again.');
+    } finally {
+      setIsGeneratingSample(false);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success': return <CheckCircle className="w-5 h-5 text-green-400" />;
@@ -324,6 +436,124 @@ export default function DataImport() {
               );
             })}
           </div>
+        </div>
+
+        {/* Enhanced Features Section */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Enhanced Data Management</h2>
+          
+          {/* Demo Mode Toggle */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                  <Info className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Demo Mode</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {demoMode ? 'Validation only - no actual import' : 'Live mode - will import data'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDemoMode(!demoMode)}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  demoMode 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                }`}
+              >
+                {demoMode ? 'Demo Mode' : 'Live Mode'}
+              </button>
+            </div>
+          </div>
+
+          {/* Export Section */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Export Current Data</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {dataTypes.map((dataType) => (
+                <div key={dataType.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-8 h-8 bg-gradient-to-br ${dataType.color} rounded-lg flex items-center justify-center`}>
+                      <dataType.icon className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">{dataType.name}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Export as CSV or JSON</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleExport(dataType.id)}
+                    disabled={isExporting}
+                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  >
+                    {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    <span>Export</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Backup Section */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Database Backup</h3>
+            <div className="flex items-center justify-between p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                  <Database className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 dark:text-white">Create Full Backup</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Export entire database as JSON</p>
+                </div>
+              </div>
+              <button
+                onClick={handleBackup}
+                disabled={isBackingUp}
+                className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                {isBackingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
+                <span>
+                  {backupStatus === 'created' ? 'Backup Created' : 
+                   backupStatus === 'creating' ? 'Creating...' : 
+                   backupStatus === 'error' ? 'Retry' : 'Backup'}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Sample Data Generation */}
+          {selectedDataType && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Generate Sample Data</h3>
+              <div className="flex items-center space-x-4 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Number of records to generate
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={sampleCount}
+                    onChange={(e) => setSampleCount(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                  />
+                </div>
+                <button
+                  onClick={handleGenerateSample}
+                  disabled={isGeneratingSample}
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                >
+                  {isGeneratingSample ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                  <span>Generate</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* File Upload Section */}

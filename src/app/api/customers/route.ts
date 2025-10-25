@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
 
     // Get query parameters for filtering and pagination
     const searchParams = request.nextUrl.searchParams;
+    const customerId = searchParams.get('customerId') || searchParams.get('id');
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || '';
     const connectionType = searchParams.get('connectionType') || '';
@@ -29,6 +30,41 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
+
+    // If customerId is provided, fetch that specific customer
+    if (customerId) {
+      const customer = await db
+        .select({
+          id: customers.id,
+          accountNumber: customers.accountNumber,
+          meterNumber: customers.meterNumber,
+          fullName: customers.fullName,
+          email: customers.email,
+          phone: customers.phone,
+          address: customers.address,
+          city: customers.city,
+          state: customers.state,
+          pincode: customers.pincode,
+          connectionType: customers.connectionType,
+          status: customers.status,
+          connectionDate: customers.connectionDate,
+          lastBillAmount: customers.lastBillAmount,
+          lastPaymentDate: customers.lastPaymentDate,
+          averageMonthlyUsage: customers.averageMonthlyUsage,
+          outstandingBalance: customers.outstandingBalance,
+          paymentStatus: customers.paymentStatus,
+          createdAt: customers.createdAt,
+          updatedAt: customers.updatedAt,
+        })
+        .from(customers)
+        .where(eq(customers.id, parseInt(customerId)))
+        .limit(1);
+
+      return NextResponse.json({
+        success: true,
+        data: customer,
+      });
+    }
 
     // Build query
     let query = db

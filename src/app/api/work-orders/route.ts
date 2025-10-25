@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
         customerName: customers.fullName,
         customerAccount: customers.accountNumber,
         customerPhone: customers.phone,
+        customerEmail: customers.email,
         customerAddress: customers.address,
         customerCity: customers.city,
         meterNumber: customers.meterNumber,
@@ -126,6 +127,27 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Title is required' }, { status: 400 });
       }
 
+      // For meter reading requests, check if customer already has a pending request
+      if (workType === 'meter_reading') {
+        const [existingRequest] = await db
+          .select()
+          .from(workOrders)
+          .where(
+            and(
+              eq(workOrders.customerId, session.user.customerId),
+              eq(workOrders.workType, 'meter_reading'),
+              eq(workOrders.status, 'assigned')
+            )
+          )
+          .limit(1);
+
+        if (existingRequest) {
+          return NextResponse.json({ 
+            error: 'You already have a pending meter reading request. Please wait for it to be processed.' 
+          }, { status: 400 });
+        }
+      }
+
       // Auto-calculate due date based on work type
       const calculatedDueDate = new Date();
       if (workType === 'complaint_resolution') {
@@ -151,7 +173,47 @@ export async function POST(request: NextRequest) {
       const [workOrder] = await db.insert(workOrders).values(workOrderData as any);
 
       // Create notification for admin/employees about new request
-      // (Optional: could notify specific admin users)
+      if (workType === 'meter_reading') {
+        // Notify all employees about new meter reading request
+        const employees = await db.select({ id: employees.id, userId: employees.userId })
+          .from(employees)
+          .where(eq(employees.status, 'active'));
+
+        for (const employee of employees) {
+          if (employee.userId) {
+            await db.insert(notifications).values({
+              userId: employee.userId,
+              notificationType: 'work_order',
+              title: 'New Meter Reading Request',
+              message: `Customer ${session.user.fullName || 'Unknown'} has requested a meter reading. Please check your work orders.`,
+              priority: 'medium',
+              actionUrl: '/employee/meter-reading',
+              actionText: 'View Request',
+              isRead: 0,
+            } as any);
+          }
+        }
+      } else if (workType === 'complaint_resolution') {
+        // Notify all employees about new complaint
+        const employees = await db.select({ id: employees.id, userId: employees.userId })
+          .from(employees)
+          .where(eq(employees.status, 'active'));
+
+        for (const employee of employees) {
+          if (employee.userId) {
+            await db.insert(notifications).values({
+              userId: employee.userId,
+              notificationType: 'work_order',
+              title: 'New Customer Complaint',
+              message: `Customer ${session.user.fullName || 'Unknown'} has submitted a complaint: "${title}". Please check your work orders.`,
+              priority: 'high',
+              actionUrl: '/employee/work-orders',
+              actionText: 'View Complaint',
+              isRead: 0,
+            } as any);
+          }
+        }
+      }
 
       const message = workType === 'complaint_resolution'
         ? 'Complaint submitted successfully'

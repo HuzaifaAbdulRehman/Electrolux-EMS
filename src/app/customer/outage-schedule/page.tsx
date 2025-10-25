@@ -27,15 +27,40 @@ export default function OutageSchedule() {
   const [searchQuery, setSearchQuery] = useState('');
   const [customerZone, setCustomerZone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [outages, setOutages] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    scheduled: 0,
+    completed: 0,
+    affectedUsers: 0,
+    avgDuration: 0
+  });
 
-  // Fetch customer profile to get their zone
+  // Fetch outages and customer profile
   useEffect(() => {
+    fetchOutages();
     fetchCustomerProfile();
   }, []);
 
-  const fetchCustomerProfile = async () => {
+  const fetchOutages = async () => {
     try {
       setLoading(true);
+      const response = await fetch('/api/outages');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setOutages(result.data);
+          calculateStats(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching outages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCustomerProfile = async () => {
+    try {
       const response = await fetch('/api/customers/profile');
       if (response.ok) {
         const result = await response.json();
@@ -45,118 +70,48 @@ export default function OutageSchedule() {
       }
     } catch (error) {
       console.error('Error fetching customer profile:', error);
-    } finally {
-      setLoading(false);
     }
+  };
+
+  const calculateStats = (outageData: any[]) => {
+    const scheduled = outageData.filter(o => o.status === 'scheduled').length;
+    const completed = outageData.filter(o => o.status === 'restored').length;
+    const affectedUsers = outageData.reduce((sum, o) => sum + (o.affectedCustomerCount || 0), 0);
+    
+    // Calculate average duration for completed outages
+    const completedOutages = outageData.filter(o => o.status === 'restored' && o.actualStartTime && o.actualEndTime);
+    let avgDuration = 0;
+    if (completedOutages.length > 0) {
+      const totalMinutes = completedOutages.reduce((sum, o) => {
+        const start = new Date(o.actualStartTime);
+        const end = new Date(o.actualEndTime);
+        return sum + (end.getTime() - start.getTime()) / (1000 * 60); // minutes
+      }, 0);
+      avgDuration = totalMinutes / completedOutages.length;
+    }
+
+    setStats({
+      scheduled,
+      completed,
+      affectedUsers,
+      avgDuration: Math.round(avgDuration)
+    });
   };
 
   const handleEnableAlerts = () => {
     router.push('/customer/settings');
   };
 
-  // Helper function to get relative dates
-  const getRelativeDate = (daysOffset: number) => {
-    const date = new Date();
-    date.setDate(date.getDate() + daysOffset);
-    return date;
-  };
+  // Filter outages based on search and area selection
+  const filteredOutages = outages.filter(outage => {
+    const matchesSearch = outage.areaName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         outage.zone.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesArea = selectedArea === 'all' || outage.zone === selectedArea;
+    return matchesSearch && matchesArea;
+  });
 
-  const formatDateTime = (date: Date, hours: number, minutes: number = 0) => {
-    const d = new Date(date);
-    d.setHours(hours, minutes, 0, 0);
-
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hour = d.getHours();
-    const min = String(d.getMinutes()).padStart(2, '0');
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const hour12 = hour % 12 || 12;
-
-    return `${year}-${month}-${day} ${String(hour12).padStart(2, '0')}:${min} ${ampm}`;
-  };
-
-  // Generate outage schedule with dynamic dates
-  const tomorrow = getRelativeDate(1);
-  const today = getRelativeDate(0);
-  const yesterday = getRelativeDate(-1);
-  const twoDaysAgo = getRelativeDate(-2);
-  const dayAfterTomorrow = getRelativeDate(2);
-
-  const outageSchedule = [
-    {
-      id: 1,
-      area: 'Zone A - North District',
-      startTime: formatDateTime(tomorrow, 6, 0),
-      endTime: formatDateTime(tomorrow, 8, 0),
-      duration: '2 hours',
-      status: 'scheduled',
-      reason: 'Routine Maintenance',
-      affectedCustomers: 1250,
-      type: 'planned',
-      notified: true
-    },
-    {
-      id: 2,
-      area: 'Zone B - Central Area',
-      startTime: formatDateTime(today, 14, 0),
-      endTime: formatDateTime(today, 16, 0),
-      duration: '2 hours',
-      status: 'scheduled',
-      reason: 'Grid Upgrade',
-      affectedCustomers: 890,
-      type: 'planned',
-      notified: true
-    },
-    {
-      id: 3,
-      area: 'Zone C - South District',
-      startTime: formatDateTime(yesterday, 10, 0),
-      endTime: formatDateTime(yesterday, 11, 30),
-      duration: '1.5 hours',
-      status: 'completed',
-      reason: 'Equipment Repair',
-      affectedCustomers: 620,
-      type: 'planned',
-      notified: true
-    },
-    {
-      id: 4,
-      area: 'Zone D - East Area',
-      startTime: formatDateTime(dayAfterTomorrow, 8, 0),
-      endTime: formatDateTime(dayAfterTomorrow, 12, 0),
-      duration: '4 hours',
-      status: 'scheduled',
-      reason: 'Transformer Replacement',
-      affectedCustomers: 1450,
-      type: 'planned',
-      notified: true
-    },
-    {
-      id: 5,
-      area: 'Zone A - North District',
-      startTime: formatDateTime(twoDaysAgo, 15, 45),
-      endTime: formatDateTime(twoDaysAgo, 17, 20),
-      duration: '1 hour 35 mins',
-      status: 'completed',
-      reason: 'Technical Fault',
-      affectedCustomers: 1100,
-      type: 'unplanned',
-      notified: false
-    },
-    {
-      id: 6,
-      area: customerZone || 'Zone A - North District',
-      startTime: formatDateTime(today, 22, 0),
-      endTime: formatDateTime(tomorrow, 2, 0),
-      duration: '4 hours',
-      status: 'scheduled',
-      reason: 'Load Shedding - Peak Demand Management',
-      affectedCustomers: 2100,
-      type: 'planned',
-      notified: true
-    }
-  ];
+  // Get unique zones for filter
+  const availableZones = [...new Set(outages.map(o => o.zone))];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -173,50 +128,45 @@ export default function OutageSchedule() {
       : 'bg-orange-500/20 text-orange-400 border-orange-500/50';
   };
 
-  const filteredSchedule = outageSchedule.filter(outage => {
-    const matchesSearch = outage.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         outage.reason.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesArea = selectedArea === 'all' || outage.area.includes(selectedArea);
-    return matchesSearch && matchesArea;
-  });
-
   // Sort: customer's zone first, then by date
-  const sortedSchedule = [...filteredSchedule].sort((a, b) => {
+  const sortedOutages = [...filteredOutages].sort((a, b) => {
     // Prioritize customer's zone
     if (customerZone) {
-      const aIsCustomerZone = a.area.includes(customerZone);
-      const bIsCustomerZone = b.area.includes(customerZone);
+      const aIsCustomerZone = a.zone === customerZone;
+      const bIsCustomerZone = b.zone === customerZone;
       if (aIsCustomerZone && !bIsCustomerZone) return -1;
       if (!aIsCustomerZone && bIsCustomerZone) return 1;
     }
 
-    // Then sort by status (scheduled first, then completed)
-    if (a.status === 'scheduled' && b.status === 'completed') return -1;
-    if (a.status === 'completed' && b.status === 'scheduled') return 1;
+    // Then sort by status (scheduled first, then restored)
+    if (a.status === 'scheduled' && b.status === 'restored') return -1;
+    if (a.status === 'restored' && b.status === 'scheduled') return 1;
 
     // Then by date (newer first)
-    return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+    const aTime = a.scheduledStartTime || a.createdAt;
+    const bTime = b.scheduledStartTime || b.createdAt;
+    return new Date(bTime).getTime() - new Date(aTime).getTime();
   });
 
-  const scheduledCount = outageSchedule.filter(o => o.status === 'scheduled').length;
-  const completedCount = outageSchedule.filter(o => o.status === 'completed').length;
-  const totalAffected = outageSchedule
-    .filter(o => o.status === 'scheduled')
-    .reduce((sum, o) => sum + o.affectedCustomers, 0);
+  // Use the stats from state
+  const scheduledCount = stats.scheduled;
+  const completedCount = stats.completed;
+  const totalAffected = stats.affectedUsers;
+  const avgDuration = stats.avgDuration;
 
-  // Calculate average duration dynamically
+  // Calculate average duration helper function
   const calculateAverageDuration = () => {
-    const durations = outageSchedule.map(o => {
-      const match = o.duration.match(/(\d+\.?\d*)\s*(hour|hr)/i);
-      return match ? parseFloat(match[1]) : 0;
-    });
-    const avg = durations.reduce((sum, d) => sum + d, 0) / durations.length;
-    return avg.toFixed(1);
+    if (avgDuration === 0) return '0';
+    const hours = Math.floor(avgDuration / 60);
+    const minutes = avgDuration % 60;
+    if (hours === 0) return `${minutes}m`;
+    if (minutes === 0) return `${hours}`;
+    return `${hours}.${Math.round(minutes / 6)}`;
   };
 
   // Find upcoming outage in customer's zone
-  const upcomingCustomerOutage = outageSchedule.find(
-    o => o.status === 'scheduled' && customerZone && o.area.includes(customerZone)
+  const upcomingCustomerOutage = sortedOutages.find(
+    o => o.status === 'scheduled' && customerZone && o.zone === customerZone
   );
 
   if (loading) {
@@ -315,15 +265,15 @@ export default function OutageSchedule() {
                   Upcoming Outage Alert - Your Area Affected!
                 </h3>
                 <p className="text-gray-700 dark:text-gray-300 mb-2">
-                  <strong>{upcomingCustomerOutage.area}</strong> will experience a {upcomingCustomerOutage.type} power outage from <strong>{upcomingCustomerOutage.startTime.split(' ').slice(-2).join(' ')}</strong> to <strong>{upcomingCustomerOutage.endTime.split(' ').slice(-2).join(' ')}</strong> for {upcomingCustomerOutage.reason.toLowerCase()}.
+                  <strong>{upcomingCustomerOutage.areaName}</strong> will experience a {upcomingCustomerOutage.outageType} power outage from <strong>{upcomingCustomerOutage.scheduledStartTime ? new Date(upcomingCustomerOutage.scheduledStartTime).toLocaleTimeString() : 'TBD'}</strong> to <strong>{upcomingCustomerOutage.scheduledEndTime ? new Date(upcomingCustomerOutage.scheduledEndTime).toLocaleTimeString() : 'TBD'}</strong> for {upcomingCustomerOutage.reason?.toLowerCase() || 'maintenance'}.
                 </p>
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Duration: <strong className="text-orange-400">{upcomingCustomerOutage.duration}</strong>
+                    Severity: <strong className="text-orange-400">{upcomingCustomerOutage.severity}</strong>
                   </span>
                   <span className="text-gray-600 dark:text-gray-400">•</span>
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Affected: <strong className="text-orange-400">{upcomingCustomerOutage.affectedCustomers.toLocaleString()} customers</strong>
+                    Affected: <strong className="text-orange-400">{upcomingCustomerOutage.affectedCustomerCount.toLocaleString()} customers</strong>
                   </span>
                 </div>
               </div>
@@ -350,10 +300,11 @@ export default function OutageSchedule() {
               className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 text-sm"
             >
               <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">All Zones</option>
-              <option value="Zone A" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Zone A - North</option>
-              <option value="Zone B" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Zone B - Central</option>
-              <option value="Zone C" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Zone C - South</option>
-              <option value="Zone D" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Zone D - East</option>
+              {availableZones.map(zone => (
+                <option key={zone} value={zone} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                  {zone}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -374,9 +325,15 @@ export default function OutageSchedule() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/10">
-                {sortedSchedule.length > 0 ? (
-                  sortedSchedule.map((outage) => {
-                    const isCustomerZone = customerZone && outage.area.includes(customerZone);
+                {sortedOutages.length > 0 ? (
+                  sortedOutages.map((outage) => {
+                    const isCustomerZone = customerZone && outage.zone === customerZone;
+                    const startTime = outage.scheduledStartTime ? new Date(outage.scheduledStartTime).toLocaleString() : 'TBD';
+                    const endTime = outage.scheduledEndTime ? new Date(outage.scheduledEndTime).toLocaleString() : 'TBD';
+                    const duration = outage.scheduledStartTime && outage.scheduledEndTime 
+                      ? `${Math.round((new Date(outage.scheduledEndTime).getTime() - new Date(outage.scheduledStartTime).getTime()) / (1000 * 60 * 60) * 10) / 10} hours`
+                      : 'TBD';
+                    
                     return (
                       <tr
                         key={outage.id}
@@ -385,7 +342,7 @@ export default function OutageSchedule() {
                         <td className="px-6 py-4">
                           <div className="flex items-center space-x-2">
                             <MapPin className={`w-4 h-4 ${isCustomerZone ? 'text-yellow-400' : 'text-blue-400'}`} />
-                            <span className="text-white font-medium">{outage.area}</span>
+                            <span className="text-white font-medium">{outage.areaName}</span>
                             {isCustomerZone && (
                               <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 rounded text-xs font-semibold">YOUR ZONE</span>
                             )}
@@ -393,33 +350,33 @@ export default function OutageSchedule() {
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <p className="text-white text-sm">{outage.startTime}</p>
-                            <p className="text-gray-600 dark:text-gray-400 text-xs">to {outage.endTime}</p>
+                            <p className="text-white text-sm">{startTime}</p>
+                            <p className="text-gray-600 dark:text-gray-400 text-xs">to {endTime}</p>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center space-x-1">
                             <Clock className="w-4 h-4 text-purple-400" />
-                            <span className="text-white text-sm">{outage.duration}</span>
+                            <span className="text-white text-sm">{duration}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <span className="text-gray-300 text-sm">{outage.reason}</span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getTypeColor(outage.type)}`}>
-                            {outage.type === 'planned' ? <Calendar className="w-3 h-3 mr-1" /> : <AlertTriangle className="w-3 h-3 mr-1" />}
-                            {outage.type.charAt(0).toUpperCase() + outage.type.slice(1)}
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getTypeColor(outage.outageType)}`}>
+                            {outage.outageType === 'planned' ? <Calendar className="w-3 h-3 mr-1" /> : <AlertTriangle className="w-3 h-3 mr-1" />}
+                            {outage.outageType.charAt(0).toUpperCase() + outage.outageType.slice(1)}
                           </span>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${getStatusColor(outage.status)}`}>
-                            {outage.status === 'completed' ? <CheckCircle className="w-3 h-3 mr-1" /> : <Clock className="w-3 h-3 mr-1" />}
+                            {outage.status === 'restored' ? <CheckCircle className="w-3 h-3 mr-1" /> : <Clock className="w-3 h-3 mr-1" />}
                             {outage.status.charAt(0).toUpperCase() + outage.status.slice(1)}
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-white text-sm">{outage.affectedCustomers.toLocaleString()} users</span>
+                          <span className="text-white text-sm">{outage.affectedCustomerCount.toLocaleString()} users</span>
                         </td>
                       </tr>
                     );

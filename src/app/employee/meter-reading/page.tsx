@@ -20,7 +20,8 @@ import {
   Building,
   ClipboardList,
   Users,
-  X
+  X,
+  ArrowRight
 } from 'lucide-react';
 
 interface Customer {
@@ -48,8 +49,8 @@ export default function MeterReadingForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Two-tab system state
-  const [activeTab, setActiveTab] = useState<'work-orders' | 'all-customers'>('work-orders');
+  // Three-tab system state
+  const [activeTab, setActiveTab] = useState<'work-orders' | 'all-customers' | 'enter-reading'>('work-orders');
   const [workOrders, setWorkOrders] = useState<any[]>([]);
   const [loadingWorkOrders, setLoadingWorkOrders] = useState(false);
 
@@ -58,6 +59,8 @@ export default function MeterReadingForm() {
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerStats, setCustomerStats] = useState<any>(null);
+  const [pagination, setPagination] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
@@ -85,12 +88,15 @@ export default function MeterReadingForm() {
   const [generatingBill, setGeneratingBill] = useState(false);
   const [billGenerated, setBillGenerated] = useState<any>(null);
   const [savedReading, setSavedReading] = useState<MeterReading | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
 
-  // Load customer from URL parameters (from bill generation page)
+  // Load customer from URL parameters (from work orders or bill generation page)
   useEffect(() => {
     const customerId = searchParams.get('customerId');
     const customerName = searchParams.get('customerName');
     const accountNumber = searchParams.get('accountNumber');
+    const workOrderId = searchParams.get('workOrderId');
 
     if (customerId && customerName && accountNumber) {
       // Pre-fill customer from URL params
@@ -106,37 +112,81 @@ export default function MeterReadingForm() {
         connectionType: '',
         averageMonthlyUsage: ''
       });
+      
+      // Set modal customer with work order ID if provided
+      if (workOrderId) {
+        setModalCustomer({
+          id: parseInt(customerId),
+          fullName: decodeURIComponent(customerName),
+          accountNumber: decodeURIComponent(accountNumber),
+          workOrderId: parseInt(workOrderId)
+        });
+      }
+      
       // Fetch full customer details and last reading
       fetchCustomerById(parseInt(customerId));
     }
   }, [searchParams]);
 
-  // Fetch work orders on mount
+  // Fetch data when switching tabs
   useEffect(() => {
+    console.log('[Tab Switch] Active tab changed to:', activeTab);
     if (activeTab === 'work-orders') {
+      console.log('[Tab Switch] Fetching work orders...');
       fetchWorkOrders();
     } else if (activeTab === 'all-customers') {
+      console.log('[Tab Switch] Fetching customers without reading...');
       fetchCustomersWithoutReading();
     }
+    // Note: enter-reading tab does NOT fetch customers - it only shows form when customer is pre-selected
   }, [activeTab]);
 
+  // Fetch customers when search changes (ONLY for All Customers tab)
+  useEffect(() => {
+    if (activeTab === 'all-customers') {
+      const timeoutId = setTimeout(() => {
+        setCurrentPage(1); // Reset to first page when searching
+        fetchCustomersWithoutReading(1);
+      }, 300); // Reduced debounce time for better responsiveness
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [customerSearch, activeTab]);
+
   // Fetch customers without current month reading
-  const fetchCustomersWithoutReading = async () => {
+  const fetchCustomersWithoutReading = async (page: number = 1) => {
+    console.log('[fetchCustomersWithoutReading] Called with page:', page, 'loadingCustomers:', loadingCustomers);
+    if (loadingCustomers) return; // Prevent multiple simultaneous calls
+    
     try {
       setLoadingCustomers(true);
-      const response = await fetch(`/api/customers/without-reading?search=${customerSearch}`);
+      console.log('[fetchCustomersWithoutReading] Making API call...');
+      const response = await fetch(`/api/customers/without-reading?search=${encodeURIComponent(customerSearch)}&page=${page}&limit=20`);
       console.log('[Frontend] Fetching customers without reading...');
+      console.log('[Frontend] Search query:', customerSearch);
+      console.log('[Frontend] Page:', page);
+      
       if (response.ok) {
         const result = await response.json();
         console.log('[Frontend] API Response:', result);
         console.log('[Frontend] Customers count:', result.data?.length || 0);
         console.log('[Frontend] Stats:', result.stats);
+        console.log('[Frontend] Pagination:', result.pagination);
+        
         if (result.success) {
+          console.log('[Frontend] Setting customers data:', result.data);
+          console.log('[Frontend] Customers count:', result.data?.length);
           setAllCustomers(result.data || []);
           setCustomerStats(result.stats);
+          setPagination(result.pagination);
+          setCurrentPage(page);
+          console.log('[Frontend] State updated - allCustomers length:', result.data?.length || 0);
+        } else {
+          console.error('[Frontend] API returned error:', result.error);
         }
       } else {
-        console.error('[Frontend] API Error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('[Frontend] API Error:', response.status, response.statusText, errorText);
       }
     } catch (error) {
       console.error('Error fetching customers without reading:', error);
@@ -153,7 +203,11 @@ export default function MeterReadingForm() {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          setWorkOrders(result.data || []);
+          // Sort work orders by creation date (oldest first - FIFO)
+          const sortedWorkOrders = (result.data || []).sort((a: any, b: any) => {
+            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          });
+          setWorkOrders(sortedWorkOrders);
         }
       }
     } catch (error) {
@@ -161,6 +215,25 @@ export default function MeterReadingForm() {
     } finally {
       setLoadingWorkOrders(false);
     }
+  };
+
+  // Handle work order click - redirect to meter reading with customer info
+  const handleWorkOrderClick = (workOrder: any) => {
+    const customer = {
+      id: workOrder.customerId,
+      fullName: workOrder.customerName,
+      accountNumber: workOrder.customerAccount,
+      meterNumber: workOrder.meterNumber,
+      phone: workOrder.customerPhone,
+      address: workOrder.customerAddress,
+      city: workOrder.customerCity,
+      state: workOrder.customerState || '', // Add missing state property
+      connectionType: 'residential', // Default
+      averageMonthlyUsage: '0'
+    };
+    
+    setSelectedCustomer(customer);
+    setShowModal(true);
   };
 
   // Fetch customer by ID (from URL params)
@@ -266,8 +339,13 @@ export default function MeterReadingForm() {
       newErrors.currentReading = 'Current reading is required';
     } else if (isNaN(Number(readingData.currentReading))) {
       newErrors.currentReading = 'Reading must be a valid number';
+    } else if (Number(readingData.currentReading) < 0) {
+      newErrors.currentReading = 'Reading cannot be negative';
     } else if (lastReading !== null && Number(readingData.currentReading) < lastReading) {
-      newErrors.currentReading = `Current reading cannot be less than previous reading (${lastReading} kWh)`;
+      // Professional warning for lower readings (not blocking)
+      console.log(`⚠️  WARNING: Current reading (${readingData.currentReading}) is less than previous reading (${lastReading})`);
+      console.log(`This is normal for: meter replacement, rollover, seasonal usage, or meter repair`);
+      // Allow the submission - this is a valid professional scenario
     }
 
     setErrors(newErrors);
@@ -290,7 +368,9 @@ export default function MeterReadingForm() {
 
     try {
       setIsSubmitting(true);
+      setSubmitting(true);
       setErrors({});
+      setSubmitSuccess('');
 
       const response = await fetch('/api/meter-readings', {
         method: 'POST',
@@ -363,16 +443,43 @@ export default function MeterReadingForm() {
         // Don't fail the whole operation if work order update fails
       }
 
-      // Refresh work orders list if modal was from work orders
-      if (modalCustomer) {
-        await fetchWorkOrders();
-      }
+      // ✅ CRITICAL: Refresh BOTH work orders and all customers lists
+      console.log('[Submit Success] Refreshing both tabs after bill generation...');
+      console.log('[Submit Success] Customer should disappear from all lists now');
+
+      await Promise.all([
+        fetchWorkOrders(),
+        fetchCustomersWithoutReading(currentPage)
+      ]);
+
+      console.log('[Submit Success] Both lists refreshed - customer removed');
+
+      // Reset form and clear selected customer (for Enter Reading tab)
+      setSelectedCustomer(null);
+      setLastReading(null);
+      setLastReadingDate(null);
+      setReadingData({
+        currentReading: '',
+        readingDate: new Date().toISOString().split('T')[0],
+        readingTime: new Date().toTimeString().slice(0, 5),
+        meterCondition: '',
+        accessibility: '',
+        notes: ''
+      });
+      setErrors({});
+      setSubmitSuccess('Meter reading recorded and bill generated successfully!');
+
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setSubmitSuccess('');
+      }, 5000);
 
     } catch (error: any) {
       console.error('Meter reading submission error:', error);
-      alert(`Error: ${error.message || 'Failed to submit meter reading'}`);
+      setErrors({ submit: error.message || 'Failed to submit meter reading' });
     } finally {
       setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
@@ -421,7 +528,7 @@ export default function MeterReadingForm() {
   };
 
   // Reset form
-  const handleReset = () => {
+  const handleReset = async () => {
     setShowSuccess(false);
     setBillGenerated(null);
     setSavedReading(null);
@@ -438,6 +545,14 @@ export default function MeterReadingForm() {
     });
     setSearchQuery('');
     setErrors({});
+
+    // ✅ CRITICAL: Refresh BOTH tabs simultaneously (not just active tab)
+    console.log('[Reset] Refreshing both work orders and all customers...');
+    await Promise.all([
+      fetchCustomersWithoutReading(currentPage),
+      fetchWorkOrders()
+    ]);
+    console.log('[Reset] Both lists refreshed successfully');
   };
 
   // Calculate consumption
@@ -449,7 +564,7 @@ export default function MeterReadingForm() {
     return 0;
   };
 
-  return(
+  return (
     <DashboardLayout userType="employee" userName={session?.user?.name || 'Employee'}>
       <div className="h-full flex flex-col">
         <div className="flex-1 overflow-y-auto">
@@ -467,7 +582,7 @@ export default function MeterReadingForm() {
               </div>
             </div>
 
-            {/* Two-Tab System */}
+            {/* Three-Tab System */}
             <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10">
               <div className="flex items-center space-x-2 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-fit">
                 <button
@@ -492,6 +607,17 @@ export default function MeterReadingForm() {
                   <Users className="w-4 h-4" />
                   <span>All Customers</span>
                 </button>
+                <button
+                  onClick={() => setActiveTab('enter-reading')}
+                  className={`px-6 py-2.5 rounded-lg font-semibold transition-all flex items-center space-x-2 ${
+                    activeTab === 'enter-reading'
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Gauge className="w-4 h-4" />
+                  <span>Enter Reading</span>
+                </button>
               </div>
 
               {/* Work Orders Tab Content */}
@@ -510,7 +636,20 @@ export default function MeterReadingForm() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {workOrders.map((wo: any) => (
+                      {/* Queue Header */}
+                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <p className="text-sm text-blue-400 font-semibold">
+                            Processing Queue ({workOrders.length} requests)
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Requests are sorted by arrival time - process in order
+                        </p>
+                      </div>
+                      
+                      {workOrders.map((wo: any, index: number) => (
                         <div
                           key={wo.id}
                           className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl p-4 cursor-pointer hover:shadow-lg hover:shadow-blue-500/20 transition-all"
@@ -518,6 +657,9 @@ export default function MeterReadingForm() {
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
                               <div className="flex items-center space-x-2 mb-2">
+                                <span className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+                                  #{index + 1}
+                                </span>
                                 <span className="text-sm font-mono text-blue-400">WO-{wo.id}</span>
                                 <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                                   wo.priority === 'high' ? 'bg-red-500/20 text-red-400' :
@@ -538,12 +680,20 @@ export default function MeterReadingForm() {
                               <button
                                 onClick={async (e) => {
                                   e.stopPropagation();
+
+                                  console.log('[Process Request] Work Order:', wo);
+                                  console.log('[Process Request] Customer ID:', wo.customerId);
+                                  console.log('[Process Request] Customer Name:', wo.customerName);
+
                                   // Fetch customer details and last reading
                                   const custResponse = await fetch(`/api/customers?customerId=${wo.customerId}`);
                                   if (custResponse.ok) {
                                     const custResult = await custResponse.json();
+                                    console.log('[Process Request] Customer API Response:', custResult);
+
                                     if (custResult.success && custResult.data && custResult.data.length > 0) {
                                       const customer = custResult.data[0];
+                                      console.log('[Process Request] Customer Data:', customer);
 
                                       // Fetch last reading
                                       const readingResponse = await fetch(`/api/meter-readings?customerId=${wo.customerId}&limit=1`);
@@ -557,10 +707,15 @@ export default function MeterReadingForm() {
                                         }
                                       }
 
-                                      setModalCustomer({ ...customer, workOrderId: wo.id });
+                                      console.log('[Process Request] Setting customer:', customer.fullName);
+                                      console.log('[Process Request] Last Reading:', lastRead);
+
+                                      // Set customer data for Enter Reading tab
+                                      setSelectedCustomer({ ...customer, workOrderId: wo.id });
                                       setLastReading(lastRead);
                                       setLastReadingDate(lastDate);
-                                      setShowModal(true);
+
+                                      // Reset form
                                       setReadingData({
                                         currentReading: '',
                                         readingDate: new Date().toISOString().split('T')[0],
@@ -569,12 +724,21 @@ export default function MeterReadingForm() {
                                         accessibility: 'accessible',
                                         notes: '',
                                       });
+                                      setErrors({});
+                                      setSubmitSuccess('');
+
+                                      // Switch to Enter Reading tab
+                                      console.log('[Process Request] Switching to enter-reading tab');
+                                      setActiveTab('enter-reading');
                                     }
+                                  } else {
+                                    console.error('[Process Request] Failed to fetch customer');
                                   }
                                 }}
-                                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all"
+                                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all flex items-center space-x-2"
                               >
-                                Enter Reading
+                                <Gauge className="w-4 h-4" />
+                                <span>Process Request</span>
                               </button>
                             </div>
                           </div>
@@ -586,7 +750,7 @@ export default function MeterReadingForm() {
               )}
 
               {/* All Customers Tab Content */}
-              {activeTab === 'all-customers' && !selectedCustomer && (
+              {activeTab === 'all-customers' && (
                 <div className="mt-4">
                   {/* Stats Banner */}
                   {customerStats && (
@@ -597,13 +761,18 @@ export default function MeterReadingForm() {
                           <p className="text-2xl font-bold text-gray-900 dark:text-white">{customerStats.totalCustomers}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">With Bill</p>
-                          <p className="text-2xl font-bold text-green-400">{customerStats.withBill || 0}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">With Reading</p>
+                          <p className="text-2xl font-bold text-green-400">{customerStats.customersWithReading || 0}</p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">Without Bill</p>
-                          <p className="text-2xl font-bold text-orange-400">{customerStats.withoutBill || 0}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400">Without Reading</p>
+                          <p className="text-2xl font-bold text-orange-400">{customerStats.customersWithoutReading || 0}</p>
                         </div>
+                      </div>
+                      <div className="mt-2 text-center">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          📊 Stats update automatically when readings are entered
+                        </p>
                       </div>
                     </div>
                   )}
@@ -631,11 +800,12 @@ export default function MeterReadingForm() {
                   ) : allCustomers.length === 0 ? (
                     <div className="text-center py-12">
                       <Users className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600 dark:text-gray-400 font-medium">All customers have bills for this month!</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Great job! All bills have been generated.</p>
+                      <p className="text-gray-600 dark:text-gray-400 font-medium">No customers found without meter readings</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">All customers may have readings for this month</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
+                      
                       {allCustomers.map((customer: any) => (
                         <div
                           key={customer.id}
@@ -652,20 +822,29 @@ export default function MeterReadingForm() {
                                   <span className="font-medium">Meter:</span> {customer.meterNumber}
                                 </p>
                               </div>
-                              {customer.lastReading > 0 && (
-                                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                                  Last Reading: {customer.lastReading} kWh on {new Date(customer.lastReadingDate).toLocaleDateString()}
-                                </p>
-                              )}
                             </div>
                             <div className="text-right">
                               <button
-                                onClick={(e) => {
+                                onClick={async (e) => {
                                   e.stopPropagation();
-                                  setModalCustomer(customer);
-                                  setLastReading(customer.lastReading);
-                                  setLastReadingDate(customer.lastReadingDate);
-                                  setShowModal(true);
+
+                                  // Fetch last reading for this customer
+                                  const readingResponse = await fetch(`/api/meter-readings?customerId=${customer.id}&limit=1`);
+                                  let lastRead = 0;
+                                  let lastDate = null;
+                                  if (readingResponse.ok) {
+                                    const readingResult = await readingResponse.json();
+                                    if (readingResult.success && readingResult.data && readingResult.data.length > 0) {
+                                      lastRead = parseFloat(readingResult.data[0].currentReading);
+                                      lastDate = readingResult.data[0].readingDate;
+                                    }
+                                  }
+
+                                  // Set customer data for Enter Reading tab
+                                  setSelectedCustomer(customer);
+                                  setLastReading(lastRead);
+                                  setLastReadingDate(lastDate);
+
                                   // Reset form
                                   setReadingData({
                                     currentReading: '',
@@ -675,15 +854,69 @@ export default function MeterReadingForm() {
                                     accessibility: 'accessible',
                                     notes: '',
                                   });
+                                  setErrors({});
+                                  setSubmitSuccess('');
+
+                                  // Switch to Enter Reading tab
+                                  setActiveTab('enter-reading');
                                 }}
-                                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all"
+                                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all flex items-center space-x-2"
                               >
-                                Enter Reading
+                                <Gauge className="w-4 h-4" />
+                                <span>Select Customer</span>
                               </button>
                             </div>
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+                  
+                  {/* Pagination Controls */}
+                  {pagination && pagination.totalPages > 1 && (
+                    <div className="flex items-center justify-center space-x-2 mt-6">
+                      <button
+                        onClick={() => fetchCustomersWithoutReading(currentPage - 1)}
+                        disabled={!pagination.hasPrev || loadingCustomers}
+                        className="px-3 py-2 bg-white/10 border border-white/20 text-gray-900 dark:text-white rounded-lg hover:bg-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                      </button>
+                      
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                          const pageNum = i + 1;
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => fetchCustomersWithoutReading(pageNum)}
+                              disabled={loadingCustomers}
+                              className={`px-3 py-2 rounded-lg transition-all ${
+                                currentPage === pageNum
+                                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+                                  : 'bg-white/10 border border-white/20 text-gray-900 dark:text-white hover:bg-white/20'
+                              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      
+                      <button
+                        onClick={() => fetchCustomersWithoutReading(currentPage + 1)}
+                        disabled={!pagination.hasNext || loadingCustomers}
+                        className="px-3 py-2 bg-white/10 border border-white/20 text-gray-900 dark:text-white rounded-lg hover:bg-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Pagination Info */}
+                  {pagination && (
+                    <div className="text-center mt-4 text-sm text-gray-600 dark:text-gray-400">
+                      Showing {((currentPage - 1) * 20) + 1} to {Math.min(currentPage * 20, pagination.total)} of {pagination.total} customers
                     </div>
                   )}
                 </div>
@@ -792,8 +1025,319 @@ export default function MeterReadingForm() {
               </div>
             )}
 
+            {/* Enter Reading Tab Content - SIMPLIFIED (NO customer list, ONLY form or select message) */}
+            {activeTab === 'enter-reading' && (
+              <div className="mt-4">
+                <div className="max-w-4xl mx-auto">
+                  {!selectedCustomer ? (
+                    <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-xl rounded-2xl p-12 border border-purple-500/30 text-center">
+                      <div className="max-w-2xl mx-auto">
+                        <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-purple-500/50">
+                          <Gauge className="w-10 h-10 text-white" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
+                          Ready to Enter Meter Reading
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400 mb-8">
+                          To enter a meter reading, please select a customer from one of the tabs below:
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                          <button
+                            onClick={() => setActiveTab('work-orders')}
+                            className="group p-6 bg-white dark:bg-white/5 rounded-xl border-2 border-green-500/30 hover:border-green-500 transition-all text-left hover:shadow-lg hover:shadow-green-500/20"
+                          >
+                            <ClipboardList className="w-8 h-8 text-green-500 mb-3" />
+                            <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">My Work Orders</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                              Process customer-requested meter readings (priority queue)
+                            </p>
+                            <div className="flex items-center text-green-500 text-sm font-semibold">
+                              <span>View Work Orders</span>
+                              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                          </button>
+
+                          <button
+                            onClick={() => setActiveTab('all-customers')}
+                            className="group p-6 bg-white dark:bg-white/5 rounded-xl border-2 border-green-500/30 hover:border-green-500 transition-all text-left hover:shadow-lg hover:shadow-green-500/20"
+                          >
+                            <Users className="w-8 h-8 text-green-500 mb-3" />
+                            <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">All Customers</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                              Browse and search all customers without bills for this month
+                            </p>
+                            <div className="flex items-center text-green-500 text-sm font-semibold">
+                              <span>Browse Customers</span>
+                              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                          </button>
+                        </div>
+
+                        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                          <p className="text-sm text-blue-400 flex items-center justify-center">
+                            <AlertCircle className="w-4 h-4 mr-2" />
+                            <span>Select a customer from either tab, then return here to enter the reading</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-purple-500/30">
+                      {/* Customer Info Header */}
+                      <div className="mb-6 pb-4 border-b border-purple-500/20">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
+                                <User className="w-5 h-5 mr-2 text-purple-400" />
+                                {selectedCustomer.fullName}
+                              </h3>
+                              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                                <div className="flex items-center text-gray-600 dark:text-gray-400">
+                                  <FileText className="w-3 h-3 mr-1" />
+                                  {selectedCustomer.accountNumber}
+                                </div>
+                                <div className="flex items-center text-gray-600 dark:text-gray-400">
+                                  <Gauge className="w-3 h-3 mr-1" />
+                                  {selectedCustomer.meterNumber}
+                                </div>
+                                <div className="flex items-center text-gray-600 dark:text-gray-400">
+                                  <MapPin className="w-3 h-3 mr-1" />
+                                  {selectedCustomer.city}
+                                </div>
+                                <div className="flex items-center text-gray-600 dark:text-gray-400">
+                                  <Phone className="w-3 h-3 mr-1" />
+                                  {selectedCustomer.phone}
+                                </div>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => setSelectedCustomer(null)}
+                              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                            >
+                              <X className="w-5 h-5" />
+                            </button>
+                          </div>
+
+                          {lastReading !== null && (
+                            <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                              <p className="text-xs text-gray-600 dark:text-gray-400">Last Reading</p>
+                              <p className="text-2xl font-bold text-purple-400">{lastReading} kWh</p>
+                              {lastReadingDate && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  {new Date(lastReadingDate).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Meter Reading Form */}
+                        <div className="mt-6 space-y-4">
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Enter Meter Reading</h3>
+
+                          {/* Current Reading */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Current Reading (kWh) *
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={readingData.currentReading}
+                              onChange={(e) => {
+                                setReadingData({ ...readingData, currentReading: e.target.value });
+                                if (errors.currentReading) {
+                                  setErrors({ ...errors, currentReading: '' });
+                                }
+                              }}
+                              placeholder={lastReading ? `Must be greater than ${lastReading}` : 'Enter current reading'}
+                              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                            />
+                            {errors.currentReading && (
+                              <p className="text-red-400 text-xs mt-1 flex items-center">
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                {errors.currentReading}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Reading Date */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Reading Date *
+                            </label>
+                            <input
+                              type="date"
+                              value={readingData.readingDate}
+                              onChange={(e) => {
+                                setReadingData({ ...readingData, readingDate: e.target.value });
+                                if (errors.readingDate) {
+                                  setErrors({ ...errors, readingDate: '' });
+                                }
+                              }}
+                              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                            />
+                            {errors.readingDate && (
+                              <p className="text-red-400 text-xs mt-1 flex items-center">
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                {errors.readingDate}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Reading Time */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Reading Time *
+                            </label>
+                            <input
+                              type="time"
+                              value={readingData.readingTime}
+                              onChange={(e) => {
+                                setReadingData({ ...readingData, readingTime: e.target.value });
+                                if (errors.readingTime) {
+                                  setErrors({ ...errors, readingTime: '' });
+                                }
+                              }}
+                              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                            />
+                            {errors.readingTime && (
+                              <p className="text-red-400 text-xs mt-1 flex items-center">
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                {errors.readingTime}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Meter Condition */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Meter Condition *
+                            </label>
+                            <select
+                              value={readingData.meterCondition}
+                              onChange={(e) => {
+                                setReadingData({ ...readingData, meterCondition: e.target.value });
+                                if (errors.meterCondition) {
+                                  setErrors({ ...errors, meterCondition: '' });
+                                }
+                              }}
+                              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all [&>option]:bg-white [&>option]:dark:bg-gray-800 [&>option]:text-gray-900 [&>option]:dark:text-white"
+                            >
+                              <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Select condition</option>
+                              <option value="good" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Good - Working properly</option>
+                              <option value="fair" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Fair - Minor issues</option>
+                              <option value="poor" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Poor - Needs attention</option>
+                              <option value="damaged" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Damaged - Requires replacement</option>
+                            </select>
+                            {errors.meterCondition && (
+                              <p className="text-red-400 text-xs mt-1 flex items-center">
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                {errors.meterCondition}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Accessibility */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Meter Accessibility *
+                            </label>
+                            <select
+                              value={readingData.accessibility}
+                              onChange={(e) => {
+                                setReadingData({ ...readingData, accessibility: e.target.value });
+                                if (errors.accessibility) {
+                                  setErrors({ ...errors, accessibility: '' });
+                                }
+                              }}
+                              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all [&>option]:bg-white [&>option]:dark:bg-gray-800 [&>option]:text-gray-900 [&>option]:dark:text-white"
+                            >
+                              <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Select accessibility</option>
+                              <option value="easy" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Easy Access</option>
+                              <option value="moderate" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Moderate Access</option>
+                              <option value="difficult" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Difficult Access</option>
+                              <option value="restricted" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Restricted Access</option>
+                            </select>
+                            {errors.accessibility && (
+                              <p className="text-red-400 text-xs mt-1 flex items-center">
+                                <AlertCircle className="w-3 h-3 mr-1" />
+                                {errors.accessibility}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Notes */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Notes (Optional)
+                            </label>
+                            <textarea
+                              value={readingData.notes}
+                              onChange={(e) => setReadingData({ ...readingData, notes: e.target.value })}
+                              rows={3}
+                              placeholder="Any additional observations or comments..."
+                              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
+                            />
+                          </div>
+
+                          {/* Success Message */}
+                          {submitSuccess && (
+                            <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg flex items-start space-x-3">
+                              <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-green-400">Success!</p>
+                                <p className="text-xs text-green-300 mt-1">{submitSuccess}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Error Message */}
+                          {errors.submit && (
+                            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-start space-x-3">
+                              <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-red-400">Error</p>
+                                <p className="text-xs text-red-300 mt-1">{errors.submit}</p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Submit Button */}
+                          <div className="pt-4">
+                            <button
+                              onClick={handleSubmit}
+                              disabled={submitting}
+                              className={`w-full py-3 px-6 rounded-lg font-semibold transition-all flex items-center justify-center space-x-2 ${
+                                submitting
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg hover:shadow-purple-500/50 text-white'
+                              }`}
+                            >
+                              {submitting ? (
+                                <>
+                                  <Loader2 className="w-5 h-5 animate-spin" />
+                                  <span>Processing...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="w-5 h-5" />
+                                  <span>Submit & Generate Bill</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  }
+                </div>
+              </div>
+            )}
+
             {/* Customer Search - Only show in All Customers tab */}
-            {activeTab === 'all-customers' && (
+            {false && activeTab === 'all-customers' && (
               <>
                 <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10">
                   <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">Customer Search</h2>
@@ -868,28 +1412,28 @@ export default function MeterReadingForm() {
                           <User className="w-4 h-4 text-gray-400 mt-0.5" />
                           <div>
                             <p className="text-gray-400 text-xs">Customer Name</p>
-                            <p className="text-white font-semibold text-sm">{selectedCustomer.fullName}</p>
+                            <p className="text-white font-semibold text-sm">{selectedCustomer?.fullName}</p>
                           </div>
                         </div>
                         <div className="flex items-start space-x-2">
                           <FileText className="w-4 h-4 text-gray-400 mt-0.5" />
                           <div>
                             <p className="text-gray-400 text-xs">Account Number</p>
-                            <p className="text-white font-semibold text-sm">{selectedCustomer.accountNumber}</p>
+                            <p className="text-white font-semibold text-sm">{selectedCustomer?.accountNumber}</p>
                           </div>
                         </div>
                         <div className="flex items-start space-x-2">
                           <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
                           <div>
                             <p className="text-gray-400 text-xs">Phone</p>
-                            <p className="text-white font-semibold text-sm">{selectedCustomer.phone}</p>
+                            <p className="text-white font-semibold text-sm">{selectedCustomer?.phone}</p>
                           </div>
                         </div>
                         <div className="flex items-start space-x-2">
                           <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
                           <div>
                             <p className="text-gray-400 text-xs">Address</p>
-                            <p className="text-white text-sm">{selectedCustomer.address}, {selectedCustomer.city}</p>
+                            <p className="text-white text-sm">{selectedCustomer?.address}, {selectedCustomer?.city}</p>
                           </div>
                         </div>
                       </div>
@@ -898,14 +1442,14 @@ export default function MeterReadingForm() {
                           <Gauge className="w-4 h-4 text-gray-400 mt-0.5" />
                           <div>
                             <p className="text-gray-400 text-xs">Meter Number</p>
-                            <p className="text-white font-semibold text-sm">{selectedCustomer.meterNumber}</p>
+                            <p className="text-white font-semibold text-sm">{selectedCustomer?.meterNumber}</p>
                           </div>
                         </div>
                         <div className="flex items-start space-x-2">
                           <Building className="w-4 h-4 text-gray-400 mt-0.5" />
                           <div>
                             <p className="text-gray-400 text-xs">Connection Type</p>
-                            <p className="text-white font-semibold text-sm">{selectedCustomer.connectionType}</p>
+                            <p className="text-white font-semibold text-sm">{selectedCustomer?.connectionType}</p>
                           </div>
                         </div>
                         <div className="flex items-start space-x-2">
@@ -922,7 +1466,7 @@ export default function MeterReadingForm() {
                           <div>
                             <p className="text-gray-400 text-xs">Last Reading Date</p>
                             <p className="text-white text-sm">
-                              {lastReadingDate ? new Date(lastReadingDate).toLocaleDateString() : 'N/A'}
+                              {lastReadingDate ? new Date(lastReadingDate as string).toLocaleDateString() : 'N/A'}
                             </p>
                           </div>
                         </div>
@@ -1091,9 +1635,9 @@ export default function MeterReadingForm() {
                       </button>
                     </div>
                   </form>
-        )}
-        </>
-      )}
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1137,10 +1681,10 @@ export default function MeterReadingForm() {
                 {lastReading !== null && lastReading > 0 && (
                   <div>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Previous Reading</p>
-                    <p className="text-sm font-semibold text-green-600 dark:text-green-400">{lastReading} kWh</p>
+                    <p className="text-sm font-semibold text-green-600 dark:text-green-400">{lastReading ?? 0} kWh</p>
                     {lastReadingDate && (
                       <p className="text-xs text-gray-500 dark:text-gray-500">
-                        {new Date(lastReadingDate).toLocaleDateString()}
+                        {new Date(lastReadingDate as string).toLocaleDateString()}
                       </p>
                     )}
                   </div>
@@ -1157,12 +1701,24 @@ export default function MeterReadingForm() {
                 </label>
                 <input
                   type="number"
-                  step="0.01"
+                  step="1"
+                  min="0"
                   value={readingData.currentReading}
                   onChange={(e) => setReadingData({ ...readingData, currentReading: e.target.value })}
-                  placeholder={lastReading ? `Must be greater than ${lastReading}` : 'Enter current meter reading'}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  onKeyDown={(e) => {
+                    // Prevent +, -, e, E characters
+                    if (['+', '-', 'e', 'E'].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                  placeholder="e.g., 12543 (can be higher or lower than previous)"
+                  autoFocus
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors text-lg font-semibold"
                 />
+                <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
+                  💡 Readings can be lower (meter replacement, rollover) or higher than previous month
+                </p>
                 {errors.currentReading && (
                   <p className="text-red-400 text-xs mt-1 flex items-center">
                     <AlertCircle className="w-3 h-3 mr-1" />
@@ -1206,7 +1762,7 @@ export default function MeterReadingForm() {
                   <select
                     value={readingData.meterCondition}
                     onChange={(e) => setReadingData({ ...readingData, meterCondition: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400 transition-colors"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400 dark:focus:border-green-400 font-medium"
                   >
                     <option value="good">Good</option>
                     <option value="faulty">Faulty</option>
@@ -1220,7 +1776,7 @@ export default function MeterReadingForm() {
                   <select
                     value={readingData.accessibility}
                     onChange={(e) => setReadingData({ ...readingData, accessibility: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400 transition-colors"
+                    className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400 dark:focus:border-green-400 font-medium"
                   >
                     <option value="accessible">Accessible</option>
                     <option value="restricted">Restricted</option>
@@ -1275,7 +1831,7 @@ export default function MeterReadingForm() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       setShowModal(false);
                       setModalCustomer(null);
                       setShowSuccess(false);
@@ -1288,6 +1844,13 @@ export default function MeterReadingForm() {
                         accessibility: 'accessible',
                         notes: '',
                       });
+                      // ✅ CRITICAL: Refresh BOTH tabs simultaneously (not just active tab)
+                      console.log('[Modal Close] Refreshing both work orders and all customers...');
+                      await Promise.all([
+                        fetchCustomersWithoutReading(currentPage),
+                        fetchWorkOrders()
+                      ]);
+                      console.log('[Modal Close] Both lists refreshed successfully');
                     }}
                     className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg text-white text-sm font-medium transition-colors"
                   >
@@ -1343,8 +1906,7 @@ export default function MeterReadingForm() {
         </div>
       )}
 
-  </DashboardLayout >
-
+    </DashboardLayout>
   );
-  
 }
+

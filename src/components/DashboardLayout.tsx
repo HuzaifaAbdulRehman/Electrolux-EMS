@@ -50,7 +50,24 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [hasActiveConnection, setHasActiveConnection] = useState(false);
+  // Initialize connection status from localStorage if available
+  const getInitialConnectionStatus = () => {
+    if (typeof window !== 'undefined') {
+      const cachedStatus = localStorage.getItem('customerConnectionStatus');
+      const statusFetched = localStorage.getItem('customerConnectionStatusFetched');
+      const cachedUserId = localStorage.getItem('customerConnectionUserId');
+      
+      // If we have cached status and it's for the current user, use it immediately
+      if (cachedStatus && statusFetched === 'true' && cachedUserId) {
+        return cachedStatus;
+      }
+    }
+    return 'loading';
+  };
+
+  const initialStatus = getInitialConnectionStatus();
+  const [hasActiveConnection, setHasActiveConnection] = useState(initialStatus === 'active');
+  const [connectionStatus, setConnectionStatus] = useState<string>(initialStatus);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -99,6 +116,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
           { name: 'Meter Reading', href: '/employee/meter-reading', icon: Gauge, description: 'Record customer readings' },
           { name: 'Work Orders', href: '/employee/work-orders', icon: ClipboardList, description: 'Manage assigned tasks' },
           { name: 'Bill Generation', href: '/employee/bill-generation', icon: FileText, description: 'Generate customer bills' },
+          { name: 'Outage Management', href: '/employee/outages', icon: ZapOff, description: 'Manage power outages' },
         ]},
         { section: 'CUSTOMER MANAGEMENT', items: [
           { name: 'Customers', href: '/employee/customers', icon: Users, description: 'View customer details' },
@@ -117,6 +135,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
         { section: 'USER MANAGEMENT', items: [
           { name: 'Customers', href: '/admin/customers', icon: Users, description: 'Manage all customers' },
           { name: 'Employees', href: '/admin/employees', icon: Building, description: 'Manage staff members' },
+          { name: 'Connection Requests', href: '/admin/connection-requests', icon: Zap, description: 'Review new connection applications' },
           { name: 'Complaints', href: '/admin/complaints', icon: MessageSquare, description: 'Review & assign complaints' },
         ]},
         { section: 'BILLING & FINANCE', items: [
@@ -133,6 +152,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
           { name: 'Settings', href: '/admin/settings', icon: Settings, description: 'System configuration' },
         ]},
         { section: 'ACCOUNT', items: [
+          { name: 'Notifications', href: '/admin/notifications', icon: Bell, description: 'View system notifications' },
           { name: 'Profile', href: '/admin/profile', icon: User, description: 'Admin profile' },
         ]},
       ];
@@ -173,13 +193,66 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
       document.documentElement.classList.remove('dark');
     }
 
-    // Check connection status from event or localStorage
-    const checkConnectionStatus = () => {
-      const connectionStatus = localStorage.getItem('connectionStatus');
-      setHasActiveConnection(connectionStatus === 'active');
+    // Fetch customer connection status only once per session
+    const fetchCustomerStatus = async () => {
+      if (userType === 'customer' && session?.user?.id) {
+        // Check if we have cached status and fetch flag
+        const cachedStatus = localStorage.getItem('customerConnectionStatus');
+        const statusFetched = localStorage.getItem('customerConnectionStatusFetched');
+        const currentUserId = session.user.id;
+        const cachedUserId = localStorage.getItem('customerConnectionUserId');
+        
+        // If we have cached status for the same user, use it immediately
+        if (cachedStatus && statusFetched === 'true' && cachedUserId === currentUserId) {
+          setConnectionStatus(cachedStatus);
+          setHasActiveConnection(cachedStatus === 'active');
+          return; // Don't fetch from API
+        }
+        
+        // Only fetch from API if we haven't fetched for this user
+        try {
+          const response = await fetch('/api/customers/profile');
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              const status = result.data.status;
+              setConnectionStatus(status);
+              setHasActiveConnection(status === 'active');
+              
+              // Cache the status and fetch flag in localStorage
+              localStorage.setItem('customerConnectionStatus', status);
+              localStorage.setItem('customerConnectionStatusFetched', 'true');
+              localStorage.setItem('customerConnectionUserId', currentUserId);
+            } else {
+              setConnectionStatus('unknown');
+              setHasActiveConnection(false);
+              localStorage.setItem('customerConnectionStatus', 'unknown');
+              localStorage.setItem('customerConnectionStatusFetched', 'true');
+              localStorage.setItem('customerConnectionUserId', currentUserId);
+            }
+          } else {
+            setConnectionStatus('unknown');
+            setHasActiveConnection(false);
+            localStorage.setItem('customerConnectionStatus', 'unknown');
+            localStorage.setItem('customerConnectionStatusFetched', 'true');
+            localStorage.setItem('customerConnectionUserId', currentUserId);
+          }
+        } catch (error) {
+          console.error('Error fetching customer status:', error);
+          setConnectionStatus('unknown');
+          setHasActiveConnection(false);
+          localStorage.setItem('customerConnectionStatus', 'unknown');
+          localStorage.setItem('customerConnectionStatusFetched', 'true');
+          localStorage.setItem('customerConnectionUserId', currentUserId);
+        }
+      } else if (userType !== 'customer') {
+        // For non-customers, set to active by default
+        setConnectionStatus('active');
+        setHasActiveConnection(true);
+      }
     };
 
-    checkConnectionStatus();
+    fetchCustomerStatus();
 
     // Fetch notifications on mount
     if (status === 'authenticated') {
@@ -188,15 +261,32 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
 
     // Listen for connection status changes
     const handleConnectionChange = (e: CustomEvent) => {
-      setHasActiveConnection(e.detail.status === 'active');
+      const newStatus = e.detail.status;
+      setConnectionStatus(newStatus);
+      setHasActiveConnection(newStatus === 'active');
+      localStorage.setItem('customerConnectionStatus', newStatus);
+      localStorage.setItem('customerConnectionStatusFetched', 'true');
+      if (session?.user?.id) {
+        localStorage.setItem('customerConnectionUserId', session.user.id);
+      }
     };
+
+    // Function to manually refresh connection status (for admin actions)
+    const refreshConnectionStatus = () => {
+      localStorage.removeItem('customerConnectionStatusFetched');
+      fetchCustomerStatus();
+    };
+
+    // Expose refresh function globally for admin actions
+    (window as any).refreshCustomerConnectionStatus = refreshConnectionStatus;
 
     window.addEventListener('connectionStatusChange' as any, handleConnectionChange);
 
     return () => {
       window.removeEventListener('connectionStatusChange' as any, handleConnectionChange);
+      delete (window as any).refreshCustomerConnectionStatus;
     };
-  }, [status]);
+  }, [status, session?.user?.id, userType]);
 
   const toggleTheme = () => {
     const newTheme = !isDarkMode;
@@ -216,6 +306,11 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
+      // Clear all cached connection status data on logout
+      localStorage.removeItem('customerConnectionStatus');
+      localStorage.removeItem('customerConnectionStatusFetched');
+      localStorage.removeItem('customerConnectionUserId');
+      
       await signOut({
         redirect: true,
         callbackUrl: '/login'
@@ -344,18 +439,29 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
             </div>
           </nav>
 
-          {/* Connection Status (for customers) */}
-          {userType === 'customer' && (
+          {/* Connection Status (for customers) - Only show if meaningful */}
+          {userType === 'customer' && connectionStatus !== 'unknown' && connectionStatus !== 'loading' && (
             <div className="p-4 border-t dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Connection</span>
                 <span className={`flex items-center space-x-1 text-sm ${
-                  hasActiveConnection ? 'text-green-500' : 'text-gray-500 dark:text-gray-400'
+                  connectionStatus === 'active' ? 'text-green-500' :
+                  connectionStatus === 'pending_installation' ? 'text-yellow-500' :
+                  connectionStatus === 'suspended' ? 'text-red-500' :
+                  'text-gray-500 dark:text-gray-400'
                 }`}>
                   <span className={`h-2 w-2 rounded-full ${
-                    hasActiveConnection ? 'bg-green-500' : 'bg-gray-500 dark:bg-gray-400'
+                    connectionStatus === 'active' ? 'bg-green-500' :
+                    connectionStatus === 'pending_installation' ? 'bg-yellow-500' :
+                    connectionStatus === 'suspended' ? 'bg-red-500' :
+                    'bg-gray-500 dark:bg-gray-400'
                   }`}></span>
-                  <span>{hasActiveConnection ? 'Active' : 'Inactive'}</span>
+                  <span>
+                    {connectionStatus === 'active' ? 'Active' :
+                     connectionStatus === 'pending_installation' ? 'Pending' :
+                     connectionStatus === 'suspended' ? 'Suspended' :
+                     connectionStatus}
+                  </span>
                 </span>
               </div>
             </div>

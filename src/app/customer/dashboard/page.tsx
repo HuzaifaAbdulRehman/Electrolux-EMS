@@ -21,13 +21,15 @@ import {
   Loader2,
   RefreshCw
 } from 'lucide-react';
-import { Line } from 'react-chartjs-2';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -40,6 +42,8 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend,
@@ -113,6 +117,7 @@ export default function CustomerDashboard() {
     currentBill = {},
     recentBills = [],
     recentPayments = [],
+    monthlyPayments = [],
     consumptionHistory = [],
     outstandingBalance = '0',
     avgConsumption = 0,
@@ -224,6 +229,118 @@ export default function CustomerDashboard() {
           color: 'rgba(255, 255, 255, 0.6)',
           callback: function(value: any) {
             return value + ' kWh';
+          }
+        }
+      }
+    }
+  };
+
+  // Payment History Chart Data (NEW)
+  const paymentHistoryData = {
+    labels: monthlyPayments.map((item: any) => {
+      const [year, month] = item.month.split('-');
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${monthNames[parseInt(month) - 1]} '${year.slice(2)}`;
+    }).reverse(),
+    datasets: [{
+      label: 'Payments (Rs)',
+      data: monthlyPayments.map((item: any) => safeNumber(item.totalPaid, 0) / 1000).reverse(),
+      backgroundColor: 'rgba(34, 197, 94, 0.8)',
+      borderColor: 'rgba(34, 197, 94, 1)',
+      borderWidth: 2,
+      borderRadius: 6
+    }]
+  };
+
+  // Bill Comparison Chart Data (NEW)
+  const billComparisonData = {
+    labels: recentBills.map((bill: any) => {
+      const date = new Date(bill.billingMonth);
+      return date.toLocaleDateString('en-US', { month: 'short' });
+    }).reverse().slice(0, 6),
+    datasets: [{
+      label: 'Bill Amount (Rs)',
+      data: recentBills.map((bill: any) => safeNumber(bill.totalAmount, 0) / 1000).reverse().slice(0, 6),
+      backgroundColor: 'rgba(59, 130, 246, 0.8)',
+      borderColor: 'rgba(59, 130, 246, 1)',
+      borderWidth: 2,
+      borderRadius: 6
+    }]
+  };
+
+  // Cost Breakdown Chart Data (NEW) - From current bill
+  const costBreakdownData = {
+    labels: ['Energy Charges', 'Fixed Charges', 'Electricity Duty', 'GST'],
+    datasets: [{
+      data: currentBill ? [
+        safeNumber(currentBill.baseAmount, 0),
+        safeNumber(currentBill.fixedCharges, 0),
+        safeNumber(currentBill.electricityDuty, 0),
+        safeNumber(currentBill.gstAmount, 0)
+      ] : [0, 0, 0, 0],
+      backgroundColor: [
+        'rgba(59, 130, 246, 0.8)',  // Blue
+        'rgba(251, 146, 60, 0.8)',  // Orange
+        'rgba(239, 68, 68, 0.8)',   // Red
+        'rgba(34, 197, 94, 0.8)'    // Green
+      ],
+      borderColor: [
+        'rgba(59, 130, 246, 1)',
+        'rgba(251, 146, 60, 1)',
+        'rgba(239, 68, 68, 1)',
+        'rgba(34, 197, 94, 1)'
+      ],
+      borderWidth: 2
+    }]
+  };
+
+  const barChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        padding: 12,
+        cornerRadius: 8
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: 'rgba(255, 255, 255, 0.6)' }
+      },
+      y: {
+        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.6)',
+          callback: function(value: any) {
+            return 'Rs ' + value + 'K';
+          }
+        }
+      }
+    }
+  };
+
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          color: 'rgba(255, 255, 255, 0.8)',
+          padding: 15,
+          font: { size: 12 }
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        padding: 12,
+        cornerRadius: 8,
+        callbacks: {
+          label: function(context: any) {
+            return context.label + ': Rs ' + context.parsed.toFixed(2);
           }
         }
       }
@@ -342,23 +459,89 @@ export default function CustomerDashboard() {
           ))}
         </div>
 
-        {/* Consumption Trend Chart */}
-        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Consumption Trend</h2>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">Your energy usage over time</p>
-            </div>
-            <Activity className="w-6 h-6 text-orange-400" />
-          </div>
-          <div className="h-64">
-            {consumptionHistory.length > 0 ? (
-              <Line data={usageTrendData} options={chartOptions} />
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                <p>No consumption data available</p>
+        {/* Charts Grid - Row 1 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Consumption Trend Chart */}
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Consumption Trend</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Your energy usage over time</p>
               </div>
-            )}
+              <Activity className="w-6 h-6 text-orange-400" />
+            </div>
+            <div className="h-64">
+              {consumptionHistory.length > 0 ? (
+                <Line data={usageTrendData} options={chartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p>No consumption data available</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Payment History Chart (NEW) */}
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Payment History</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Your monthly payments</p>
+              </div>
+              <DollarSign className="w-6 h-6 text-green-400" />
+            </div>
+            <div className="h-64">
+              {monthlyPayments.length > 0 ? (
+                <Bar data={paymentHistoryData} options={barChartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p>No payment data available</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Charts Grid - Row 2 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Bill Comparison Chart (NEW) */}
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Bill Comparison</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Monthly bill amount trends</p>
+              </div>
+              <FileText className="w-6 h-6 text-blue-400" />
+            </div>
+            <div className="h-64">
+              {recentBills.length > 0 ? (
+                <Bar data={billComparisonData} options={barChartOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p>No bill data available</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Cost Breakdown Chart (NEW) */}
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Cost Breakdown</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Current bill components</p>
+              </div>
+              <Zap className="w-6 h-6 text-yellow-400" />
+            </div>
+            <div className="h-64">
+              {currentBill && safeNumber(currentBill.totalAmount, 0) > 0 ? (
+                <Doughnut data={costBreakdownData} options={doughnutOptions} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p>No current bill available</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

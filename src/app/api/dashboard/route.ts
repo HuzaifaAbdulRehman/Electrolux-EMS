@@ -12,11 +12,47 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('[Dashboard API] Fetching dashboard data for:', session.user.userType, session.user.id);
+    // Get period parameter from query string
+    const { searchParams } = new URL(request.url);
+    const period = searchParams.get('period') || '6months';
 
-    // Get current month for calculations
+    console.log('[Dashboard API] Fetching dashboard data for:', session.user.userType, session.user.id, 'Period:', period);
+
+    // Calculate date range based on period
     const currentDate = new Date();
     const currentMonth = currentDate.toISOString().substring(0, 7);
+
+    let startDate: Date;
+    let monthLimit = 6;
+
+    switch (period) {
+      case 'month':
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        monthLimit = 1;
+        break;
+      case 'lastMonth':
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+        monthLimit = 1;
+        break;
+      case '3months':
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 3, 1);
+        monthLimit = 3;
+        break;
+      case '6months':
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 6, 1);
+        monthLimit = 6;
+        break;
+      case 'all':
+        startDate = new Date(2020, 0, 1);
+        monthLimit = 24;
+        break;
+      default:
+        startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 6, 1);
+        monthLimit = 6;
+    }
+
+    const startDateStr = startDate.toISOString().split('T')[0];
+    console.log('[Dashboard API] Date filter:', startDateStr, 'Months:', monthLimit);
 
     // 1. BASIC METRICS (DBMS: Aggregate Functions)
     // Get customer count by status
@@ -41,7 +77,7 @@ export async function GET(request: NextRequest) {
     const [totalBills] = await db
       .select({ count: sql<number>`COUNT(*)` })
       .from(bills)
-      .where(sql`${bills.billingMonth} LIKE ${currentMonth + '%'}`);
+      .where(sql`${bills.billingMonth} >= ${startDateStr}`);
 
     const [activeBills] = await db
       .select({ count: sql<number>`COUNT(*)` })
@@ -53,7 +89,7 @@ export async function GET(request: NextRequest) {
         total: sql<number>`COALESCE(SUM(${bills.totalAmount}), 0)`
       })
       .from(bills)
-      .where(sql`${bills.billingMonth} LIKE ${currentMonth + '%'}`);
+      .where(sql`${bills.billingMonth} >= ${startDateStr}`);
 
     const [outstandingAmount] = await db
         .select({
@@ -66,7 +102,7 @@ export async function GET(request: NextRequest) {
       .select({ count: sql<number>`COUNT(*)` })
       .from(bills)
       .where(and(
-        sql`${bills.billingMonth} LIKE ${currentMonth + '%'}`,
+        sql`${bills.billingMonth} >= ${startDateStr}`,
         eq(bills.status, 'paid')
       ));
 
@@ -84,7 +120,7 @@ export async function GET(request: NextRequest) {
         })
         .from(bills)
       .innerJoin(customers, eq(bills.customerId, customers.id))
-      .where(sql`${bills.billingMonth} >= '2024-01-01'`)
+      .where(sql`${bills.billingMonth} >= ${startDateStr}`)
       .orderBy(desc(bills.createdAt))
         .limit(5);
 
@@ -97,7 +133,7 @@ export async function GET(request: NextRequest) {
       })
       .from(bills)
       .innerJoin(customers, eq(bills.customerId, customers.id))
-      .where(sql`${bills.billingMonth} >= '2024-01-01'`)
+      .where(sql`${bills.billingMonth} >= ${startDateStr}`)
       .groupBy(customers.connectionType)
       .orderBy(sql`SUM(${bills.totalAmount}) DESC`);
 
@@ -108,9 +144,10 @@ export async function GET(request: NextRequest) {
         revenue: sql<number>`SUM(${bills.totalAmount})`
       })
       .from(bills)
-      .where(sql`${bills.billingMonth} >= '2024-01-01'`)
+      .where(sql`${bills.billingMonth} >= ${startDateStr}`)
       .groupBy(sql`DATE_FORMAT(${bills.billingMonth}, '%Y-%m')`)
-      .orderBy(sql`DATE_FORMAT(${bills.billingMonth}, '%Y-%m')`);
+      .orderBy(sql`DATE_FORMAT(${bills.billingMonth}, '%Y-%m')`)
+      .limit(monthLimit);
 
     // 5. PAYMENT METHODS (DBMS: JOIN with Payments)
     const paymentMethods = await db
@@ -121,7 +158,7 @@ export async function GET(request: NextRequest) {
         })
         .from(payments)
       .innerJoin(bills, eq(payments.billId, bills.id))
-      .where(sql`${bills.billingMonth} LIKE ${currentMonth + '%'}`)
+      .where(sql`${bills.billingMonth} >= ${startDateStr}`)
       .groupBy(payments.paymentMethod);
 
     // 6. WORK ORDERS STATUS (DBMS: Conditional Aggregation)
@@ -141,7 +178,7 @@ export async function GET(request: NextRequest) {
         totalAmount: sql<number>`COALESCE(SUM(${bills.totalAmount}), 0)`
       })
       .from(bills)
-      .where(sql`${bills.billingMonth} >= '2024-01-01'`)
+      .where(sql`${bills.billingMonth} >= ${startDateStr}`)
       .groupBy(bills.status);
 
     // 8. CONNECTION TYPE DISTRIBUTION (DBMS: Customer Grouping)
@@ -208,6 +245,39 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {} as Record<string, { count: number; activeCount: number }>);
 
+    // 9. TOP 10 HIGH-CONSUMING CUSTOMERS (DBMS: JOIN + ORDER BY + LIMIT)
+    const topConsumingCustomers = await db
+      .select({
+        customerId: customers.id,
+        customerName: customers.fullName,
+        accountNumber: customers.accountNumber,
+        connectionType: customers.connectionType,
+        totalConsumption: sql<number>`COALESCE(SUM(${bills.unitsConsumed}), 0)`,
+        billCount: sql<number>`COUNT(${bills.id})`,
+        avgConsumption: sql<number>`COALESCE(AVG(${bills.unitsConsumed}), 0)`
+      })
+      .from(customers)
+      .leftJoin(bills, eq(customers.id, bills.customerId))
+      .where(sql`${bills.billingMonth} >= ${startDateStr}`)
+      .groupBy(customers.id, customers.fullName, customers.accountNumber, customers.connectionType)
+      .orderBy(sql`COALESCE(SUM(${bills.unitsConsumed}), 0) DESC`)
+      .limit(10);
+
+    // 10. MONTHLY COLLECTION RATE TREND (DBMS: CASE WHEN + Date Grouping)
+    const collectionRateTrend = await db
+      .select({
+        month: sql<string>`DATE_FORMAT(${bills.billingMonth}, '%Y-%m')`,
+        totalBills: sql<number>`COUNT(*)`,
+        paidBills: sql<number>`SUM(CASE WHEN ${bills.status} = 'paid' THEN 1 ELSE 0 END)`,
+        totalAmount: sql<number>`COALESCE(SUM(${bills.totalAmount}), 0)`,
+        paidAmount: sql<number>`COALESCE(SUM(CASE WHEN ${bills.status} = 'paid' THEN ${bills.totalAmount} ELSE 0 END), 0)`
+      })
+      .from(bills)
+      .where(sql`${bills.billingMonth} >= ${startDateStr}`)
+      .groupBy(sql`DATE_FORMAT(${bills.billingMonth}, '%Y-%m')`)
+      .orderBy(sql`DATE_FORMAT(${bills.billingMonth}, '%Y-%m')`)
+      .limit(monthLimit);
+
     const dashboardData = {
       metrics,
       recentBills,
@@ -219,7 +289,16 @@ export async function GET(request: NextRequest) {
         return acc;
       }, {} as Record<string, number>),
       billsStatus: billsStatusFormatted,
-      connectionTypeDistribution: connectionTypeFormatted
+      connectionTypeDistribution: connectionTypeFormatted,
+      topConsumingCustomers,
+      collectionRateTrend: collectionRateTrend.map(item => ({
+        month: item.month,
+        totalBills: item.totalBills,
+        paidBills: item.paidBills,
+        collectionRate: item.totalBills > 0 ? parseFloat(((item.paidBills / item.totalBills) * 100).toFixed(1)) : 0,
+        totalAmount: item.totalAmount,
+        paidAmount: item.paidAmount
+      }))
     };
 
     console.log('[Dashboard API] Dashboard data fetched successfully');

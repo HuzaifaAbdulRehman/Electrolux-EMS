@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
     const availableEmployees = await db
       .select({
         id: employees.id,
-        fullName: employees.fullName,
+        fullName: employees.employeeName,
         email: employees.email,
         phone: employees.phone,
         department: employees.department,
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
         eq(workOrders.status, 'in_progress')
       ))
       .where(eq(employees.status, 'active'))
-      .groupBy(employees.id, employees.fullName, employees.email, employees.phone, employees.department)
+      .groupBy(employees.id, employees.employeeName, employees.email, employees.phone, employees.department)
       .orderBy(sql`workLoad ASC`);
 
     const total = totalResult.count;
@@ -114,7 +114,9 @@ export async function GET(request: NextRequest) {
 
     // Format status counts
     const statusStats = statusCounts.reduce((acc, item) => {
-      acc[item.status] = item.count;
+      if (item.status) {
+        acc[item.status] = item.count;
+      }
       return acc;
     }, {} as Record<string, number>);
 
@@ -322,11 +324,11 @@ export async function PATCH(request: NextRequest) {
     // Create work order if needed (DBMS: INSERT with Foreign Key)
     let workOrderId = null;
     if (workOrderData && !customerData) { // Only create work order for approve action
-      const workOrder = await db
+      const [workOrder] = await db
         .insert(workOrders)
         .values(workOrderData as any);
 
-      workOrderId = workOrder.insertId;
+      workOrderId = (workOrder as any).insertId;
       console.log('[Admin Connection Requests] Work order created:', workOrderId);
     }
 

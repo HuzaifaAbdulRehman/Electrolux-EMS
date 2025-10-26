@@ -43,22 +43,34 @@ export function getCityCode(city: string): string {
  */
 export async function generateMeterNumber(city: string): Promise<string> {
   const cityCode = getCityCode(city);
-  
+
   try {
-    // Get the maximum meter number for this city using SQL MAX() function
-    // This demonstrates DBMS concepts: aggregate functions, string manipulation
-    const result = await db.execute(sql`
-      SELECT MAX(CAST(SUBSTRING(meter_number, 9) AS UNSIGNED)) as max_id 
-      FROM customers 
-      WHERE meter_number LIKE CONCAT('MTR-', ${cityCode}, '-%')
-    `);
-    
-    const maxId = result[0]?.max_id || 0;
+    // Get all customers with meter numbers for this city and find max manually
+    const existingMeters = await db
+      .select({ meterNumber: customers.meterNumber })
+      .from(customers)
+      .where(sql`${customers.meterNumber} LIKE ${`MTR-${cityCode}-%`}`);
+
+    let maxId = 0;
+
+    // Parse existing meter numbers to find the highest sequence
+    for (const meter of existingMeters) {
+      if (meter.meterNumber) {
+        const match = meter.meterNumber.match(/^MTR-[A-Z]{3}-(\d{6})$/);
+        if (match) {
+          const id = parseInt(match[1], 10);
+          if (id > maxId) {
+            maxId = id;
+          }
+        }
+      }
+    }
+
     const nextId = maxId + 1;
     const paddedId = String(nextId).padStart(6, '0');
-    
+
     return `MTR-${cityCode}-${paddedId}`;
-    
+
   } catch (error) {
     console.error('Error generating meter number:', error);
     // Fallback: use timestamp-based ID

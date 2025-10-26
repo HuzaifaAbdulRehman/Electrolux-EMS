@@ -59,7 +59,7 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('[Dashboard] Fetching dashboard data...');
       const response = await fetch('/api/dashboard');
 
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
       }
 
       const result = await response.json();
-      
+
       if (!result.success) {
         throw new Error(result.error || 'API returned error');
       }
@@ -80,10 +80,40 @@ export default function AdminDashboard() {
 
       setDashboardData(result.data);
       setRetryCount(0);
+
+      // Cache dashboard data in localStorage for resilience
+      try {
+        localStorage.setItem('last_dashboard_data', JSON.stringify({
+          data: result.data,
+          timestamp: new Date().toISOString()
+        }));
+      } catch (cacheErr) {
+        console.warn('[Dashboard] Failed to cache data to localStorage:', cacheErr);
+      }
+
       console.log('[Dashboard] Dashboard data loaded successfully');
     } catch (err: any) {
       console.error('[Dashboard] Error fetching dashboard data:', err);
       setError(err.message || 'Failed to load dashboard data');
+
+      // Try to load cached data if API fails
+      try {
+        const cachedData = localStorage.getItem('last_dashboard_data');
+        if (cachedData) {
+          const { data, timestamp } = JSON.parse(cachedData);
+          const cacheAge = new Date().getTime() - new Date(timestamp).getTime();
+          const cacheAgeHours = cacheAge / (1000 * 60 * 60);
+
+          // Use cache if less than 24 hours old
+          if (cacheAgeHours < 24) {
+            console.log('[Dashboard] Loading cached data from', timestamp);
+            setDashboardData(data);
+            setError(err.message + ' (Showing cached data from ' + new Date(timestamp).toLocaleString() + ')');
+          }
+        }
+      } catch (cacheErr) {
+        console.error('[Dashboard] Failed to load cached data:', cacheErr);
+      }
     } finally {
       setLoading(false);
     }
@@ -135,26 +165,32 @@ export default function AdminDashboard() {
     );
   }
 
-  const { metrics, recentBills = [], revenueByCategory = {}, monthlyRevenue = [], paymentMethods = {} } = dashboardData;
+  const { metrics, recentBills = [], revenueByCategory = {}, monthlyRevenue = [], paymentMethods = {}, billsStatus = {}, connectionTypeDistribution = {} } = dashboardData;
 
-  // Chart data from API
+  // Chart data from API - Revenue by Connection Type
+  const categoryLabels = Object.keys(revenueByCategory);
+  const categoryValues = Object.values(revenueByCategory).map((item: any) => item.total || item);
+
   const categoryData = {
-    labels: Object.keys(revenueByCategory),
+    labels: categoryLabels.map(label => {
+      // Capitalize and format labels
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    }),
     datasets: [
       {
-        label: 'Revenue ($)',
-        data: Object.values(revenueByCategory),
+        label: 'Revenue (Rs)',
+        data: categoryValues,
         backgroundColor: [
-          'rgba(239, 68, 68, 0.85)',
-          'rgba(236, 72, 153, 0.85)',
-          'rgba(168, 85, 247, 0.85)',
-          'rgba(59, 130, 246, 0.85)'
+          'rgba(239, 68, 68, 0.85)',     // Industrial - Red
+          'rgba(59, 130, 246, 0.85)',    // Commercial - Blue
+          'rgba(34, 197, 94, 0.85)',     // Agricultural - Green
+          'rgba(250, 204, 21, 0.85)'     // Residential - Yellow
         ],
         borderColor: [
           'rgba(239, 68, 68, 1)',
-          'rgba(236, 72, 153, 1)',
-          'rgba(168, 85, 247, 1)',
-          'rgba(59, 130, 246, 1)'
+          'rgba(59, 130, 246, 1)',
+          'rgba(34, 197, 94, 1)',
+          'rgba(250, 204, 21, 1)'
         ],
         borderWidth: 2,
         borderRadius: 8
@@ -164,33 +200,55 @@ export default function AdminDashboard() {
 
   // Monthly Revenue Trend from actual data
   const revenueData = {
-    labels: monthlyRevenue.map((item: any) => item.month),
+    labels: monthlyRevenue.map((item: any) => {
+      // Format: "2025-05" -> "May '25"
+      const [year, month] = item.month.split('-');
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${monthNames[parseInt(month) - 1]} '${year.slice(2)}`;
+    }),
     datasets: [
       {
-        label: 'Revenue',
-        data: monthlyRevenue.map((item: any) => item.revenue),
-        borderColor: 'rgba(239, 68, 68, 1)',
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        label: 'Monthly Revenue (Rs)',
+        data: monthlyRevenue.map((item: any) => item.revenue / 1000), // Convert to thousands
+        borderColor: 'rgba(34, 197, 94, 1)',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
         tension: 0.4,
-        fill: true
+        fill: true,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2
       }
     ]
   };
 
   // Payment Methods from actual data
+  const paymentMethodLabels = Object.keys(paymentMethods);
+  const paymentMethodCounts = paymentMethodLabels.map(method => {
+    const data = paymentMethods[method];
+    return typeof data === 'object' ? (data.count || 0) : data;
+  });
+
   const paymentMethodsData = {
-    labels: Object.keys(paymentMethods),
+    labels: paymentMethodLabels.map(method => {
+      // Format label: bank_transfer -> Bank Transfer
+      return method.split('_').map(word =>
+        word.charAt(0).toUpperCase() + word.slice(1)
+      ).join(' ');
+    }),
     datasets: [
       {
         label: 'Transactions',
-        data: Object.values(paymentMethods).map((pm: any) => pm.count || 0),
+        data: paymentMethodCounts,
         backgroundColor: [
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(236, 72, 153, 0.8)',
-          'rgba(168, 85, 247, 0.8)',
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(16, 185, 129, 0.8)',
-          'rgba(245, 158, 11, 0.8)'
+          'rgba(239, 68, 68, 0.8)',     // Red
+          'rgba(236, 72, 153, 0.8)',    // Pink
+          'rgba(168, 85, 247, 0.8)',    // Purple
+          'rgba(59, 130, 246, 0.8)',    // Blue
+          'rgba(16, 185, 129, 0.8)',    // Green
+          'rgba(245, 158, 11, 0.8)',    // Yellow
+          'rgba(20, 184, 166, 0.8)'     // Teal
         ],
         borderColor: [
           'rgba(239, 68, 68, 1)',
@@ -198,7 +256,68 @@ export default function AdminDashboard() {
           'rgba(168, 85, 247, 1)',
           'rgba(59, 130, 246, 1)',
           'rgba(16, 185, 129, 1)',
-          'rgba(245, 158, 11, 1)'
+          'rgba(245, 158, 11, 1)',
+          'rgba(20, 184, 166, 1)'
+        ],
+        borderWidth: 2
+      }
+    ]
+  };
+
+  // Bills Status Distribution from actual data
+  const billsStatusLabels = Object.keys(billsStatus);
+  const billsStatusCounts = billsStatusLabels.map(status => {
+    const data = billsStatus[status];
+    return typeof data === 'object' ? (data.count || 0) : data;
+  });
+
+  const billsStatusData = {
+    labels: billsStatusLabels.map(status => status.charAt(0).toUpperCase() + status.slice(1)),
+    datasets: [
+      {
+        label: 'Bills Count',
+        data: billsStatusCounts,
+        backgroundColor: [
+          'rgba(34, 197, 94, 0.85)',    // Paid - Green
+          'rgba(250, 204, 21, 0.85)',   // Issued/Pending - Yellow
+          'rgba(239, 68, 68, 0.85)',    // Overdue - Red
+          'rgba(148, 163, 184, 0.85)'   // Other - Gray
+        ],
+        borderColor: [
+          'rgba(34, 197, 94, 1)',
+          'rgba(250, 204, 21, 1)',
+          'rgba(239, 68, 68, 1)',
+          'rgba(148, 163, 184, 1)'
+        ],
+        borderWidth: 2
+      }
+    ]
+  };
+
+  // Connection Type Distribution from actual data
+  const connectionTypeLabels = Object.keys(connectionTypeDistribution);
+  const connectionTypeCounts = connectionTypeLabels.map(type => {
+    const data = connectionTypeDistribution[type];
+    return typeof data === 'object' ? (data.count || 0) : data;
+  });
+
+  const connectionTypeData = {
+    labels: connectionTypeLabels.map(type => type.charAt(0).toUpperCase() + type.slice(1)),
+    datasets: [
+      {
+        label: 'Customer Count',
+        data: connectionTypeCounts,
+        backgroundColor: [
+          'rgba(239, 68, 68, 0.85)',     // Industrial - Red
+          'rgba(59, 130, 246, 0.85)',    // Commercial - Blue
+          'rgba(34, 197, 94, 0.85)',     // Agricultural - Green
+          'rgba(250, 204, 21, 0.85)'     // Residential - Yellow
+        ],
+        borderColor: [
+          'rgba(239, 68, 68, 1)',
+          'rgba(59, 130, 246, 1)',
+          'rgba(34, 197, 94, 1)',
+          'rgba(250, 204, 21, 1)'
         ],
         borderWidth: 2
       }
@@ -214,6 +333,29 @@ export default function AdminDashboard() {
           color: 'rgba(255, 255, 255, 0.8)',
           font: { size: 12 }
         }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderWidth: 1,
+        padding: 12,
+        displayColors: true,
+        callbacks: {
+          label: function(context: any) {
+            let label = context.dataset.label || '';
+            if (label) {
+              label += ': ';
+            }
+            if (context.parsed.y !== null) {
+              // Value is already in thousands, multiply back for display
+              const actualValue = context.parsed.y * 1000;
+              label += 'Rs ' + actualValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+            return label;
+          }
+        }
       }
     },
     scales: {
@@ -223,7 +365,14 @@ export default function AdminDashboard() {
       },
       y: {
         grid: { color: 'rgba(255, 255, 255, 0.1)' },
-        ticks: { color: 'rgba(255, 255, 255, 0.6)' }
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.6)',
+          callback: function(value: any) {
+            // Value is already in thousands, just add K suffix
+            return 'Rs ' + value.toFixed(0) + 'K';
+          }
+        },
+        beginAtZero: true
       }
     }
   };
@@ -233,11 +382,30 @@ export default function AdminDashboard() {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'bottom' as const,
+        position: 'right' as const,
         labels: {
           color: 'rgba(255, 255, 255, 0.8)',
           font: { size: 12 },
-          padding: 15
+          padding: 15,
+          boxWidth: 15,
+          usePointStyle: true
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderWidth: 1,
+        padding: 12,
+        callbacks: {
+          label: function(context: any) {
+            const label = context.label || '';
+            const value = context.parsed || 0;
+            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const percentage = ((value / total) * 100).toFixed(1);
+            return `${label}: ${value} (${percentage}%)`;
+          }
         }
       }
     }
@@ -367,9 +535,9 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revenue Trend</h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Monthly revenue over time</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Monthly revenue (6 months)</p>
               </div>
-              <BarChart3 className="w-6 h-6 text-red-400" />
+              <Activity className="w-6 h-6 text-green-400" />
             </div>
             <div className="h-64">
               {monthlyRevenue.length > 0 ? (
@@ -382,42 +550,173 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Revenue by Category */}
+          {/* Revenue Distribution - Doughnut Chart */}
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revenue by Category</h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Connection type breakdown</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revenue Distribution</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Revenue by connection type (%)</p>
               </div>
-              <PieChart className="w-6 h-6 text-pink-400" />
+              <DollarSign className="w-6 h-6 text-green-400" />
             </div>
             <div className="h-64">
               {Object.keys(revenueByCategory).length > 0 ? (
-                <Bar data={categoryData} options={chartOptions} />
+                <Doughnut
+                  data={{
+                    labels: categoryLabels.map(label => label.charAt(0).toUpperCase() + label.slice(1)),
+                    datasets: [{
+                      data: categoryValues,
+                      backgroundColor: [
+                        'rgba(239, 68, 68, 0.85)',
+                        'rgba(59, 130, 246, 0.85)',
+                        'rgba(34, 197, 94, 0.85)',
+                        'rgba(250, 204, 21, 0.85)'
+                      ],
+                      borderColor: [
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(34, 197, 94, 1)',
+                        'rgba(250, 204, 21, 1)'
+                      ],
+                      borderWidth: 2
+                    }]
+                  }}
+                  options={{
+                    ...doughnutOptions,
+                    plugins: {
+                      ...doughnutOptions.plugins,
+                      tooltip: {
+                        ...doughnutOptions.plugins.tooltip,
+                        callbacks: {
+                          label: function(context: any) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: Rs ${value.toLocaleString('en-IN', {minimumFractionDigits: 2})} (${percentage}%)`;
+                          }
+                        }
+                      }
+                    }
+                  }}
+                />
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-500">
-                  <p>No category data available</p>
+                  <p>No revenue data available</p>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Payment Methods */}
-        {Object.keys(paymentMethods).length > 0 && (
+        {/* Charts Row 2 - Connection Types & Bills Status */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Connection Type Distribution - Bar Chart */}
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Payment Methods</h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Distribution by payment type</p>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Customer Distribution</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">By connection type</p>
               </div>
-              <CreditCard className="w-6 h-6 text-purple-400" />
+              <Users className="w-6 h-6 text-purple-400" />
             </div>
             <div className="h-64">
-              <Doughnut data={paymentMethodsData} options={doughnutOptions} />
+              {Object.keys(connectionTypeDistribution).length > 0 ? (
+                <Bar
+                  data={connectionTypeData}
+                  options={{
+                    ...chartOptions,
+                    indexAxis: 'y' as const,
+                    plugins: {
+                      ...chartOptions.plugins,
+                      legend: {
+                        display: false
+                      },
+                      tooltip: {
+                        ...chartOptions.plugins.tooltip,
+                        callbacks: {
+                          label: function(context: any) {
+                            const label = context.label || '';
+                            const value = context.parsed.x || 0;
+                            const typeKey = connectionTypeLabels[context.dataIndex];
+                            const activeCount = connectionTypeDistribution[typeKey]?.activeCount || 0;
+                            return [
+                              `Total: ${value} customers`,
+                              `Active: ${activeCount} customers`
+                            ];
+                          }
+                        }
+                      }
+                    },
+                    scales: {
+                      x: {
+                        ...chartOptions.scales.y,
+                        ticks: {
+                          color: 'rgba(255, 255, 255, 0.6)',
+                          callback: function(value: any) {
+                            return value;
+                          }
+                        }
+                      },
+                      y: {
+                        ...chartOptions.scales.x
+                      }
+                    }
+                  }}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p>No customer data available</p>
+                </div>
+              )}
             </div>
           </div>
-        )}
+
+          {/* Bills Status Distribution */}
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Bills Status</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Distribution by bill status</p>
+              </div>
+              <FileText className="w-6 h-6 text-blue-400" />
+            </div>
+            <div className="h-64">
+              {Object.keys(billsStatus).length > 0 ? (
+                <Doughnut
+                  data={billsStatusData}
+                  options={{
+                    ...doughnutOptions,
+                    plugins: {
+                      ...doughnutOptions.plugins,
+                      tooltip: {
+                        ...doughnutOptions.plugins.tooltip,
+                        callbacks: {
+                          label: function(context: any) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            const statusKey = billsStatusLabels[context.dataIndex];
+                            const amount = billsStatus[statusKey]?.amount || 0;
+                            return [
+                              `${label}: ${value} bills (${percentage}%)`,
+                              `Amount: Rs ${amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}`
+                            ];
+                          }
+                        }
+                      }
+                    }
+                  }}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p>No bills data available</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Recent Bills Table */}
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden">

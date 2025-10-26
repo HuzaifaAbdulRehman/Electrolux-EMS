@@ -17,7 +17,9 @@ import {
   Clock,
   AlertCircle,
   Loader2,
-  TrendingUp
+  TrendingUp,
+  Bell,
+  X
 } from 'lucide-react';
 
 export default function AdminBills() {
@@ -30,6 +32,14 @@ export default function AdminBills() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState(monthParam || new Date().toISOString().slice(0, 7));
+  const [selectedBill, setSelectedBill] = useState<any | null>(null);
+  const [showBillModal, setShowBillModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentDetails, setPaymentDetails] = useState({
+    paymentMethod: 'bank_transfer',
+    transactionRef: '',
+    notes: ''
+  });
   const [stats, setStats] = useState({
     total: 0,
     totalAmount: 0,
@@ -115,6 +125,122 @@ export default function AdminBills() {
       case 'cancelled': return <XCircle className="w-4 h-4" />;
       default: return <FileText className="w-4 h-4" />;
     }
+  };
+
+  const handleViewBill = (bill: any) => {
+    setSelectedBill(bill);
+    setShowBillModal(true);
+  };
+
+  const handleStatusUpdate = async (billId: number, newStatus: string, paymentData?: any) => {
+    try {
+      setError(null);
+
+      const requestBody: any = {
+        status: newStatus,
+        paidDate: newStatus === 'paid' ? new Date().toISOString() : null
+      };
+
+      // Include payment details if marking as paid
+      if (newStatus === 'paid' && paymentData) {
+        requestBody.paymentMethod = paymentData.paymentMethod;
+        requestBody.transactionRef = paymentData.transactionRef;
+        requestBody.notes = paymentData.notes;
+      }
+
+      const response = await fetch(`/api/bills/${billId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Refresh bills list
+        await fetchBills();
+
+        // Update selected bill if modal is still open
+        if (selectedBill && selectedBill.id === billId) {
+          setSelectedBill({ ...selectedBill, status: newStatus });
+        }
+      } else {
+        setError(result.error || 'Failed to update bill status');
+        alert('Failed to update bill status: ' + (result.error || 'Unknown error'));
+      }
+    } catch (err) {
+      console.error('Error updating bill status:', err);
+      setError('Network error while updating bill status');
+      alert('Network error while updating bill status');
+    }
+  };
+
+  const handleMarkAsPaid = async () => {
+    // CRITICAL CHECK: Verify bill isn't already paid (prevent double payment)
+    if (selectedBill.status === 'paid') {
+      alert('⚠️ This bill is already marked as PAID.\n\nPlease refresh the page to see the latest status.');
+      setShowPaymentModal(false);
+      return;
+    }
+
+    // Validate payment details
+    if (!paymentDetails.transactionRef.trim()) {
+      alert('Please enter a transaction reference number');
+      return;
+    }
+
+    if (paymentDetails.transactionRef.length < 5) {
+      alert('Transaction reference must be at least 5 characters');
+      return;
+    }
+
+    // Re-fetch bill status to check for race condition
+    try {
+      const checkResponse = await fetch(`/api/bills/${selectedBill.id}`);
+      const checkResult = await checkResponse.json();
+
+      if (checkResult.success && checkResult.data.status === 'paid') {
+        alert('⚠️ This bill was just paid by the customer!\n\nPayment already recorded. Refreshing...');
+        setShowPaymentModal(false);
+        setShowBillModal(false);
+        await fetchBills();
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking bill status:', err);
+    }
+
+    // Confirm action
+    const confirmMessage = `Confirm marking Bill #${selectedBill.id} as PAID?\n\n` +
+      `Amount: Rs ${parseFloat(selectedBill.totalAmount).toLocaleString()}\n` +
+      `Payment Method: ${paymentDetails.paymentMethod.replace('_', ' ').toUpperCase()}\n` +
+      `Transaction Ref: ${paymentDetails.transactionRef}\n\n` +
+      `⚠️ IMPORTANT: Ensure payment is actually received!\n` +
+      `This action will be logged in the audit trail.`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    // Call API with payment details
+    await handleStatusUpdate(selectedBill.id, 'paid', {
+      paymentMethod: paymentDetails.paymentMethod,
+      transactionRef: paymentDetails.transactionRef,
+      notes: paymentDetails.notes
+    });
+
+    // Close modals and reset form
+    setShowPaymentModal(false);
+    setShowBillModal(false);
+    setPaymentDetails({
+      paymentMethod: 'bank_transfer',
+      transactionRef: '',
+      notes: ''
+    });
+
+    alert('✅ Payment recorded successfully!\n\nBill marked as paid and payment record created in database.');
   };
 
   const handleExport = () => {
@@ -310,8 +436,8 @@ export default function AdminBills() {
                       </td>
                       <td className="px-6 py-4">
                         <button
-                          onClick={() => window.open(`/customer/view-bills?billId=${bill.id}`, '_blank')}
-                          className="text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          onClick={() => handleViewBill(bill)}
+                          className="text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-1 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded"
                           title="View Bill Details"
                         >
                           <Eye className="w-5 h-5" />
@@ -324,6 +450,328 @@ export default function AdminBills() {
             </div>
           )}
         </div>
+
+        {/* Bill Details Modal */}
+        {showBillModal && selectedBill && (
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+            onClick={() => setShowBillModal(false)}
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full my-8 flex flex-col max-h-[calc(100vh-4rem)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header - Fixed */}
+              <div className="flex-shrink-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">Bill Details</h2>
+                    <p className="text-purple-100 mt-1">Bill ID: #{selectedBill.id}</p>
+                  </div>
+                  <button
+                    onClick={() => setShowBillModal(false)}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  >
+                    <XCircle className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Status Badge */}
+                <div className="flex items-center justify-between">
+                  <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(selectedBill.status)}`}>
+                    {getStatusIcon(selectedBill.status)}
+                    <span className="ml-2 capitalize">{selectedBill.status}</span>
+                  </span>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Bill Number</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">{selectedBill.billNumber || 'N/A'}</p>
+                  </div>
+                </div>
+
+                {/* Customer Information */}
+                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Customer Information</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Account Number</p>
+                      <p className="text-base font-semibold text-gray-900 dark:text-white">{selectedBill.accountNumber}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Customer Name</p>
+                      <p className="text-base font-semibold text-gray-900 dark:text-white">{selectedBill.customerName || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Billing Period */}
+                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Billing Period</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Billing Month</p>
+                      <p className="text-base font-semibold text-gray-900 dark:text-white">
+                        {new Date(selectedBill.billingPeriod).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Due Date</p>
+                      <p className="text-base font-semibold text-gray-900 dark:text-white">
+                        {new Date(selectedBill.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Consumption & Charges */}
+                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Consumption & Charges</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-gray-400">Units Consumed</span>
+                      <span className="text-lg font-bold text-gray-900 dark:text-white">{selectedBill.unitsConsumed} kWh</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 dark:text-gray-400">Base Amount</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">Rs {parseFloat(selectedBill.baseAmount || 0).toLocaleString()}</span>
+                    </div>
+                    {selectedBill.additionalCharges && parseFloat(selectedBill.additionalCharges) > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 dark:text-gray-400">Additional Charges</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">Rs {parseFloat(selectedBill.additionalCharges).toLocaleString()}</span>
+                      </div>
+                    )}
+                    {selectedBill.taxAmount && parseFloat(selectedBill.taxAmount) > 0 && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 dark:text-gray-400">Tax Amount</span>
+                        <span className="font-semibold text-gray-900 dark:text-white">Rs {parseFloat(selectedBill.taxAmount).toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="border-t border-gray-300 dark:border-white/20 pt-3 mt-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">Total Amount</span>
+                        <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">Rs {parseFloat(selectedBill.totalAmount).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tariff Information */}
+                {selectedBill.tariffId && (
+                  <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                    <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Tariff Information</h3>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Tariff ID</p>
+                      <p className="text-base font-semibold text-gray-900 dark:text-white">#{selectedBill.tariffId}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Timestamps */}
+                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                  <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Timestamps</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Issue Date</p>
+                      <p className="text-base font-semibold text-gray-900 dark:text-white">
+                        {new Date(selectedBill.issueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    </div>
+                    {selectedBill.paidDate && (
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Paid Date</p>
+                        <p className="text-base font-semibold text-green-600 dark:text-green-400">
+                          {new Date(selectedBill.paidDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer - Admin Actions - Fixed */}
+              <div className="flex-shrink-0 bg-gray-50 dark:bg-white/5 p-6 rounded-b-2xl border-t border-gray-200 dark:border-white/10">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
+                  {/* Status Update Actions */}
+                  <div className="flex flex-wrap gap-2">
+                    {selectedBill.status !== 'paid' && (
+                      <button
+                        onClick={() => setShowPaymentModal(true)}
+                        className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center space-x-1"
+                        title="Mark as Paid"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        <span>Mark Paid</span>
+                      </button>
+                    )}
+                    {selectedBill.status === 'pending' && (
+                      <button
+                        onClick={() => handleStatusUpdate(selectedBill.id, 'issued')}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm flex items-center space-x-1"
+                        title="Issue Bill"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>Issue Bill</span>
+                      </button>
+                    )}
+                    {(selectedBill.status === 'issued' || selectedBill.status === 'overdue') && (
+                      <button
+                        onClick={() => {
+                          alert('Payment reminder will be sent to customer via email/SMS (future feature)');
+                        }}
+                        className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-sm flex items-center space-x-1"
+                        title="Send Reminder"
+                      >
+                        <Bell className="w-4 h-4" />
+                        <span>Send Reminder</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setShowBillModal(false)}
+                    className="px-6 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Confirmation Modal */}
+        {showPaymentModal && selectedBill && (
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 overflow-y-auto"
+            onClick={() => setShowPaymentModal(false)}
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full my-8 max-h-[calc(100vh-4rem)] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-6 rounded-t-2xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold">Record Payment</h2>
+                    <p className="text-green-100 text-sm mt-1">Bill #{selectedBill.id} - Rs {parseFloat(selectedBill.totalAmount).toLocaleString()}</p>
+                  </div>
+                  <button
+                    onClick={() => setShowPaymentModal(false)}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 space-y-4">
+                {/* Warning Message */}
+                <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/30 rounded-lg p-3">
+                  <div className="flex items-start space-x-2">
+                    <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-yellow-800 dark:text-yellow-200">
+                      <p className="font-semibold mb-1">Important: Payment Verification Required</p>
+                      <p>Ensure payment is received and verified before marking as paid. This action creates an audit trail.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Method */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Payment Method <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={paymentDetails.paymentMethod}
+                    onChange={(e) => setPaymentDetails({ ...paymentDetails, paymentMethod: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="cash">Cash Payment</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="online_payment">Online Payment Gateway</option>
+                    <option value="mobile_wallet">Mobile Wallet (JazzCash/Easypaisa)</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                {/* Transaction Reference */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Transaction Reference / Receipt Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentDetails.transactionRef}
+                    onChange={(e) => setPaymentDetails({ ...paymentDetails, transactionRef: e.target.value })}
+                    placeholder="e.g., TXN-20251026-1234"
+                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimum 5 characters. Use bank transaction ID, receipt number, or cheque number.</p>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                    Additional Notes (Optional)
+                  </label>
+                  <textarea
+                    value={paymentDetails.notes}
+                    onChange={(e) => setPaymentDetails({ ...paymentDetails, notes: e.target.value })}
+                    placeholder="Any additional information about the payment..."
+                    rows={3}
+                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                  />
+                </div>
+
+                {/* Customer Info Summary */}
+                <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-3 border border-gray-200 dark:border-white/10">
+                  <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">PAYMENT SUMMARY</p>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Account:</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{selectedBill.accountNumber}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Customer:</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{selectedBill.customerName || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-gray-300 dark:border-white/20 pt-2 mt-2">
+                      <span className="font-bold text-gray-900 dark:text-white">Amount:</span>
+                      <span className="font-bold text-green-600 dark:text-green-400">Rs {parseFloat(selectedBill.totalAmount).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="bg-gray-50 dark:bg-white/5 p-6 rounded-b-2xl border-t border-gray-200 dark:border-white/10">
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowPaymentModal(false)}
+                    className="flex-1 px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleMarkAsPaid}
+                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all font-semibold flex items-center justify-center space-x-2"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    <span>Confirm Payment</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

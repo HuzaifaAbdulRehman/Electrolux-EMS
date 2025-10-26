@@ -305,7 +305,7 @@ export default function UsageAnalytics() {
               >
                 <option value="month" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">This Month</option>
                 <option value="6months" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Last 6 Months</option>
-                <option value="year" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">This Year</option>
+                <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">All Time</option>
               </select>
             </div>
           </div>

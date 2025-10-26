@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
       const recentBills = await db
         .select({
           id: bills.id,
+          billNumber: bills.billNumber,
           customerName: customers.fullName,
         accountNumber: customers.accountNumber,
           totalAmount: bills.totalAmount,
@@ -83,27 +84,22 @@ export async function GET(request: NextRequest) {
         })
         .from(bills)
       .innerJoin(customers, eq(bills.customerId, customers.id))
-      .where(sql`${bills.billingMonth} LIKE ${currentMonth + '%'}`)
+      .where(sql`${bills.billingMonth} >= '2024-01-01'`)
       .orderBy(desc(bills.createdAt))
         .limit(5);
 
-    // 3. REVENUE BY CATEGORY (DBMS: GROUP BY)
+    // 3. REVENUE BY CONNECTION TYPE (DBMS: JOIN + GROUP BY)
     const revenueByCategory = await db
         .select({
-        category: sql<string>`CASE 
-          WHEN ${bills.totalAmount} < 100 THEN 'Low'
-          WHEN ${bills.totalAmount} < 500 THEN 'Medium'
-          ELSE 'High'
-        END`.as('category'),
-        total: sql<number>`SUM(${bills.totalAmount})`
+        category: customers.connectionType,
+        total: sql<number>`SUM(${bills.totalAmount})`,
+        billCount: sql<number>`COUNT(${bills.id})`
       })
       .from(bills)
-      .where(sql`${bills.billingMonth} LIKE ${currentMonth + '%'}`)
-      .groupBy(sql`CASE 
-        WHEN ${bills.totalAmount} < 100 THEN 'Low'
-        WHEN ${bills.totalAmount} < 500 THEN 'Medium'
-        ELSE 'High'
-      END`);
+      .innerJoin(customers, eq(bills.customerId, customers.id))
+      .where(sql`${bills.billingMonth} >= '2024-01-01'`)
+      .groupBy(customers.connectionType)
+      .orderBy(sql`SUM(${bills.totalAmount}) DESC`);
 
     // 4. MONTHLY REVENUE TREND (DBMS: Date Functions)
     const monthlyRevenue = await db
@@ -137,16 +133,27 @@ export async function GET(request: NextRequest) {
       .from(workOrders)
       .groupBy(workOrders.status);
 
-    // 7. CUSTOMER GROWTH (DBMS: Date Range Queries)
-    const customerGrowth = await db
+    // 7. BILLS STATUS DISTRIBUTION (DBMS: Grouping by Status)
+    const billsStatusDistribution = await db
       .select({
-        month: sql<string>`DATE_FORMAT(${customers.createdAt}, '%Y-%m')`,
-        count: sql<number>`COUNT(*)`
+        status: bills.status,
+        count: sql<number>`COUNT(*)`,
+        totalAmount: sql<number>`COALESCE(SUM(${bills.totalAmount}), 0)`
+      })
+      .from(bills)
+      .where(sql`${bills.billingMonth} >= '2024-01-01'`)
+      .groupBy(bills.status);
+
+    // 8. CONNECTION TYPE DISTRIBUTION (DBMS: Customer Grouping)
+    const connectionTypeDistribution = await db
+      .select({
+        connectionType: customers.connectionType,
+        count: sql<number>`COUNT(*)`,
+        activeCount: sql<number>`SUM(CASE WHEN ${customers.status} = 'active' THEN 1 ELSE 0 END)`
       })
       .from(customers)
-      .where(sql`${customers.createdAt} >= '2024-01-01'`)
-      .groupBy(sql`DATE_FORMAT(${customers.createdAt}, '%Y-%m')`)
-      .orderBy(sql`DATE_FORMAT(${customers.createdAt}, '%Y-%m')`);
+      .groupBy(customers.connectionType)
+      .orderBy(sql`COUNT(*) DESC`);
 
     // Calculate derived metrics
     const metrics = {
@@ -185,6 +192,22 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {} as Record<string, { count: number; total: number }>);
 
+    const billsStatusFormatted = billsStatusDistribution.reduce((acc, item) => {
+      acc[item.status] = {
+        count: item.count,
+        amount: item.totalAmount
+      };
+      return acc;
+    }, {} as Record<string, { count: number; amount: number }>);
+
+    const connectionTypeFormatted = connectionTypeDistribution.reduce((acc, item) => {
+      acc[item.connectionType] = {
+        count: item.count,
+        activeCount: item.activeCount
+      };
+      return acc;
+    }, {} as Record<string, { count: number; activeCount: number }>);
+
     const dashboardData = {
       metrics,
       recentBills,
@@ -195,10 +218,8 @@ export async function GET(request: NextRequest) {
         acc[item.status] = item.count;
         return acc;
       }, {} as Record<string, number>),
-      customerGrowth: customerGrowth.map(item => ({
-        month: item.month,
-        count: item.count
-      }))
+      billsStatus: billsStatusFormatted,
+      connectionTypeDistribution: connectionTypeFormatted
     };
 
     console.log('[Dashboard API] Dashboard data fetched successfully');

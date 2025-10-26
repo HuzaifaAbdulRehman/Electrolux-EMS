@@ -67,49 +67,11 @@ export default function LoginPage() {
     }
   };
 
-  // Quick login for demo
-  const quickLogin = async (email: string, password: string) => {
-    setEmail(email);
-    setPassword(password);
-    setIsLoading(true);
+  // Fill demo credentials (doesn't auto-login)
+  const fillDemoCredentials = (demoEmail: string, demoPassword: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
     setError('');
-
-    try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError('Invalid credentials');
-        setIsLoading(false);
-      } else if (result?.ok) {
-        // Fetch session to get user type
-        const response = await fetch('/api/auth/session');
-        const session = await response.json();
-
-        if (session?.user?.userType) {
-          switch (session.user.userType) {
-            case 'admin':
-              router.push('/admin/dashboard');
-              break;
-            case 'employee':
-              router.push('/employee/dashboard');
-              break;
-            case 'customer':
-              router.push('/customer/dashboard');
-              break;
-            default:
-              router.push('/');
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Quick login error:', error);
-      setError('An error occurred. Please try again.');
-      setIsLoading(false);
-    }
   };
 
   return (
@@ -232,29 +194,32 @@ export default function LoginPage() {
             {/* Demo Accounts */}
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
               <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">
-                Demo Accounts
+                Demo Accounts (Click to fill credentials)
               </p>
               <div className="space-y-2">
                 <button
-                  onClick={() => quickLogin('admin@electrolux.com', 'Admin@123')}
+                  type="button"
+                  onClick={() => fillDemoCredentials('admin@electrolux.com', 'password123')}
                   disabled={isLoading}
                   className="w-full py-2 px-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Login as Admin
+                  Admin Account
                 </button>
                 <button
-                  onClick={() => quickLogin('employee1@electrolux.com', 'Employee@123')}
+                  type="button"
+                  onClick={() => fillDemoCredentials('employee1@electrolux.com', 'password123')}
                   disabled={isLoading}
                   className="w-full py-2 px-3 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Login as Employee
+                  Employee Account
                 </button>
                 <button
-                  onClick={() => quickLogin('customer1@electrolux.com', 'Customer@123')}
+                  type="button"
+                  onClick={() => fillDemoCredentials('customer1@example.com', 'password123')}
                   disabled={isLoading}
                   className="w-full py-2 px-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Login as Customer
+                  Customer Account
                 </button>
               </div>
             </div>

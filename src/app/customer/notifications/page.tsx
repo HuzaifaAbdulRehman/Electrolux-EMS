@@ -203,7 +203,7 @@ export default function Notifications() {
     <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+        <div className="bg-white dark:bg-gray-800 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Notifications</h1>
@@ -212,7 +212,7 @@ export default function Notifications() {
             <div className="mt-4 sm:mt-0 flex items-center space-x-3">
               <button
                 onClick={handleMarkAllRead}
-                className="px-4 py-2 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:bg-gray-100 dark:bg-white/20 transition-all flex items-center space-x-2"
+                className="px-4 py-2 bg-gray-50 dark:bg-gray-700 backdrop-blur-sm border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 transition-all flex items-center space-x-2"
               >
                 <CheckCheck className="w-5 h-5" />
                 <span>Mark All Read</span>
@@ -230,7 +230,7 @@ export default function Notifications() {
 
         {/* Statistics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-gray-800 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Total</p>
@@ -239,7 +239,7 @@ export default function Notifications() {
               <Bell className="w-8 h-8 text-blue-400" />
             </div>
           </div>
-          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-gray-800 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Unread</p>
@@ -248,7 +248,7 @@ export default function Notifications() {
               <BellOff className="w-8 h-8 text-yellow-400" />
             </div>
           </div>
-          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-gray-800 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">High Priority</p>
@@ -257,7 +257,7 @@ export default function Notifications() {
               <AlertTriangle className="w-8 h-8 text-red-400" />
             </div>
           </div>
-          <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+          <div className="bg-white dark:bg-gray-800 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">This Week</p>
@@ -271,7 +271,7 @@ export default function Notifications() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Filters Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+            <div className="bg-white dark:bg-gray-800 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Categories</h2>
               <div className="space-y-2">
                 {categories.map((category) => (
@@ -280,12 +280,16 @@ export default function Notifications() {
                     onClick={() => setActiveFilter(category.id)}
                     className={`w-full px-4 py-3 rounded-lg text-left transition-all flex items-center justify-between ${
                       activeFilter === category.id
-                        ? 'bg-gradient-to-r from-yellow-400/20 to-orange-500/20 text-white border border-yellow-400/30'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-100 dark:hover:bg-white/10'
+                        ? 'bg-gradient-to-r from-yellow-400/20 to-orange-500/20 text-yellow-300 border border-yellow-400/30'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
                     <span>{category.label}</span>
-                    <span className="px-2 py-0.5 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 rounded-full text-xs">
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${
+                      activeFilter === category.id
+                        ? 'bg-yellow-400/20 text-yellow-300'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    }`}>
                       {category.count}
                     </span>
                   </button>
@@ -298,7 +302,7 @@ export default function Notifications() {
           <div className="lg:col-span-3">
             <div className="space-y-4">
               {loading && (
-                <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-12 border border-gray-200 dark:border-white/10 text-center">
+                <div className="bg-white dark:bg-gray-800 backdrop-blur-xl rounded-2xl p-12 border border-gray-200 dark:border-gray-700 text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
                   <p className="text-gray-600 dark:text-gray-400">Loading notifications...</p>
                 </div>
@@ -320,8 +324,8 @@ export default function Notifications() {
               {!loading && !error && notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`bg-white/5 backdrop-blur-xl rounded-2xl p-6 border transition-all hover:border-gray-300 dark:border-gray-300 dark:border-white/20 ${
-                    notification.read ? 'border-gray-200 dark:border-white/10 opacity-75' : 'border-gray-300 dark:border-gray-300 dark:border-white/20'
+                  className={`bg-white dark:bg-gray-800 backdrop-blur-xl rounded-2xl p-6 border transition-all hover:border-gray-400 dark:hover:border-gray-600 ${
+                    notification.read ? 'border-gray-200 dark:border-gray-700 opacity-75' : 'border-gray-300 dark:border-gray-600'
                   }`}
                 >
                   <div className="flex items-start space-x-4">
@@ -334,7 +338,7 @@ export default function Notifications() {
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h3 className="text-white font-semibold flex items-center space-x-2">
+                          <h3 className="text-gray-900 dark:text-white font-semibold flex items-center space-x-2">
                             {notification.title}
                             {!notification.read && (
                               <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
@@ -390,7 +394,7 @@ export default function Notifications() {
               ))}
 
               {!loading && !error && notifications.length === 0 && (
-                <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-12 border border-gray-200 dark:border-white/10 text-center">
+                <div className="bg-white dark:bg-gray-800 backdrop-blur-xl rounded-2xl p-12 border border-gray-200 dark:border-gray-700 text-center">
                   <BellOff className="w-16 h-16 text-gray-500 mx-auto mb-4" />
                   <h3 className="text-gray-900 dark:text-white text-lg font-semibold mb-2">No notifications</h3>
                   <p className="text-gray-600 dark:text-gray-400">You're all caught up! Check back later for new updates.</p>

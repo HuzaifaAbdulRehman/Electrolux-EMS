@@ -61,33 +61,33 @@ ChartJS.register(
 );
 
 export default function AdminAnalytics() {
-  const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [selectedPeriod, setSelectedPeriod] = useState('6months');
   const [selectedMetric, setSelectedMetric] = useState('revenue');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch real data from dashboard API
+  // Fetch real data from analytics API
   useEffect(() => {
-    fetchDashboardData();
+    fetchAnalyticsData();
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchAnalyticsData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('/api/dashboard');
+      const response = await fetch('/api/analytics');
 
       if (!response.ok) {
-        throw new Error('Failed to fetch dashboard data');
+        throw new Error('Failed to fetch analytics data');
       }
 
       const result = await response.json();
 
       if (result.success) {
-        setDashboardData(result.data);
-        console.log('[Analytics] Dashboard data loaded:', result.data);
+        setAnalyticsData(result.data);
+        console.log('[Analytics] Analytics data loaded:', result.data);
       } else {
         throw new Error(result.error || 'Failed to load data');
       }
@@ -101,13 +101,13 @@ export default function AdminAnalytics() {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchDashboardData().finally(() => {
+    fetchAnalyticsData().finally(() => {
       setTimeout(() => setRefreshing(false), 500);
     });
   };
 
   const handleExportAnalytics = () => {
-    if (!dashboardData) {
+    if (!analyticsData) {
       setError('No data available to export');
       return;
     }
@@ -149,7 +149,7 @@ export default function AdminAnalytics() {
     );
   }
 
-  if (error || !dashboardData) {
+  if (error || !analyticsData) {
     return (
       <DashboardLayout userType="admin" userName="Admin User">
         <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
@@ -159,7 +159,7 @@ export default function AdminAnalytics() {
           </div>
           <p className="text-red-300 mb-4">{error || 'No data available'}</p>
           <button
-            onClick={fetchDashboardData}
+            onClick={fetchAnalyticsData}
             className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all"
           >
             Try Again
@@ -169,116 +169,65 @@ export default function AdminAnalytics() {
     );
   }
 
-  // Extract real data from API
-  const metrics = dashboardData.metrics || {};
-  const monthlyRevenue = dashboardData.monthlyRevenue || [];
-  const paymentMethods = dashboardData.paymentMethods || {};
-  const revenueByCategory = dashboardData.revenueByCategory || {};
-  const workOrderStats = dashboardData.workOrderStats || {};
-  const customerGrowth = dashboardData.customerGrowth || [];
+  // Extract real data from Analytics API
+  const topRevenueCustomers = analyticsData.topRevenueCustomers || [];
+  const collectionTrend = analyticsData.collectionTrend || [];
+  const consumptionPattern = analyticsData.consumptionPattern || [];
+  const workOrderStats = analyticsData.workOrderStats || {};
+  const revenueByConnectionType = analyticsData.revenueByConnectionType || {};
+  const paymentDistribution = analyticsData.paymentDistribution || {};
 
-  // Calculate KPIs from real data
-  const totalRevenue = safeNumber(metrics.monthlyRevenue, 0);
-  const totalCustomers = safeNumber(metrics.totalCustomers, 0);
-  const collectionRate = safeNumber(metrics.collectionRate, 0);
-  const avgBillAmount = safeNumber(metrics.averageBillAmount, 0);
-
-  // KPIs with real data
-  const kpis = {
-    revenue: {
-      value: formatCurrency(totalRevenue, 'Rs. '),
-      change: totalRevenue > 0 ? '+12.5%' : '0%',
-      trend: 'up',
-      realData: true
-    },
-    customers: {
-      value: totalCustomers.toLocaleString(),
-      change: totalCustomers > 0 ? '+8.2%' : '0%',
-      trend: 'up',
-      realData: true
-    },
-    avgBill: {
-      value: formatCurrency(avgBillAmount, 'Rs. '),
-      change: avgBillAmount > 0 ? '+5.7%' : '0%',
-      trend: 'up',
-      realData: true
-    },
-    collections: {
-      value: collectionRate.toFixed(1) + '%',
-      change: collectionRate > 90 ? '+2.1%' : '-1.5%',
-      trend: collectionRate > 90 ? 'up' : 'down',
-      realData: true
-    }
+  // 1. TOP 10 REVENUE CUSTOMERS - Bar Chart
+  const topCustomersData = {
+    labels: topRevenueCustomers.slice(0, 10).map((c: any) => c.customerName || 'Unknown'),
+    datasets: [{
+      label: 'Total Revenue (Rs)',
+      data: topRevenueCustomers.slice(0, 10).map((c: any) => safeNumber(c.totalRevenue, 0)),
+      backgroundColor: 'rgba(239, 68, 68, 0.85)',
+      borderColor: 'rgba(239, 68, 68, 1)',
+      borderWidth: 2
+    }]
   };
 
-  // Revenue trend data from real monthly revenue
-  const revenueTrendData = {
-    labels: monthlyRevenue.map((item: any) => {
+  // 2. COLLECTION RATE TREND - Line Chart
+  const collectionRateData = {
+    labels: collectionTrend.map((item: any) => {
       const [year, month] = item.month.split('-');
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return monthNames[parseInt(month) - 1] || item.month;
+      return `${monthNames[parseInt(month) - 1]} '${year.slice(2)}`;
     }),
-    datasets: [
-      {
-        label: 'Revenue (Real Data)',
-        data: monthlyRevenue.map((item: any) => safeNumber(item.revenue, 0) / 1000), // Convert to thousands
-        borderColor: 'rgb(34, 197, 94)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-        tension: 0.4,
-        fill: true
-      },
-      {
-        label: 'Target (Projected)',
-        data: monthlyRevenue.map((item: any, index: number) => (safeNumber(item.revenue, 0) * 1.1) / 1000), // 10% above actual
-        borderColor: 'rgb(156, 163, 175)',
-        borderDash: [5, 5],
-        tension: 0.4
-      }
-    ]
-  };
-
-  // Payment methods from real data
-  const paymentMethodLabels = Object.keys(paymentMethods);
-  const paymentMethodCounts = Object.values(paymentMethods).map((pm: any) => pm.count);
-
-  const paymentMethodData = {
-    labels: paymentMethodLabels.map(method =>
-      method.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
-    ),
     datasets: [{
-      data: paymentMethodCounts,
-      backgroundColor: [
-        'rgba(59, 130, 246, 0.8)',
-        'rgba(34, 197, 94, 0.8)',
-        'rgba(250, 204, 21, 0.8)',
-        'rgba(239, 68, 68, 0.8)',
-        'rgba(168, 85, 247, 0.8)',
-        'rgba(236, 72, 153, 0.8)',
-        'rgba(20, 184, 166, 0.8)'
-      ]
+      label: 'Collection Rate (%)',
+      data: collectionTrend.map((item: any) => parseFloat(item.collectionRate)),
+      borderColor: 'rgb(34, 197, 94)',
+      backgroundColor: 'rgba(34, 197, 94, 0.1)',
+      tension: 0.4,
+      fill: true
     }]
   };
 
-  // Revenue by category from real data
-  const categoryLabels = Object.keys(revenueByCategory);
-  const categoryValues = Object.values(revenueByCategory).map((v: any) => safeNumber(v, 0) / 1000);
-
-  const revenueByCategoryData = {
-    labels: categoryLabels.length > 0 ? categoryLabels : ['Low', 'Medium', 'High'],
+  // 3. CONSUMPTION PATTERN - Line Chart
+  const consumptionData = {
+    labels: consumptionPattern.map((item: any) => {
+      const [year, month] = item.month.split('-');
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${monthNames[parseInt(month) - 1]} '${year.slice(2)}`;
+    }),
     datasets: [{
-      label: 'Revenue (Rs. Thousands)',
-      data: categoryValues.length > 0 ? categoryValues : [0, 0, 0],
-      backgroundColor: [
-        'rgba(59, 130, 246, 0.8)',
-        'rgba(250, 204, 21, 0.8)',
-        'rgba(34, 197, 94, 0.8)'
-      ]
+      label: 'Avg Consumption (Units)',
+      data: consumptionPattern.map((item: any) => safeNumber(item.avgConsumption, 0)),
+      borderColor: 'rgb(59, 130, 246)',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      tension: 0.4,
+      fill: true
     }]
   };
 
-  // Work order statistics from real data
+  // 4. WORK ORDERS - Doughnut Chart (Enhanced with completion time)
   const workOrderLabels = Object.keys(workOrderStats);
-  const workOrderCounts = Object.values(workOrderStats).map((count: any) => safeNumber(count, 0));
+  const workOrderCounts = workOrderLabels.map((status: string) =>
+    safeNumber(workOrderStats[status]?.count, 0)
+  );
 
   const workOrderData = {
     labels: workOrderLabels.map(status =>
@@ -287,27 +236,11 @@ export default function AdminAnalytics() {
     datasets: [{
       data: workOrderCounts,
       backgroundColor: [
-        'rgba(250, 204, 21, 0.8)', // assigned
-        'rgba(59, 130, 246, 0.8)', // in_progress
-        'rgba(34, 197, 94, 0.8)', // completed
-        'rgba(239, 68, 68, 0.8)'  // cancelled
+        'rgba(250, 204, 21, 0.8)',
+        'rgba(59, 130, 246, 0.8)',
+        'rgba(34, 197, 94, 0.8)',
+        'rgba(239, 68, 68, 0.8)'
       ]
-    }]
-  };
-
-  // Customer growth from real data
-  const customerGrowthData = {
-    labels: customerGrowth.map((item: any) => {
-      const [year, month] = item.month.split('-');
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return monthNames[parseInt(month) - 1] || item.month;
-    }),
-    datasets: [{
-      label: 'New Customers',
-      data: customerGrowth.map((item: any) => item.count),
-      backgroundColor: 'rgba(59, 130, 246, 0.8)',
-      borderColor: 'rgb(59, 130, 246)',
-      borderWidth: 2
     }]
   };
 
@@ -329,11 +262,11 @@ export default function AdminAnalytics() {
                 onChange={(e) => setSelectedPeriod(e.target.value)}
                 className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium transition-colors"
               >
-                <option value="day" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Today</option>
-                <option value="week" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Week</option>
                 <option value="month" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Month</option>
-                <option value="quarter" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Quarter</option>
-                <option value="year" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">This Year</option>
+                <option value="lastMonth" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Last Month</option>
+                <option value="3months" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Last 3 Months</option>
+                <option value="6months" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Last 6 Months</option>
+                <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">All Time</option>
               </select>
               <button
                 onClick={handleRefresh}
@@ -376,32 +309,78 @@ export default function AdminAnalytics() {
           ))}
         </div>
 
-        {/* Main Analytics Grid */}
+        {/* Main Analytics Grid - Professional Deep Insights */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Revenue Trend */}
+          {/* Top 10 Revenue Customers */}
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revenue Trend</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Top 10 Revenue Customers</h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-1">
                   <Database className="w-3 h-3 mr-1 text-green-400" />
-                  From bills table - Monthly aggregated
+                  JOIN + GROUP BY + ORDER BY + LIMIT
                 </p>
               </div>
             </div>
             <div className="h-64">
-              {monthlyRevenue.length > 0 ? (
+              {topRevenueCustomers.length > 0 ? (
+                <Bar
+                  data={topCustomersData}
+                  options={{
+                    indexAxis: 'y' as const,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { display: false }
+                    },
+                    scales: {
+                      x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: {
+                          color: 'rgba(255, 255, 255, 0.6)',
+                          callback: function(value: any) {
+                            return 'Rs ' + (value / 1000).toFixed(0) + 'K';
+                          }
+                        }
+                      },
+                      y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: {
+                          color: 'rgba(255, 255, 255, 0.6)',
+                          font: { size: 10 }
+                        }
+                      }
+                    }
+                  }}
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center text-gray-500">
+                  No customer data available
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Collection Rate Trend */}
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Collection Rate Trend</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-1">
+                  <Database className="w-3 h-3 mr-1 text-green-400" />
+                  Window Functions + Date Grouping
+                </p>
+              </div>
+            </div>
+            <div className="h-64">
+              {collectionTrend.length > 0 ? (
                 <Line
-                  data={revenueTrendData}
+                  data={collectionRateData}
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      legend: {
-                        display: true,
-                        position: 'bottom',
-                        labels: { color: 'rgba(255, 255, 255, 0.6)' }
-                      }
+                      legend: { display: false }
                     },
                     scales: {
                       x: {
@@ -413,7 +392,55 @@ export default function AdminAnalytics() {
                         ticks: {
                           color: 'rgba(255, 255, 255, 0.6)',
                           callback: function(value: any) {
-                            return 'Rs. ' + value + 'k';
+                            return value + '%';
+                          }
+                        },
+                        min: 0,
+                        max: 100
+                      }
+                    }
+                  }}
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center text-gray-500">
+                  No collection data available
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Consumption Pattern */}
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Monthly Consumption Pattern</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-1">
+                  <Database className="w-3 h-3 mr-1 text-green-400" />
+                  Aggregation with AVG + SUM Functions
+                </p>
+              </div>
+            </div>
+            <div className="h-64">
+              {consumptionPattern.length > 0 ? (
+                <Line
+                  data={consumptionData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { display: false }
+                    },
+                    scales: {
+                      x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: 'rgba(255, 255, 255, 0.6)' }
+                      },
+                      y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: {
+                          color: 'rgba(255, 255, 255, 0.6)',
+                          callback: function(value: any) {
+                            return value.toFixed(0) + ' units';
                           }
                         }
                       }
@@ -422,95 +449,20 @@ export default function AdminAnalytics() {
                 />
               ) : (
                 <div className="h-full flex items-center justify-center text-gray-500">
-                  No revenue data available
+                  No consumption data available
                 </div>
               )}
             </div>
           </div>
 
-          {/* Payment Methods */}
-          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Payment Methods</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-1">
-                  <Database className="w-3 h-3 mr-1 text-green-400" />
-                  From payments table - Current month
-                </p>
-              </div>
-            </div>
-            <div className="h-64">
-              {paymentMethodLabels.length > 0 ? (
-                <Doughnut
-                  data={paymentMethodData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        display: true,
-                        position: 'bottom',
-                        labels: { color: 'rgba(255, 255, 255, 0.6)' }
-                      }
-                    }
-                  }}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center text-gray-500">
-                  No payment data available
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Revenue by Category */}
-          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Revenue by Bill Category</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-1">
-                  <Database className="w-3 h-3 mr-1 text-green-400" />
-                  From bills table - Categorized by amount
-                </p>
-              </div>
-            </div>
-            <div className="h-64">
-              <Bar
-                data={revenueByCategoryData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: { display: false }
-                  },
-                  scales: {
-                    x: {
-                      grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                      ticks: { color: 'rgba(255, 255, 255, 0.6)' }
-                    },
-                    y: {
-                      grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                      ticks: {
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        callback: function(value: any) {
-                          return 'Rs. ' + value + 'k';
-                        }
-                      }
-                    }
-                  }
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Work Orders */}
+          {/* Work Orders Status */}
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Work Order Status</h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-1">
                   <Database className="w-3 h-3 mr-1 text-green-400" />
-                  From work_orders table - All statuses
+                  GROUP BY with TIMESTAMPDIFF
                 </p>
               </div>
             </div>
@@ -526,6 +478,15 @@ export default function AdminAnalytics() {
                         display: true,
                         position: 'bottom',
                         labels: { color: 'rgba(255, 255, 255, 0.6)' }
+                      },
+                      tooltip: {
+                        callbacks: {
+                          afterLabel: function(context: any) {
+                            const status = workOrderLabels[context.dataIndex];
+                            const avgDays = workOrderStats[status]?.avgCompletionDays || 0;
+                            return avgDays > 0 ? `Avg: ${avgDays} days` : '';
+                          }
+                        }
                       }
                     }
                   }}
@@ -539,52 +500,17 @@ export default function AdminAnalytics() {
           </div>
         </div>
 
-        {/* Customer Growth Chart */}
-        {customerGrowth.length > 0 && (
-          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Customer Growth</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-1">
-                  <Database className="w-3 h-3 mr-1 text-green-400" />
-                  From customers table - Monthly new registrations
-                </p>
-              </div>
-            </div>
-            <div className="h-64">
-              <Bar
-                data={customerGrowthData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: { display: false }
-                  },
-                  scales: {
-                    x: {
-                      grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                      ticks: { color: 'rgba(255, 255, 255, 0.6)' }
-                    },
-                    y: {
-                      grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                      ticks: { color: 'rgba(255, 255, 255, 0.6)' }
-                    }
-                  }
-                }}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Data Source Info */}
         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
           <div className="flex items-start space-x-3">
             <Database className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
             <div>
-              <h4 className="font-semibold text-blue-400 mb-1">Real Database Analytics</h4>
+              <h4 className="font-semibold text-blue-400 mb-1">Advanced Database Analytics</h4>
               <p className="text-sm text-blue-300">
-                All charts display real-time data from your MySQL database using complex queries including JOINs, GROUP BY,
-                aggregations (SUM, COUNT, AVG), and date functions. Data is fetched from bills, payments, customers, and work_orders tables.
+                All charts use advanced SQL queries demonstrating DBMS concepts: JOINs with multiple tables,
+                GROUP BY with aggregations (SUM, COUNT, AVG), ORDER BY + LIMIT for Top-N queries,
+                Window Functions for trend analysis, DATE_FORMAT for time-series grouping, and
+                TIMESTAMPDIFF for duration calculations. Data sourced from bills, payments, customers, meter_readings, and work_orders tables.
               </p>
             </div>
           </div>

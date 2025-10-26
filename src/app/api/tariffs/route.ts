@@ -2,29 +2,84 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { tariffs, tariffSlabs } from '@/lib/drizzle/schema';
+import { tariffs } from '@/lib/drizzle/schema';
 import { eq, desc } from 'drizzle-orm';
+
+// Helper function to transform database tariff to frontend format
+function transformTariffForFrontend(tariff: any) {
+  return {
+    id: tariff.id,
+    category: tariff.category,
+    fixedCharge: parseFloat(tariff.fixedCharge || 0),
+    validFrom: tariff.effectiveDate,
+    validUntil: tariff.validUntil,
+
+    // Transform slabs from denormalized to array format
+    slabs: [
+      { range: `${tariff.slab1Start}-${tariff.slab1End} kWh`, rate: parseFloat(tariff.slab1Rate || 0), startUnits: tariff.slab1Start, endUnits: tariff.slab1End, ratePerUnit: parseFloat(tariff.slab1Rate || 0) },
+      { range: `${tariff.slab2Start}-${tariff.slab2End} kWh`, rate: parseFloat(tariff.slab2Rate || 0), startUnits: tariff.slab2Start, endUnits: tariff.slab2End, ratePerUnit: parseFloat(tariff.slab2Rate || 0) },
+      { range: `${tariff.slab3Start}-${tariff.slab3End} kWh`, rate: parseFloat(tariff.slab3Rate || 0), startUnits: tariff.slab3Start, endUnits: tariff.slab3End, ratePerUnit: parseFloat(tariff.slab3Rate || 0) },
+      { range: `${tariff.slab4Start}-${tariff.slab4End} kWh`, rate: parseFloat(tariff.slab4Rate || 0), startUnits: tariff.slab4Start, endUnits: tariff.slab4End, ratePerUnit: parseFloat(tariff.slab4Rate || 0) },
+      { range: `${tariff.slab5Start}+ kWh`, rate: parseFloat(tariff.slab5Rate || 0), startUnits: tariff.slab5Start, endUnits: tariff.slab5End || 999999, ratePerUnit: parseFloat(tariff.slab5Rate || 0) },
+    ],
+
+    // Transform time of use to object format
+    timeOfUse: {
+      peak: {
+        hours: '6 PM - 10 PM',
+        rate: parseFloat(tariff.timeOfUsePeakRate || 0)
+      },
+      normal: {
+        hours: '10 AM - 6 PM',
+        rate: parseFloat(tariff.timeOfUseNormalRate || 0)
+      },
+      offPeak: {
+        hours: '10 PM - 10 AM',
+        rate: parseFloat(tariff.timeOfUseOffpeakRate || 0)
+      }
+    },
+
+    electricityDutyPercent: parseFloat(tariff.electricityDutyPercent || 0),
+    gstPercent: parseFloat(tariff.gstPercent || 0),
+    createdAt: tariff.createdAt,
+    updatedAt: tariff.updatedAt
+  };
+}
 
 // GET /api/tariffs - Get all tariffs
 export async function GET(request: NextRequest) {
   try {
+    console.log('[API TARIFFS] GET request received');
     const session = await getServerSession(authOptions);
+    console.log('[API TARIFFS] Session:', session ? 'exists' : 'null');
+
     if (!session) {
+      console.log('[API TARIFFS] No session - returning 401');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('[API TARIFFS] Fetching from database...');
     const result = await db
       .select()
       .from(tariffs)
       .orderBy(desc(tariffs.effectiveDate));
 
+    console.log('[API TARIFFS] Database returned:', result.length, 'tariffs');
+    console.log('[API TARIFFS] First tariff:', result[0]);
+
+    // Transform data for frontend
+    const transformedData = result.map(transformTariffForFrontend);
+
+    console.log('[API TARIFFS] Transformed data:', transformedData.length, 'tariffs');
+    console.log('[API TARIFFS] First transformed:', transformedData[0]);
+
     return NextResponse.json({
       success: true,
-      data: result,
+      data: transformedData,
     });
   } catch (error) {
-    console.error('Error fetching tariffs:', error);
-    return NextResponse.json({ error: 'Failed to fetch tariffs' }, { status: 500 });
+    console.error('[API TARIFFS] Error fetching tariffs:', error);
+    return NextResponse.json({ error: 'Failed to fetch tariffs', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 }
 

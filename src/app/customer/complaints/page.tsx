@@ -28,8 +28,7 @@ export default function CustomerComplaints() {
   const [newComplaint, setNewComplaint] = useState({
     category: 'power_outage',
     title: '',
-    description: '',
-    priority: 'medium'
+    description: ''
   });
 
   useEffect(() => {
@@ -41,16 +40,26 @@ export default function CustomerComplaints() {
       setLoading(true);
       setError(null);
       const response = await fetch('/api/complaints');
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        setError(errorData.error || `Server error: ${response.status}`);
+        setLoading(false);
+        return;
+      }
+
       const result = await response.json();
 
       if (result.success) {
         setComplaints(result.data);
       } else {
+        console.error('Fetch failed:', result);
         setError(result.error || 'Failed to fetch complaints');
       }
     } catch (err) {
-      setError('Network error while fetching complaints');
       console.error('Error fetching complaints:', err);
+      setError(`Network error: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -72,8 +81,7 @@ export default function CustomerComplaints() {
         setNewComplaint({
           category: 'power_outage',
           title: '',
-          description: '',
-          priority: 'medium'
+          description: ''
         });
       } else {
         const error = await response.json();
@@ -301,26 +309,15 @@ export default function CustomerComplaints() {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-white [&>option]:dark:bg-gray-800 [&>option]:text-gray-900 [&>option]:dark:text-white"
                   >
                     <option value="power_outage" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Power Outage</option>
+                    <option value="meter_issue" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Meter Issue</option>
                     <option value="billing" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Billing Issue</option>
                     <option value="service" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Service Request</option>
-                    <option value="meter_issue" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Meter Issue</option>
                     <option value="connection" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Connection Issue</option>
                     <option value="other" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Other</option>
                   </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority</label>
-                  <select
-                    value={newComplaint.priority}
-                    onChange={(e) => setNewComplaint({...newComplaint, priority: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-white [&>option]:dark:bg-gray-800 [&>option]:text-gray-900 [&>option]:dark:text-white"
-                  >
-                    <option value="low" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Low</option>
-                    <option value="medium" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Medium</option>
-                    <option value="high" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">High</option>
-                    <option value="urgent" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Urgent</option>
-                  </select>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Your complaint will be reviewed and prioritized by our admin team
+                  </p>
                 </div>
 
                 <div>

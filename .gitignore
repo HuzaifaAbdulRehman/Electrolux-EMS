@@ -70,3 +70,15 @@ TESTING_WORKFLOW_GUIDE.md
 TESTING_WORKFLOW.md
 ZONE_BASED_OUTAGES_IMPLEMENTATION.md
 .claude/settings.local.json
+ADMIN_PROFILE_DATA_IMPORT_GUIDE.md
+COMPLAINT_SYSTEM_TEST_GUIDE.md
+COMPLAINT_UPDATE_FIX.md
+COMPLAINTS_TABLE_FIX.md
+EMPLOYEE_NUMBER_UPDATE_GUIDE.md
+QUICK_COMPLAINT_TEST.md
+reset-database-smart.js
+reset-database.js
+test-bills-api.js
+test-notifications-api.js
+verify-login.js
+.claude/settings.local.json

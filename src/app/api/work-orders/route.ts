@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { workOrders, customers, employees, notifications } from '@/lib/drizzle/schema';
-import { eq, and, desc, or } from 'drizzle-orm';
+import { workOrders, customers, employees, notifications, complaints } from '@/lib/drizzle/schema';
+import { eq, and, desc, or, sql, asc } from 'drizzle-orm';
 
 // GET /api/work-orders - Get work orders
 export async function GET(request: NextRequest) {
@@ -87,7 +87,17 @@ export async function GET(request: NextRequest) {
       query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
     }
 
-    const result = await query.orderBy(desc(workOrders.assignedDate));
+    // PROFESSIONAL SORTING: Priority first (urgent → low), then FIFO within same priority
+    const result = await query.orderBy(
+      sql`CASE
+        WHEN ${workOrders.priority} = 'urgent' THEN 1
+        WHEN ${workOrders.priority} = 'high' THEN 2
+        WHEN ${workOrders.priority} = 'medium' THEN 3
+        WHEN ${workOrders.priority} = 'low' THEN 4
+        ELSE 5
+      END`,
+      asc(workOrders.assignedDate) // Oldest first within same priority (FIFO)
+    );
 
     return NextResponse.json({
       success: true,
@@ -312,6 +322,90 @@ export async function PATCH(request: NextRequest) {
       .update(workOrders)
       .set(updateData)
       .where(eq(workOrders.id, id));
+
+    // SYNC COMPLAINT STATUS when work order status changes (reverse sync!)
+    try {
+      // Find complaint linked to this work order
+      const [linkedComplaint] = await db
+        .select()
+        .from(complaints)
+        .where(eq(complaints.workOrderId, id))
+        .limit(1);
+
+      if (linkedComplaint) {
+        let complaintStatus = null;
+        let complaintUpdate: any = {};
+
+        // Map work order status to complaint status
+        switch (status) {
+          case 'in_progress':
+            complaintStatus = 'in_progress';
+            complaintUpdate.status = 'in_progress';
+            break;
+          case 'completed':
+            complaintStatus = 'resolved';
+            complaintUpdate.status = 'resolved';
+            complaintUpdate.resolvedAt = new Date();
+            if (completionNotes) {
+              complaintUpdate.resolutionNotes = completionNotes;
+            }
+            break;
+        }
+
+        if (complaintStatus) {
+          await db
+            .update(complaints)
+            .set(complaintUpdate)
+            .where(eq(complaints.id, linkedComplaint.id));
+
+          console.log(`✅ Complaint ${linkedComplaint.id} status synced to: ${complaintStatus}`);
+
+          // Notify customer AND admin when complaint is resolved
+          if (complaintStatus === 'resolved' && workOrder.customerId) {
+            // Notify customer
+            const [customer] = await db
+              .select({ userId: customers.userId, fullName: customers.fullName })
+              .from(customers)
+              .where(eq(customers.id, workOrder.customerId))
+              .limit(1);
+
+            if (customer?.userId) {
+              await db.insert(notifications).values({
+                userId: customer.userId,
+                notificationType: 'service',
+                title: 'Complaint Resolved',
+                message: `Your complaint "${linkedComplaint.title}" has been resolved. ${completionNotes || ''}`,
+                priority: 'high',
+                actionUrl: '/customer/complaints',
+                actionText: 'View Complaint',
+                isRead: 0,
+              } as any);
+              console.log(`✅ Notification sent to customer for resolved complaint`);
+            }
+
+            // Notify admin
+            try {
+              await db.insert(notifications).values({
+                userId: 1, // Admin user ID
+                notificationType: 'service',
+                title: 'Complaint Resolved by Employee',
+                message: `Complaint "${linkedComplaint.title}" from ${customer?.fullName || 'Customer'} has been resolved. ${completionNotes || ''}`,
+                priority: 'normal',
+                actionUrl: '/admin/complaints',
+                actionText: 'View Complaint',
+                isRead: 0,
+              } as any);
+              console.log(`✅ Notification sent to admin for resolved complaint`);
+            } catch (adminNotifError) {
+              console.error('Failed to notify admin:', adminNotifError);
+            }
+          }
+        }
+      }
+    } catch (complaintSyncError) {
+      console.error('Failed to sync complaint status:', complaintSyncError);
+      // Don't fail work order update if complaint sync fails
+    }
 
     // Create notification for customer when work order is completed
     if (status === 'completed' && workOrder.customerId) {

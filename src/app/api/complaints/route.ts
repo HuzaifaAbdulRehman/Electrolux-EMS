@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
 import { complaints, workOrders, notifications, customers, employees } from '@/lib/drizzle/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, asc } from 'drizzle-orm';
 
 // GET /api/complaints - Get complaints (filtered by user type)
 export async function GET(request: NextRequest) {
@@ -51,13 +51,14 @@ export async function GET(request: NextRequest) {
       const customer = await db
         .select({ id: customers.id })
         .from(customers)
-        .where(eq(customers.userId, session.user.id))
+        .where(eq(customers.userId, parseInt(session.user.id)))
         .limit(1);
-      
+
       if (customer.length) {
         conditions.push(eq(complaints.customerId, customer[0].id));
       } else {
         // Return empty result if customer profile not found
+        console.error(`Customer profile not found for userId: ${session.user.id}`);
         return NextResponse.json({
           success: true,
           data: [],
@@ -69,13 +70,14 @@ export async function GET(request: NextRequest) {
       const employee = await db
         .select({ id: employees.id })
         .from(employees)
-        .where(eq(employees.userId, session.user.id))
+        .where(eq(employees.userId, parseInt(session.user.id)))
         .limit(1);
-      
+
       if (employee.length) {
         conditions.push(eq(complaints.employeeId, employee[0].id));
       } else {
         // Return empty result if employee profile not found
+        console.error(`Employee profile not found for userId: ${session.user.id}`);
         return NextResponse.json({
           success: true,
           data: [],
@@ -97,7 +99,17 @@ export async function GET(request: NextRequest) {
       query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
     }
 
-    query = query.orderBy(desc(complaints.createdAt)).limit(limit).offset(offset);
+    // PROFESSIONAL SORTING: Priority first (urgent → low), then FIFO within same priority
+    query = query.orderBy(
+      sql`CASE
+        WHEN ${complaints.priority} = 'urgent' THEN 1
+        WHEN ${complaints.priority} = 'high' THEN 2
+        WHEN ${complaints.priority} = 'medium' THEN 3
+        WHEN ${complaints.priority} = 'low' THEN 4
+        ELSE 5
+      END`,
+      asc(complaints.createdAt) // Oldest first within same priority (FIFO)
+    ).limit(limit).offset(offset);
 
     const result = await query;
 
@@ -125,7 +137,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error fetching complaints:', error);
-    return NextResponse.json({ error: 'Failed to fetch complaints' }, { status: 500 });
+    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Stack trace:', error instanceof Error ? error.stack : '');
+    return NextResponse.json({
+      error: 'Failed to fetch complaints',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 
@@ -142,7 +159,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { category, title, description, priority } = body;
+    const { category, title, description } = body;
 
     if (!category || !title || !description) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -159,13 +176,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Customer profile not found' }, { status: 404 });
     }
 
+    // SET DEFAULT PRIORITY (Admin will review and adjust as needed)
+    const finalPriority = 'medium';  // All complaints start as MEDIUM
+
+    console.log(`📋 Complaint submitted with default priority: ${finalPriority} (Admin can adjust)`);
+
     // Create complaint
     const [newComplaint] = await db.insert(complaints).values({
       customerId: customer[0].id,
       category,
       title,
       description,
-      priority: priority || 'medium',
+      priority: finalPriority,  // Priority set by category, NOT by customer!
       status: 'submitted',
     } as any);
 
@@ -175,10 +197,10 @@ export async function POST(request: NextRequest) {
     try {
       await db.insert(notifications).values({
         userId: 1, // Admin user ID (assuming admin is user 1)
-        notificationType: 'complaint',
+        notificationType: 'service',
         title: 'New Complaint Submitted',
-        message: `New complaint: ${title}`,
-        priority: priority === 'urgent' ? 'high' : 'medium',
+        message: `New ${finalPriority.toUpperCase()} priority complaint: ${title}`,
+        priority: finalPriority === 'urgent' ? 'high' : 'normal',
         actionUrl: '/admin/complaints',
         isRead: 0,
       } as any);

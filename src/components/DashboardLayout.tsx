@@ -349,10 +349,10 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600 dark:text-gray-400">Connection</span>
                 <span className={`flex items-center space-x-1 text-sm ${
-                  hasActiveConnection ? 'text-green-500' : 'text-gray-500'
+                  hasActiveConnection ? 'text-green-500' : 'text-gray-500 dark:text-gray-400'
                 }`}>
                   <span className={`h-2 w-2 rounded-full ${
-                    hasActiveConnection ? 'bg-green-500' : 'bg-gray-500'
+                    hasActiveConnection ? 'bg-green-500' : 'bg-gray-500 dark:bg-gray-400'
                   }`}></span>
                   <span>{hasActiveConnection ? 'Active' : 'Inactive'}</span>
                 </span>
@@ -393,7 +393,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
             >
-              {isSidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isSidebarOpen ? <X className="h-6 w-6 text-gray-700 dark:text-gray-300" /> : <Menu className="h-6 w-6 text-gray-700 dark:text-gray-300" />}
             </button>
 
             {/* Spacer for mobile menu button alignment */}
@@ -423,7 +423,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
                   }}
                   className="relative p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <Bell className="h-5 w-5" />
+                  <Bell className="h-5 w-5 text-gray-700 dark:text-gray-300" />
                   {unreadCount > 0 && (
                     <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
                   )}
@@ -432,7 +432,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
                 {isNotificationOpen && (
                   <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl border dark:border-gray-700 z-50">
                     <div className="p-4 border-b dark:border-gray-700">
-                      <h3 className="font-semibold">Notifications</h3>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">Notifications</h3>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
                       {notifications.length > 0 ? (
@@ -441,7 +441,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
                             <div className="flex items-start space-x-3">
                               {getNotificationIcon(notification.type)}
                               <div className="flex-1">
-                                <p className="font-medium text-sm">{notification.title}</p>
+                                <p className="font-medium text-sm text-gray-900 dark:text-white">{notification.title}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{notification.message}</p>
                                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 flex items-center">
                                   <Clock className="h-3 w-3 mr-1" />
@@ -482,27 +482,27 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
                       {displayName.charAt(0).toUpperCase()}
                     </span>
                   </div>
-                  <span className="hidden md:block text-sm font-medium">{displayName}</span>
-                  <ChevronDown className="h-4 w-4" />
+                  <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-300">{displayName}</span>
+                  <ChevronDown className="h-4 w-4 text-gray-700 dark:text-gray-300" />
                 </button>
 
                 {isProfileOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border dark:border-gray-700 z-50">
                     <div className="p-4 border-b dark:border-gray-700">
-                      <p className="font-semibold">{displayName}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{displayName}</p>
                       <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{userEmail}</p>
                     </div>
                     <div className="p-2">
                       <Link
                         href={`/${userType}/profile`}
-                        className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
                       >
                         <User className="h-4 w-4" />
                         <span>Profile</span>
                       </Link>
                       <Link
                         href={`/${userType}/settings`}
-                        className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
                       >
                         <Settings className="h-4 w-4" />
                         <span>Settings</span>

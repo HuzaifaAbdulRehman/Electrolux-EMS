@@ -19,7 +19,8 @@ import {
   Save,
   X,
   User,
-  Calendar
+  Calendar,
+  RefreshCw
 } from 'lucide-react';
 
 export default function AdminComplaints() {
@@ -30,6 +31,7 @@ export default function AdminComplaints() {
   const [selectedComplaint, setSelectedComplaint] = useState<any>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [selectedPriority, setSelectedPriority] = useState('medium');
 
   useEffect(() => {
     fetchComplaints();
@@ -91,15 +93,16 @@ export default function AdminComplaints() {
 
   const handleAssignComplaint = async () => {
     if (!selectedComplaint || !selectedEmployee) return;
-    
+
     try {
       setError(null);
       const response = await fetch(`/api/complaints/${selectedComplaint.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           status: 'assigned',
-          employeeId: parseInt(selectedEmployee)
+          employeeId: parseInt(selectedEmployee),
+          priority: selectedPriority  // Admin-set priority!
         })
       });
       
@@ -185,6 +188,26 @@ export default function AdminComplaints() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Complaint Management</h1>
               <p className="text-gray-600 dark:text-gray-400">Review and manage customer complaints</p>
             </div>
+            <button
+              onClick={() => {
+                fetchComplaints();
+                fetchEmployees();
+              }}
+              disabled={loading}
+              className="mt-4 sm:mt-0 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all flex items-center space-x-2 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Refreshing...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-5 h-5" />
+                  <span>Refresh</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
@@ -276,6 +299,12 @@ export default function AdminComplaints() {
                       <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                         <span>Category: {getCategoryName(complaint.category)}</span>
                         <span>Submitted: {new Date(complaint.submittedAt).toLocaleDateString()}</span>
+                        {complaint.employeeId && (
+                          <span className="flex items-center text-blue-600 dark:text-blue-400">
+                            <User className="w-3 h-3 mr-1" />
+                            Assigned to Employee ID: {complaint.employeeId}
+                          </span>
+                        )}
                         {complaint.resolvedAt && (
                           <span>Resolved: {new Date(complaint.resolvedAt).toLocaleDateString()}</span>
                         )}
@@ -289,51 +318,47 @@ export default function AdminComplaints() {
                       )}
                     </div>
                     <div className="flex items-center space-x-2 ml-4">
-                      {complaint.status === 'submitted' && (
+                      {/* Admin can only assign unassigned complaints */}
+                      {(complaint.status === 'submitted' || complaint.status === 'under_review') && (
                         <button
                           onClick={() => {
                             setSelectedComplaint(complaint);
+                            setSelectedPriority(complaint.priority || 'medium'); // Set current priority
                             setShowAssignModal(true);
                           }}
                           className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
                         >
-                          Assign
+                          Assign to Employee
                         </button>
                       )}
-                      {complaint.status === 'under_review' && (
-                        <button
-                          onClick={() => {
-                            setSelectedComplaint(complaint);
-                            setShowAssignModal(true);
-                          }}
-                          className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                        >
-                          Assign
-                        </button>
-                      )}
+
+                      {/* Show assigned employee info for assigned complaints */}
                       {complaint.status === 'assigned' && (
-                        <button
-                          onClick={() => handleStatusUpdate(complaint.id, 'in_progress')}
-                          className="px-3 py-1 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm"
-                        >
-                          Start Work
-                        </button>
+                        <span className="px-3 py-1 bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded-lg text-sm border border-orange-500/50">
+                          Assigned - Waiting for employee to start
+                        </span>
                       )}
+
                       {complaint.status === 'in_progress' && (
-                        <button
-                          onClick={() => handleStatusUpdate(complaint.id, 'resolved')}
-                          className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
-                        >
-                          Mark Resolved
-                        </button>
+                        <span className="px-3 py-1 bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-lg text-sm border border-purple-500/50">
+                          Employee working on it
+                        </span>
                       )}
+
+                      {/* Admin can close resolved complaints */}
                       {complaint.status === 'resolved' && (
                         <button
                           onClick={() => handleStatusUpdate(complaint.id, 'closed')}
                           className="px-3 py-1 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
                         >
-                          Close
+                          Close Complaint
                         </button>
+                      )}
+
+                      {complaint.status === 'closed' && (
+                        <span className="px-3 py-1 bg-gray-500/20 text-gray-600 dark:text-gray-400 rounded-lg text-sm border border-gray-500/50">
+                          Closed
+                        </span>
                       )}
                     </div>
                   </div>
@@ -373,6 +398,25 @@ export default function AdminComplaints() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Set Priority
+                  </label>
+                  <select
+                    value={selectedPriority}
+                    onChange={(e) => setSelectedPriority(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-white [&>option]:dark:bg-gray-800 [&>option]:text-gray-900 [&>option]:dark:text-white"
+                  >
+                    <option value="low" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">🟢 Low - General queries, non-urgent</option>
+                    <option value="medium" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">🟡 Medium - Standard issues</option>
+                    <option value="high" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">🟠 High - Important, needs attention</option>
+                    <option value="urgent" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">🔴 Urgent - Emergency, critical</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Admin sets priority based on issue severity
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Assign to Employee
                   </label>
                   <select
@@ -383,7 +427,7 @@ export default function AdminComplaints() {
                     <option value="" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Select Employee</option>
                     {employees.map((employee) => (
                       <option key={employee.id} value={employee.id} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-                        {employee.employeeName} - {employee.department} - {employee.designation} - Work Orders: {employee.workOrdersCount || 0}
+                        {employee.employeeName} ({employee.email.split('@')[0]}) - {employee.department} - {employee.designation} - Work Orders: {employee.workOrdersCount || 0}
                       </option>
                     ))}
                   </select>

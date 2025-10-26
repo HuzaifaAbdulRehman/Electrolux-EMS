@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // Create user account
-      await db.insert(users).values({
+      const [insertResult] = await db.insert(users).values({
         email: data.email,
         password: hashedPassword,
         userType: 'customer',
@@ -117,8 +117,11 @@ export async function POST(request: NextRequest) {
         isActive: 1,
       });
 
-      // Get the newly created user ID
-      [newUser] = await db.select().from(users).where(eq(users.email, data.email)).limit(1);
+      // Get user ID from insert result
+      const userId = (insertResult as any).insertId;
+
+      // Get the newly created user
+      [newUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
       // Generate unique account number (not meter - use customer's meter)
       const timestamp = Date.now();
@@ -139,9 +142,9 @@ export async function POST(request: NextRequest) {
         connectionType: data.connectionType || 'Residential',
         status: customerStatus, // 'pending_installation' or 'active'
         connectionDate: new Date().toISOString().split('T')[0],
-        lastBillAmount: '0',
-        outstandingBalance: '0',
-        averageMonthlyUsage: '0',
+        lastBillAmount: '0.00',
+        outstandingBalance: '0.00',
+        averageMonthlyUsage: '0.00',
         paymentStatus: 'paid',
       };
 
@@ -179,7 +182,7 @@ export async function POST(request: NextRequest) {
       throw dbError;
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration error:', error);
 
     if (error instanceof z.ZodError) {
@@ -190,7 +193,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Registration failed. Please try again later.' },
+      { error: 'Registration failed. Please try again later.', details: error?.message || 'Unknown error' },
       { status: 500 }
     );
   }

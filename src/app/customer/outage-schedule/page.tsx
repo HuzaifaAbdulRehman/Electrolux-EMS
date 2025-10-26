@@ -48,9 +48,11 @@ export default function OutageSchedule() {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          setOutages(result.data);
-          calculateStats(result.data);
+          setOutages(result.data || []);
+          calculateStats(result.data || []);
         }
+      } else {
+        console.error('Failed to fetch outages:', response.statusText);
       }
     } catch (error) {
       console.error('Error fetching outages:', error);

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { outages, customers } from '@/lib/drizzle/schema';
-import { eq, desc, and, sql } from 'drizzle-orm';
+import { outages, customers, notifications } from '@/lib/drizzle/schema';
+import { eq, desc, and, sql, like } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
@@ -114,6 +114,17 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = parseInt(session.user.id);
+    
+    // Calculate affected customer count if not provided
+    let customerCount = affectedCustomerCount || 0;
+    if (!affectedCustomerCount) {
+      const [countResult] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(customers)
+        .where(eq(customers.zone, zone));
+      customerCount = countResult.count;
+    }
+
     const newOutage = await db.insert(outages).values({
       areaName,
       zone,
@@ -122,15 +133,48 @@ export async function POST(request: NextRequest) {
       severity,
       scheduledStartTime: scheduledStartTime ? new Date(scheduledStartTime) : null,
       scheduledEndTime: scheduledEndTime ? new Date(scheduledEndTime) : null,
-      affectedCustomerCount: affectedCustomerCount || 0,
+      affectedCustomerCount: customerCount,
       status: 'scheduled',
       createdBy: userId
     });
 
+    const outageId = newOutage.insertId;
+
+    // Send notifications to affected customers
+    try {
+      const affectedCustomers = await db
+        .select({ userId: customers.userId, fullName: customers.fullName })
+        .from(customers)
+        .where(eq(customers.zone, zone));
+
+      const notificationPromises = affectedCustomers.map(customer => 
+        db.insert(notifications).values({
+          userId: customer.userId,
+          notificationType: 'outage',
+          title: `Power Outage Scheduled - ${areaName}`,
+          message: `A ${outageType} power outage is scheduled for ${areaName} on ${scheduledStartTime ? new Date(scheduledStartTime).toLocaleDateString() : 'TBD'}. ${reason ? `Reason: ${reason}` : ''}`,
+          priority: severity === 'critical' ? 'urgent' : severity === 'high' ? 'high' : 'medium',
+          actionUrl: '/customer/outage-schedule',
+          actionText: 'View Details',
+          isRead: 0
+        })
+      );
+
+      await Promise.all(notificationPromises);
+      console.log(`[Outage API] Sent notifications to ${affectedCustomers.length} customers`);
+    } catch (notificationError) {
+      console.error('[Outage API] Error sending notifications:', notificationError);
+      // Don't fail the outage creation if notifications fail
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Outage created successfully',
-      data: { id: newOutage.insertId }
+      data: { 
+        id: outageId,
+        affectedCustomers: customerCount,
+        notificationsSent: true
+      }
     });
 
   } catch (error: any) {
@@ -149,9 +193,9 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Only admin can update outages
-    if (session.user.userType !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
+    // Admin and employees can update outages
+    if (!['admin', 'employee'].includes(session.user.userType)) {
+      return NextResponse.json({ error: 'Forbidden - Admin/Employee access required' }, { status: 403 });
     }
 
     const body = await request.json();
@@ -159,6 +203,16 @@ export async function PATCH(request: NextRequest) {
 
     if (!id) {
       return NextResponse.json({ error: 'Outage ID is required' }, { status: 400 });
+    }
+
+    // Get current outage details
+    const [currentOutage] = await db
+      .select()
+      .from(outages)
+      .where(eq(outages.id, id));
+
+    if (!currentOutage) {
+      return NextResponse.json({ error: 'Outage not found' }, { status: 404 });
     }
 
     // Convert datetime strings to Date objects if present
@@ -175,13 +229,80 @@ export async function PATCH(request: NextRequest) {
       updateData.actualEndTime = new Date(updateData.actualEndTime);
     }
 
+    // Handle status changes with timestamps
+    const now = new Date();
+    if (updateData.status) {
+      if (updateData.status === 'ongoing' && currentOutage.status === 'scheduled') {
+        updateData.actualStartTime = now;
+      } else if (updateData.status === 'restored' && currentOutage.status === 'ongoing') {
+        updateData.actualEndTime = now;
+      }
+    }
+
     await db.update(outages)
       .set(updateData)
       .where(eq(outages.id, id));
 
+    // Send notifications for status changes
+    if (updateData.status && updateData.status !== currentOutage.status) {
+      try {
+        const affectedCustomers = await db
+          .select({ userId: customers.userId, fullName: customers.fullName })
+          .from(customers)
+          .where(eq(customers.zone, currentOutage.zone));
+
+        let notificationTitle = '';
+        let notificationMessage = '';
+        let priority = 'medium';
+
+        switch (updateData.status) {
+          case 'ongoing':
+            notificationTitle = `Power Outage Started - ${currentOutage.areaName}`;
+            notificationMessage = `The scheduled power outage in ${currentOutage.areaName} has started. Expected restoration: ${currentOutage.scheduledEndTime ? new Date(currentOutage.scheduledEndTime).toLocaleString() : 'TBD'}`;
+            priority = currentOutage.severity === 'critical' ? 'urgent' : 'high';
+            break;
+          case 'restored':
+            notificationTitle = `Power Restored - ${currentOutage.areaName}`;
+            notificationMessage = `Power has been restored in ${currentOutage.areaName}. ${updateData.restorationNotes ? `Notes: ${updateData.restorationNotes}` : ''}`;
+            priority = 'medium';
+            break;
+          case 'cancelled':
+            notificationTitle = `Outage Cancelled - ${currentOutage.areaName}`;
+            notificationMessage = `The scheduled power outage in ${currentOutage.areaName} has been cancelled.`;
+            priority = 'low';
+            break;
+        }
+
+        if (notificationTitle) {
+          const notificationPromises = affectedCustomers.map(customer => 
+            db.insert(notifications).values({
+              userId: customer.userId,
+              notificationType: 'outage',
+              title: notificationTitle,
+              message: notificationMessage,
+              priority,
+              actionUrl: '/customer/outage-schedule',
+              actionText: 'View Details',
+              isRead: 0
+            })
+          );
+
+          await Promise.all(notificationPromises);
+          console.log(`[Outage API] Sent status update notifications to ${affectedCustomers.length} customers`);
+        }
+      } catch (notificationError) {
+        console.error('[Outage API] Error sending status notifications:', notificationError);
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Outage updated successfully'
+      message: 'Outage updated successfully',
+      data: { 
+        id,
+        status: updateData.status,
+        notificationsSent: updateData.status ? true : false
+      }
     });
 
   } catch (error: any) {

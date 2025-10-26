@@ -1,0 +1,503 @@
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Zap,
+  User,
+  Mail,
+  Phone,
+  Home,
+  MapPin,
+  Calendar,
+  FileText,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  ArrowLeft
+} from 'lucide-react';
+import Link from 'next/link';
+
+export default function ApplyConnection() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [applicationNumber, setApplicationNumber] = useState('');
+
+  const [formData, setFormData] = useState({
+    applicantName: '',
+    fatherName: '',
+    email: '',
+    phone: '',
+    alternatePhone: '',
+    idType: 'national_id' as 'passport' | 'drivers_license' | 'national_id' | 'voter_id' | 'aadhaar',
+    idNumber: '',
+    propertyType: 'Residential' as 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural',
+    connectionType: 'single-phase',
+    loadRequired: '',
+    propertyAddress: '',
+    city: '',
+    state: '',
+    pincode: '',
+    landmark: '',
+    preferredDate: '',
+    purposeOfConnection: 'domestic' as 'domestic' | 'business' | 'industrial' | 'agricultural',
+    existingConnection: false,
+    existingAccountNumber: ''
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/connection-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.details || result.error || 'Failed to submit application');
+      }
+
+      setApplicationNumber(result.data.applicationNumber);
+      setSuccess(true);
+
+    } catch (err: any) {
+      console.error('Error submitting application:', err);
+      setError(err.message || 'Failed to submit application');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 text-center">
+          <div className="mb-6">
+            <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Application Submitted Successfully!
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Your connection request has been received and is under review
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl p-6 mb-6">
+            <p className="text-sm opacity-90 mb-2">Your Application Number</p>
+            <p className="text-3xl font-bold tracking-wide">{applicationNumber}</p>
+            <p className="text-sm opacity-90 mt-2">Please save this number for future reference</p>
+          </div>
+
+          <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 text-left space-y-3 mb-6">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">What's Next?</h3>
+            <div className="flex items-start space-x-3">
+              <div className="w-6 h-6 rounded-full bg-yellow-400 text-white flex items-center justify-center text-sm flex-shrink-0">1</div>
+              <div>
+                <p className="text-gray-900 dark:text-white font-medium">Application Review</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Our team will review your application within 2-3 business days</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-6 h-6 rounded-full bg-yellow-400 text-white flex items-center justify-center text-sm flex-shrink-0">2</div>
+              <div>
+                <p className="text-gray-900 dark:text-white font-medium">Site Inspection</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">If approved, we'll schedule a site inspection at your property</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-6 h-6 rounded-full bg-yellow-400 text-white flex items-center justify-center text-sm flex-shrink-0">3</div>
+              <div>
+                <p className="text-gray-900 dark:text-white font-medium">Installation</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Our technician will install the meter and activate your connection</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="w-6 h-6 rounded-full bg-yellow-400 text-white flex items-center justify-center text-sm flex-shrink-0">4</div>
+              <div>
+                <p className="text-gray-900 dark:text-white font-medium">Account Activation</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">You'll receive your account credentials via email</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              We'll send updates to <span className="font-semibold text-gray-900 dark:text-white">{formData.email}</span>
+            </p>
+            <Link href="/login">
+              <button className="w-full px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all">
+                Go to Login
+              </button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <Link href="/login" className="inline-flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4">
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back to Login
+          </Link>
+          <div className="flex items-center justify-center mb-4">
+            <div className="p-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg">
+              <Zap className="w-10 h-10 text-white" />
+            </div>
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+            Apply for New Connection
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Get electricity connection in just a few simple steps
+          </p>
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 bg-red-500/20 border border-red-500/50 rounded-xl p-4 flex items-start space-x-3">
+            <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-red-400 font-semibold">Application Error</p>
+              <p className="text-red-300 text-sm">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
+          {/* Personal Information */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <User className="w-5 h-5 mr-2 text-yellow-400" />
+              Personal Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Applicant Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.applicantName}
+                  onChange={(e) => setFormData({ ...formData, applicantName: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Enter full name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Father's Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.fatherName}
+                  onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Enter father's name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="your.email@example.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Phone <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                  <input
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="+92 3XX XXXXXXX"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Alternate Phone
+                </label>
+                <input
+                  type="tel"
+                  value={formData.alternatePhone}
+                  onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ID Verification */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <FileText className="w-5 h-5 mr-2 text-yellow-400" />
+              Identity Verification
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  ID Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.idType}
+                  onChange={(e) => setFormData({ ...formData, idType: e.target.value as any })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="national_id">National ID</option>
+                  <option value="passport">Passport</option>
+                  <option value="drivers_license">Driver's License</option>
+                  <option value="voter_id">Voter ID</option>
+                  <option value="aadhaar">Aadhaar</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  ID Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.idNumber}
+                  onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="Enter ID number"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Connection Details */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Zap className="w-5 h-5 mr-2 text-yellow-400" />
+              Connection Details
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Property Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.propertyType}
+                  onChange={(e) => setFormData({ ...formData, propertyType: e.target.value as any })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="Residential">Residential</option>
+                  <option value="Commercial">Commercial</option>
+                  <option value="Industrial">Industrial</option>
+                  <option value="Agricultural">Agricultural</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Connection Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.connectionType}
+                  onChange={(e) => setFormData({ ...formData, connectionType: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="single-phase">Single Phase</option>
+                  <option value="three-phase">Three Phase</option>
+                  <option value="industrial">Industrial</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Load Required (kW)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.loadRequired}
+                  onChange={(e) => setFormData({ ...formData, loadRequired: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="e.g., 5.5"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Purpose <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.purposeOfConnection}
+                  onChange={(e) => setFormData({ ...formData, purposeOfConnection: e.target.value as any })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="domestic">Domestic</option>
+                  <option value="business">Business</option>
+                  <option value="industrial">Industrial</option>
+                  <option value="agricultural">Agricultural</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Preferred Connection Date
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                  <input
+                    type="date"
+                    value={formData.preferredDate}
+                    onChange={(e) => setFormData({ ...formData, preferredDate: e.target.value })}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Property Address */}
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <Home className="w-5 h-5 mr-2 text-yellow-400" />
+              Property Address
+            </h2>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Property Address <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={formData.propertyAddress}
+                  onChange={(e) => setFormData({ ...formData, propertyAddress: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="House/Flat number, Street, Area"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    City <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="e.g., Lahore"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    State/Province
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="e.g., Punjab"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Pincode
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.pincode}
+                    onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="54000"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Landmark
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    value={formData.landmark}
+                    onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
+                    className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="Near..."
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-center">
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-orange-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Submitting Application...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-5 h-5" />
+                  <span>Submit Application</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
+            By submitting this form, you agree to our terms and conditions
+          </p>
+        </form>
+      </div>
+    </div>
+  );
+}

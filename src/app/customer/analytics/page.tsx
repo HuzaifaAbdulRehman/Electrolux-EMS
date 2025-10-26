@@ -56,7 +56,9 @@ export default function UsageAnalytics() {
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/customer/dashboard');
+        console.log('[Analytics] Fetching data for period:', selectedPeriod);
+
+        const response = await fetch(`/api/customer/dashboard?period=${selectedPeriod}`);
         const data = await response.json();
 
         console.log('[Analytics] API Response:', data);
@@ -83,7 +85,7 @@ export default function UsageAnalytics() {
       }
     };
     fetchAnalytics();
-  }, []);
+  }, [selectedPeriod]); // Re-fetch when period changes
 
   if (loading) {
     return (
@@ -97,8 +99,10 @@ export default function UsageAnalytics() {
 
   // Extract real data from dashboard API response
   const consumptionHistory = analyticsData?.data?.consumptionHistory || [];
+  const extendedConsumptionHistory = analyticsData?.data?.extendedConsumptionHistory || [];
   const recentBills = analyticsData?.data?.recentBills || [];
   const currentBill = analyticsData?.data?.currentBill || null;
+  const avgConsumptionFromAPI = analyticsData?.data?.avgConsumption || 0;
 
   // Calculate metrics from real data
   const currentMonthUsage = consumptionHistory.length > 0
@@ -144,57 +148,6 @@ export default function UsageAnalytics() {
     ]
   };
 
-  // Usage by Appliance (Doughnut Chart)
-  const applianceUsageData = {
-    labels: ['AC/Heating', 'Water Heater', 'Lighting', 'Kitchen', 'Electronics', 'Others'],
-    datasets: [
-      {
-        data: [35, 20, 15, 12, 10, 8],
-        backgroundColor: [
-          'rgba(239, 68, 68, 0.8)',
-          'rgba(251, 146, 60, 0.8)',
-          'rgba(250, 204, 21, 0.8)',
-          'rgba(34, 197, 94, 0.8)',
-          'rgba(59, 130, 246, 0.8)',
-          'rgba(168, 85, 247, 0.8)',
-        ],
-        borderWidth: 2,
-        borderColor: '#fff',
-        hoverOffset: 8
-      }
-    ]
-  };
-
-  // Efficiency Radar Chart
-  const efficiencyRadarData = {
-    labels: ['Usage Efficiency', 'Peak Avoidance', 'Consistency', 'Conservation', 'Cost Management'],
-    datasets: [
-      {
-        label: 'Your Performance',
-        data: [75, 60, 85, 70, 80],
-        backgroundColor: 'rgba(34, 197, 94, 0.2)',
-        borderColor: 'rgb(34, 197, 94)',
-        borderWidth: 2,
-        pointBackgroundColor: 'rgb(34, 197, 94)',
-        pointBorderColor: '#fff',
-        pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: 'rgb(34, 197, 94)',
-      },
-      {
-        label: 'Target',
-        data: [85, 80, 90, 85, 90],
-        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-        borderColor: 'rgb(59, 130, 246)',
-        borderWidth: 2,
-        borderDash: [5, 5],
-        pointBackgroundColor: 'rgb(59, 130, 246)',
-        pointBorderColor: '#fff',
-        pointHoverBackgroundColor: '#fff',
-        pointHoverBorderColor: 'rgb(59, 130, 246)',
-      }
-    ]
-  };
-
   // Cost Breakdown (Vertical Bar Chart) - Use real bill data
   const costBreakdownData = {
     labels: consumptionHistory.map((item: any) => {
@@ -206,6 +159,58 @@ export default function UsageAnalytics() {
         label: 'Total Amount (Rs.)',
         data: consumptionHistory.map((item: any) => item.totalAmount).reverse().slice(0, 6),
         backgroundColor: 'rgba(251, 146, 60, 0.8)',
+        borderRadius: 4,
+      }
+    ]
+  };
+
+  // Bill Components Breakdown (Stacked Bar Chart) - Real data
+  const billComponentsData = {
+    labels: extendedConsumptionHistory.map((item: any) => {
+      const date = new Date(item.billingPeriod);
+      return date.toLocaleDateString('en-US', { month: 'short' });
+    }).slice(-6),
+    datasets: [
+      {
+        label: 'Energy Charges',
+        data: extendedConsumptionHistory.map((item: any) => safeNumber(item.baseAmount, 0)).slice(-6),
+        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+      },
+      {
+        label: 'Fixed Charges',
+        data: extendedConsumptionHistory.map((item: any) => safeNumber(item.fixedCharges, 0)).slice(-6),
+        backgroundColor: 'rgba(251, 146, 60, 0.8)',
+      },
+      {
+        label: 'Electricity Duty',
+        data: extendedConsumptionHistory.map((item: any) => safeNumber(item.electricityDuty, 0)).slice(-6),
+        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+      },
+      {
+        label: 'GST',
+        data: extendedConsumptionHistory.map((item: any) => safeNumber(item.gstAmount, 0)).slice(-6),
+        backgroundColor: 'rgba(34, 197, 94, 0.8)',
+      }
+    ]
+  };
+
+  // Usage vs Average Comparison (Grouped Bar Chart) - Real data
+  const usageComparisonData = {
+    labels: extendedConsumptionHistory.map((item: any) => {
+      const date = new Date(item.billingPeriod);
+      return date.toLocaleDateString('en-US', { month: 'short' });
+    }).slice(-6),
+    datasets: [
+      {
+        label: 'Your Usage (kWh)',
+        data: extendedConsumptionHistory.map((item: any) => safeNumber(item.unitsConsumed, 0)).slice(-6),
+        backgroundColor: 'rgba(251, 146, 60, 0.8)',
+        borderRadius: 4,
+      },
+      {
+        label: 'Average Usage (kWh)',
+        data: Array(6).fill(avgConsumptionFromAPI),
+        backgroundColor: 'rgba(156, 163, 175, 0.5)',
         borderRadius: 4,
       }
     ]
@@ -281,6 +286,39 @@ export default function UsageAnalytics() {
         ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 10 } }
       },
       x: {
+        grid: { color: 'rgba(156, 163, 175, 0.1)' },
+        ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 10 } }
+      }
+    }
+  };
+
+  const stackedBarOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: { color: 'rgba(156, 163, 175, 0.8)', padding: 10, font: { size: 10 } }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+        padding: 10,
+        callbacks: {
+          label: function(context: any) {
+            return context.dataset.label + ': Rs ' + context.parsed.y.toFixed(2);
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        stacked: true,
+        grid: { color: 'rgba(156, 163, 175, 0.1)' },
+        ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 10 } }
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
         grid: { color: 'rgba(156, 163, 175, 0.1)' },
         ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 10 } }
       }
@@ -391,65 +429,145 @@ export default function UsageAnalytics() {
               </div>
             </div>
 
-            {/* Cost Breakdown - Full Width */}
-            <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                <DollarSign className="w-5 h-5 mr-2 text-green-500" />
-                Monthly Cost Breakdown (Last 6 Months)
-              </h3>
-              <div className="h-72">
-                <Bar
-                  data={costBreakdownData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'bottom',
-                        labels: {
-                          color: 'rgba(156, 163, 175, 0.8)',
-                          padding: 15,
-                          font: { size: 11 }
-                        }
-                      },
-                      tooltip: {
-                        backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        padding: 12,
-                        callbacks: {
-                          label: function(context: any) {
-                            return `${context.dataset.label}: Rs. ${context.parsed.y}`;
-                          },
-                          footer: function(items: any) {
-                            let sum = 0;
-                            items.forEach((item: any) => {
-                              sum += item.parsed.y;
-                            });
-                            return `Total: Rs. ${sum}`;
-                          }
-                        }
-                      }
-                    },
-                    scales: {
-                      y: {
-                        stacked: true,
-                        grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                        ticks: {
-                          color: 'rgba(156, 163, 175, 0.6)',
-                          callback: function(value: any) {
-                            return 'Rs. ' + value;
+            {/* Additional Analytics - Professional 3-Column Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Monthly Cost Breakdown */}
+              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                  <DollarSign className="w-5 h-5 mr-2 text-green-500" />
+                  Monthly Cost
+                </h3>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Last 6 months bills</p>
+                <div className="h-64">
+                  <Bar
+                    data={costBreakdownData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                          backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                          titleColor: '#fff',
+                          bodyColor: '#fff',
+                          padding: 10,
+                          callbacks: {
+                            label: function(context: any) {
+                              return `Rs. ${context.parsed.y}`;
+                            }
                           }
                         }
                       },
-                      x: {
-                        stacked: true,
-                        grid: { display: false },
-                        ticks: { color: 'rgba(156, 163, 175, 0.6)' }
+                      scales: {
+                        y: {
+                          grid: { color: 'rgba(156, 163, 175, 0.1)' },
+                          ticks: {
+                            color: 'rgba(156, 163, 175, 0.6)',
+                            font: { size: 9 },
+                            callback: function(value: any) {
+                              return 'Rs. ' + value;
+                            }
+                          }
+                        },
+                        x: {
+                          grid: { display: false },
+                          ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 9 } }
+                        }
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Bill Components Breakdown */}
+              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                  <DollarSign className="w-5 h-5 mr-2 text-blue-500" />
+                  Bill Components
+                </h3>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Charges breakdown</p>
+                <div className="h-64">
+                  {extendedConsumptionHistory.length > 0 ? (
+                    <Bar data={billComponentsData} options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'bottom',
+                          labels: { color: 'rgba(156, 163, 175, 0.8)', padding: 8, font: { size: 8 } }
+                        },
+                        tooltip: {
+                          backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                          padding: 8,
+                          callbacks: {
+                            label: function(context: any) {
+                              return context.dataset.label + ': Rs ' + context.parsed.y.toFixed(0);
+                            }
+                          }
+                        }
+                      },
+                      scales: {
+                        x: {
+                          stacked: true,
+                          grid: { color: 'rgba(156, 163, 175, 0.1)' },
+                          ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 9 } }
+                        },
+                        y: {
+                          stacked: true,
+                          beginAtZero: true,
+                          grid: { color: 'rgba(156, 163, 175, 0.1)' },
+                          ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 9 } }
+                        }
+                      }
+                    }} />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      <p>No data available</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Usage vs Average Comparison */}
+              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+                  <Zap className="w-5 h-5 mr-2 text-orange-500" />
+                  Usage vs Average
+                </h3>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Your comparison</p>
+                <div className="h-64">
+                  {extendedConsumptionHistory.length > 0 ? (
+                    <Bar data={usageComparisonData} options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'bottom',
+                          labels: { color: 'rgba(156, 163, 175, 0.8)', padding: 8, font: { size: 9 } }
+                        },
+                        tooltip: {
+                          backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                          padding: 10
+                        }
+                      },
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          grid: { color: 'rgba(156, 163, 175, 0.1)' },
+                          ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 9 } }
+                        },
+                        x: {
+                          grid: { color: 'rgba(156, 163, 175, 0.1)' },
+                          ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 9 } }
+                        }
+                      }
+                    }} />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      <p>No data available</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

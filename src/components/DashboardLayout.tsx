@@ -104,6 +104,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
           { name: 'Customers', href: '/employee/customers', icon: Users, description: 'View customer details' },
         ]},
         { section: 'ACCOUNT', items: [
+          { name: 'Notifications', href: '/employee/notifications', icon: Bell, description: 'View your notifications' },
           { name: 'Profile', href: '/employee/profile', icon: User, description: 'Your employee profile' },
           { name: 'Settings', href: '/employee/settings', icon: Settings, description: 'Preferences' },
         ]},

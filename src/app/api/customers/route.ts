@@ -215,15 +215,39 @@ export async function POST(request: NextRequest) {
       isActive: 1,
     });
 
-    // Generate account and meter numbers
-    const accountNumber = `ELX-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
-    const meterNumber = `MTR-${String(Date.now()).slice(-6)}`;
+    console.log('[CREATE CUSTOMER] User created with ID:', newUser.insertId);
+
+    // Generate account number (unique timestamp-based)
+    // Format: ELX-YYYY-XXXXXX-RRR (Year-Timestamp-Random)
+    const randomSuffix = crypto.randomBytes(2).toString('hex').toUpperCase();
+    const accountNumber = `ELX-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}-${randomSuffix}`;
+
+    // Determine customer status
+    // For 5th semester project: pending_installation means meter not yet assigned
+    const customerStatus = body.status || (body.meterNumber ? 'active' : 'pending_installation');
+
+    // Meter number will be assigned AFTER installation by employee
+    // For now, only assign if explicitly provided (existing meter) or if status is active
+    let meterNumber = null;
+    if (body.meterNumber) {
+      // Admin manually providing meter number (existing meter)
+      meterNumber = body.meterNumber;
+    } else if (customerStatus === 'active') {
+      // For backward compatibility: auto-generate if marked as active
+      // DBMS Project: Use AUTO_INCREMENT customer.id for uniqueness
+      // We'll update after INSERT to use actual customer ID
+      meterNumber = 'TEMP'; // Temporary, will be updated below
+    }
+
+    console.log('[CREATE CUSTOMER] Account number:', accountNumber);
+    console.log('[CREATE CUSTOMER] Initial meter number:', meterNumber);
+    console.log('[CREATE CUSTOMER] Status:', customerStatus);
 
     // Create customer record
     const [newCustomer] = await db.insert(customers).values({
       userId: newUser.insertId,
       accountNumber,
-      meterNumber,
+      meterNumber: meterNumber,
       fullName: body.fullName,
       email: body.email,
       phone: body.phone,
@@ -231,18 +255,40 @@ export async function POST(request: NextRequest) {
       city: body.city,
       state: body.state,
       pincode: body.pincode,
+      zone: body.zone || null, // Load shedding zone
       connectionType: body.connectionType,
-      status: body.status || 'active',
+      status: customerStatus,
       connectionDate: body.connectionDate || new Date().toISOString().split('T')[0],
     } as any);
 
+    const customerId = newCustomer.insertId;
+    console.log('[CREATE CUSTOMER] Customer created with ID:', customerId);
+
+    // If meter number was set to TEMP, update with actual customer ID
+    if (meterNumber === 'TEMP') {
+      // DBMS Project: Meter number format MTR-{CustomerID}-{Year}
+      // This ensures uniqueness using AUTO_INCREMENT ID
+      const actualMeterNumber = `MTR-${String(customerId).padStart(6, '0')}-${new Date().getFullYear()}`;
+
+      await db.update(customers)
+        .set({ meterNumber: actualMeterNumber } as any)
+        .where(eq(customers.id, customerId));
+
+      meterNumber = actualMeterNumber;
+      console.log('[CREATE CUSTOMER] Meter number updated to:', actualMeterNumber);
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Customer created successfully',
+      message: customerStatus === 'pending_installation'
+        ? 'Customer created successfully. Meter number will be assigned after installation.'
+        : 'Customer created successfully',
       data: {
-        id: newCustomer.insertId,
+        id: customerId,
         accountNumber,
         meterNumber,
+        status: customerStatus,
+        temporaryPassword: randomPassword, // Admin should provide this to customer
       },
     }, { status: 201 });
 

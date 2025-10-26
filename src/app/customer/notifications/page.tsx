@@ -2,30 +2,29 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Bell,
-  BellOff,
-  Filter,
-  Check,
-  CheckCheck,
-  Info,
-  AlertTriangle,
+  CheckCircle,
   AlertCircle,
-  DollarSign,
-  Zap,
-  Calendar,
-  MessageSquare,
-  Settings,
-  Trash2,
   Clock,
-  ChevronRight,
-  Mail,
-  FileText,
-  CreditCard,
+  Trash2,
+  Filter,
+  RefreshCw,
+  Loader2,
+  Eye,
+  EyeOff,
+  Calendar,
+  User,
+  Zap,
+  DollarSign,
   Wrench,
+  FileText,
+  ArrowRight,
+  Settings,
+  CreditCard,
+  MessageSquare,
   Power
 } from 'lucide-react';
 
@@ -115,10 +114,10 @@ export default function Notifications() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'border-red-500/50 bg-red-500/10';
-      case 'medium': return 'border-yellow-500/50 bg-yellow-500/10';
-      case 'low': return 'border-blue-500/50 bg-blue-500/10';
-      default: return 'border-gray-500/50 bg-gray-500/10';
+      case 'high': return 'border-red-500/50 bg-red-500/10 text-red-400';
+      case 'medium': return 'border-yellow-500/50 bg-yellow-500/10 text-yellow-400';
+      case 'low': return 'border-blue-500/50 bg-blue-500/10 text-blue-400';
+      default: return 'border-gray-500/50 bg-gray-500/10 text-gray-400';
     }
   };
 

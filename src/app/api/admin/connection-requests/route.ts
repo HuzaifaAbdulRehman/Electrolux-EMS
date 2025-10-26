@@ -165,18 +165,18 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { requestId, action, employeeId, estimatedCharges, inspectionDate, notes } = body;
+    const { requestId, action, employeeId, estimatedCharges, inspectionDate, notes, zone } = body;
 
-    console.log('[Admin Connection Requests] Processing action:', { requestId, action, employeeId });
+    console.log('[Admin Connection Requests] Processing action:', { requestId, action, employeeId, zone });
 
     // Get the connection request
-    const [request] = await db
+    const [connectionRequest] = await db
       .select()
       .from(connectionRequests)
       .where(eq(connectionRequests.id, requestId))
       .limit(1);
 
-    if (!request) {
+    if (!connectionRequest) {
       return NextResponse.json({
         error: 'Connection request not found'
       }, { status: 404 });
@@ -184,6 +184,7 @@ export async function PATCH(request: NextRequest) {
 
     let updateData: any = {};
     let workOrderData: any = null;
+    let customerData: any = null;
 
     // Handle different actions (DBMS: Conditional Updates)
     switch (action) {
@@ -191,21 +192,21 @@ export async function PATCH(request: NextRequest) {
         updateData = {
           status: 'approved',
           approvalDate: new Date().toISOString().split('T')[0],
-          estimatedCharges: estimatedCharges || request.estimatedCharges,
-          inspectionDate: inspectionDate || request.inspectionDate
+          estimatedCharges: estimatedCharges || connectionRequest.estimatedCharges,
+          inspectionDate: inspectionDate || connectionRequest.inspectionDate
         };
-        
+
         // Create work order for installation (DBMS: Transaction with Foreign Key)
         workOrderData = {
           employeeId: employeeId,
           customerId: null, // Will be set when customer is created
           workType: 'new_connection',
-          title: `New Connection Installation - ${request.applicationNumber}`,
-          description: `Install new ${request.connectionType} connection for ${request.applicantName}`,
+          title: `New Connection Installation - ${connectionRequest.applicationNumber}`,
+          description: `Install new ${connectionRequest.connectionType} connection for ${connectionRequest.applicantName}`,
           priority: 'high',
           status: 'assigned',
           assignedDate: new Date().toISOString().split('T')[0],
-          dueDate: request.preferredDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          dueDate: connectionRequest.preferredDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         };
         break;
 
@@ -221,6 +222,81 @@ export async function PATCH(request: NextRequest) {
           status: 'under_review',
           inspectionDate: inspectionDate,
           estimatedCharges: estimatedCharges
+        };
+        break;
+
+      case 'create_customer':
+        // DBMS Project: Create customer account from connection request
+        // Import users table
+        const { users } = await import('@/lib/drizzle/schema');
+        const crypto = await import('crypto');
+        const bcrypt = await import('bcryptjs');
+
+        // Generate secure password
+        const randomPassword = crypto.randomBytes(8).toString('base64').replace(/[/+=]/g, '') +
+                              crypto.randomBytes(4).toString('hex').toUpperCase() + '!@#';
+        const hashedPassword = await bcrypt.hash(randomPassword, 12);
+
+        console.log('[Connection Request] Creating user account for:', connectionRequest.applicantName);
+
+        // Create user account
+        const [newUser] = await db.insert(users).values({
+          email: connectionRequest.email,
+          password: hashedPassword,
+          userType: 'customer',
+          name: connectionRequest.applicantName,
+          phone: connectionRequest.phone,
+          isActive: 1,
+        });
+
+        console.log('[Connection Request] User created, creating customer record...');
+
+        // Generate account number
+        const randomSuffix = crypto.randomBytes(2).toString('hex').toUpperCase();
+        const accountNumber = `ELX-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}-${randomSuffix}`;
+
+        // Create customer with pending_installation status
+        const [newCustomer] = await db.insert(customers).values({
+          userId: newUser.insertId,
+          accountNumber,
+          meterNumber: null, // Will be assigned after installation
+          fullName: connectionRequest.applicantName,
+          email: connectionRequest.email,
+          phone: connectionRequest.phone,
+          address: connectionRequest.propertyAddress,
+          city: connectionRequest.city,
+          state: connectionRequest.state || 'Punjab',
+          pincode: connectionRequest.pincode || '00000',
+          zone: zone || null,
+          connectionType: connectionRequest.propertyType,
+          status: 'pending_installation',
+          connectionDate: new Date().toISOString().split('T')[0],
+        } as any);
+
+        const customerId = newCustomer.insertId;
+        console.log('[Connection Request] Customer created with ID:', customerId);
+
+        // Update connection request status
+        updateData = {
+          status: 'approved',
+          approvalDate: new Date().toISOString().split('T')[0],
+        };
+
+        // Find and update work order with customer ID
+        await db.update(workOrders)
+          .set({ customerId: customerId } as any)
+          .where(and(
+            eq(workOrders.workType, 'new_connection'),
+            sql`${workOrders.description} LIKE ${`%${connectionRequest.applicationNumber}%`}`
+          ));
+
+        console.log('[Connection Request] Work order updated with customer ID');
+
+        // Store customer data in response
+        customerData = {
+          customerId,
+          accountNumber,
+          temporaryPassword: randomPassword
         };
         break;
 
@@ -244,24 +320,28 @@ export async function PATCH(request: NextRequest) {
       .where(eq(connectionRequests.id, requestId));
 
     // Create work order if needed (DBMS: INSERT with Foreign Key)
-    if (workOrderData) {
-      const [workOrder] = await db
+    let workOrderId = null;
+    if (workOrderData && !customerData) { // Only create work order for approve action
+      const workOrder = await db
         .insert(workOrders)
-        .values(workOrderData as any)
-        .returning();
+        .values(workOrderData as any);
 
-      console.log('[Admin Connection Requests] Work order created:', workOrder.id);
+      workOrderId = workOrder.insertId;
+      console.log('[Admin Connection Requests] Work order created:', workOrderId);
     }
 
     console.log('[Admin Connection Requests] Request updated successfully:', requestId);
 
     return NextResponse.json({
       success: true,
-      message: `Connection request ${action}ed successfully`,
+      message: action === 'create_customer'
+        ? 'Customer account created successfully'
+        : `Connection request ${action}ed successfully`,
       data: {
         requestId,
         action,
-        workOrderId: workOrderData ? workOrderData.id : null
+        workOrderId: workOrderId,
+        ...(customerData || {})
       }
     });
 

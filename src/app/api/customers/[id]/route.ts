@@ -132,6 +132,9 @@ export async function PATCH(
 
     let body = await request.json();
 
+    console.log('[UPDATE CUSTOMER] Request from:', session.user.userType, 'for customer:', customerId);
+    console.log('[UPDATE CUSTOMER] Update data:', JSON.stringify(body, null, 2));
+
     // If customer is updating their own profile, limit the fields they can update
     if (session.user.userType === 'customer') {
       const allowedFields = ['phone', 'address', 'city', 'state', 'pincode'];
@@ -144,18 +147,68 @@ export async function PATCH(
       body = filteredBody;
     }
 
+    // Special handling for meter assignment (Employee/Admin only)
+    // DBMS Project: Meter assignment after installation
+    if (body.assignMeter === true) {
+      console.log('[UPDATE CUSTOMER] Meter assignment requested');
+
+      // Only employees and admins can assign meters
+      if (session.user.userType === 'customer') {
+        return NextResponse.json({ error: 'Forbidden - Only employees can assign meters' }, { status: 403 });
+      }
+
+      // Get current customer status
+      const [currentCustomer] = await db
+        .select({ status: customers.status, meterNumber: customers.meterNumber })
+        .from(customers)
+        .where(eq(customers.id, customerId))
+        .limit(1);
+
+      if (!currentCustomer) {
+        return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+      }
+
+      if (currentCustomer.meterNumber) {
+        return NextResponse.json({
+          error: 'Meter already assigned',
+          currentMeterNumber: currentCustomer.meterNumber
+        }, { status: 400 });
+      }
+
+      // Generate meter number using customer ID (ensures uniqueness)
+      // Format: MTR-{CustomerID}-{Year}
+      const meterNumber = body.meterNumber || `MTR-${String(customerId).padStart(6, '0')}-${new Date().getFullYear()}`;
+
+      console.log('[UPDATE CUSTOMER] Assigning meter number:', meterNumber);
+
+      // Update customer with meter number and activate
+      body = {
+        ...body,
+        meterNumber,
+        status: 'active',
+        connectionDate: body.connectionDate || new Date().toISOString().split('T')[0],
+      };
+
+      delete body.assignMeter; // Remove the flag before update
+    }
+
     // Update customer
     await db
       .update(customers)
       .set({
         ...body,
         updatedAt: new Date(),
-      })
+      } as any)
       .where(eq(customers.id, customerId));
+
+    console.log('[UPDATE CUSTOMER] Customer updated successfully');
 
     return NextResponse.json({
       success: true,
-      message: 'Customer updated successfully',
+      message: body.meterNumber
+        ? 'Meter assigned and customer activated successfully'
+        : 'Customer updated successfully',
+      data: body.meterNumber ? { meterNumber: body.meterNumber } : undefined,
     });
 
   } catch (error) {

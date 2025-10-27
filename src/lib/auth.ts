@@ -89,12 +89,18 @@ export const authOptions: NextAuthOptions = {
                 customerId: customers.id,
                 accountNumber: customers.accountNumber,
                 meterNumber: customers.meterNumber,
+                status: customers.status,
               })
               .from(customers)
               .where(eq(customers.userId, user.id))
               .limit(1);
 
             if (customerResults[0]) {
+              // Check if customer account is pending installation
+              if (customerResults[0].status === 'pending_installation') {
+                throw new Error('Your account is pending meter installation. You will be notified once your meter is installed.');
+              }
+
               additionalData = {
                 customerId: customerResults[0].customerId,
                 accountNumber: customerResults[0].accountNumber,

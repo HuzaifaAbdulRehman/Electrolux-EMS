@@ -36,9 +36,6 @@ export default function EmployeeProfile() {
     fullName: '',
     email: '',
     phone: '',
-    address: '',
-    emergencyContact: '',
-    dateOfBirth: '',
     department: '',
     position: ''
   });
@@ -65,9 +62,6 @@ export default function EmployeeProfile() {
           fullName: result.data.fullName,
           email: result.data.email,
           phone: result.data.phone,
-          address: '',
-          emergencyContact: '',
-          dateOfBirth: '',
           department: result.data.department,
           position: result.data.designation
         });
@@ -101,13 +95,6 @@ export default function EmployeeProfile() {
     successRate: '0',
     inProgressTasks: 0,
     pendingTasks: 0
-  };
-
-  // Add placeholder fields for UI
-  const displayStats = {
-    ...workStats,
-    customerRating: '4.8',
-    onTimeCompletion: '95%'
   };
 
   // Achievements based on real data
@@ -230,7 +217,7 @@ export default function EmployeeProfile() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Total Tasks</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{displayStats.totalTasks}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{workStats.totalTasks}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-white" />
@@ -241,7 +228,7 @@ export default function EmployeeProfile() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Completed</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{displayStats.completedThisMonth}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{workStats.completedThisMonth}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-white" />
@@ -252,7 +239,7 @@ export default function EmployeeProfile() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">In Progress</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{displayStats.inProgressTasks}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{workStats.inProgressTasks}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                 <Clock className="w-5 h-5 text-white" />
@@ -263,7 +250,7 @@ export default function EmployeeProfile() {
 
         {/* Tabs */}
         <div className="flex space-x-1 bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-1">
-          {['personal', 'work', 'performance', 'achievements'].map((tab) => (
+          {['personal', 'work', 'achievements'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -323,40 +310,6 @@ export default function EmployeeProfile() {
                       <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <span className="text-gray-900 dark:text-white">{profileData.phone}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Emergency Contact</label>
-                    {isEditing ? (
-                      <input
-                        type="tel"
-                        value={profileData.emergencyContact}
-                        onChange={(e) => setProfileData({ ...profileData, emergencyContact: e.target.value })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400"
-                      />
-                    ) : (
-                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
-                        <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                        <span className="text-gray-900 dark:text-white">{profileData.emergencyContact}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Address</label>
-                    {isEditing ? (
-                      <textarea
-                        value={profileData.address}
-                        onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400"
-                        rows={2}
-                      />
-                    ) : (
-                      <div className="flex items-start space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
-                        <MapPin className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5" />
-                        <span className="text-gray-900 dark:text-white">{profileData.address}</span>
                       </div>
                     )}
                   </div>
@@ -428,38 +381,6 @@ export default function EmployeeProfile() {
               </div>
             )}
 
-            {activeTab === 'performance' && (
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Performance History</h2>
-                <div className="space-y-4">
-                  {recentPerformance.map((month, index) => (
-                    <div key={index} className="p-4 bg-white dark:bg-white/5 rounded-xl">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-white font-semibold">{month.month} 2024</h3>
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          month.score >= 90
-                            ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                            : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
-                        }`}>
-                          {month.score}% Score
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm">Tasks Completed</p>
-                          <p className="text-white font-semibold">{month.tasks}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm">Customer Rating</p>
-                          <p className="text-white font-semibold">⭐ {month.rating}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {activeTab === 'achievements' && (
               <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Achievements & Recognition</h2>
@@ -501,12 +422,8 @@ export default function EmployeeProfile() {
                   <span className="text-green-400 font-semibold">{workStats.successRate}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Overtime Hours</span>
-                  <span className="text-white font-semibold">{workStats.overtimeHours} hrs</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Leaves Taken</span>
-                  <span className="text-white font-semibold">{workStats.leavesTaken} days</span>
+                  <span className="text-gray-600 dark:text-gray-400">Pending Tasks</span>
+                  <span className="text-yellow-400 font-semibold">{workStats.pendingTasks}</span>
                 </div>
               </div>
             </div>

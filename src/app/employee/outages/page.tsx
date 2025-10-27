@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import toast from 'react-hot-toast';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Zap,
@@ -117,12 +118,16 @@ export default function EmployeeOutages() {
       setSelectedOutage(null);
       setUpdateData({ status: '', restorationNotes: '' });
       
-      // Show success message
-      alert('Outage status updated successfully!');
+      // Show success toast
+      toast.success('Outage status updated successfully!', {
+        duration: 4000,
+      });
       
     } catch (err: any) {
       console.error('Error updating outage:', err);
-      alert(err.message || 'Failed to update outage');
+      toast.error(err.message || 'Failed to update outage', {
+        duration: 5000,
+      });
     } finally {
       setUpdating(false);
     }

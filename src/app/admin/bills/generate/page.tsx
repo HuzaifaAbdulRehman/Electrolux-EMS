@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   FileText,
@@ -98,6 +99,11 @@ export default function BulkBillGeneration() {
           ...result.summary,
           generatedBills: result.generatedBills,
           failed: result.failed
+        });
+        
+        // Show success toast
+        toast.success(`Successfully generated ${result.summary.billsGenerated} bills!`, {
+          duration: 5000,
         });
       } else {
         setGenerationResult({

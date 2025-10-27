@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
       isActive: 1,
     });
 
-    console.log('[CREATE CUSTOMER] User created with ID:', newUser.insertId);
+    console.log('[CREATE CUSTOMER] User created with ID:', newUser.id);
 
     // Generate account number (unique timestamp-based)
     // Format: ELX-YYYY-XXXXXX-RRR (Year-Timestamp-Random)
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
 
     // Create customer record
     const [newCustomer] = await db.insert(customers).values({
-      userId: newUser.insertId,
+      userId: newUser.id,
       accountNumber,
       meterNumber: meterNumber,
       fullName: body.fullName,
@@ -261,7 +261,7 @@ export async function POST(request: NextRequest) {
       connectionDate: body.connectionDate || new Date().toISOString().split('T')[0],
     } as any);
 
-    const customerId = newCustomer.insertId;
+    const customerId = newCustomer.id;
     console.log('[CREATE CUSTOMER] Customer created with ID:', customerId);
 
     // If meter number was set to TEMP, update with actual customer ID

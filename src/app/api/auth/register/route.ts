@@ -13,12 +13,13 @@ const registrationSchema = z.object({
   confirmPassword: z.string(),
   fullName: z.string().min(2, 'Full name is required'),
   phone: z.string().regex(/^0\d{10}$/, 'Phone number must be 11 digits starting with 0 (e.g., 03001234567)'),
-  address: z.string().min(10, 'Address must be at least 10 characters'),
-  city: z.string().min(2, 'City is required'),
-  state: z.string().min(2, 'State is required'),
-  pincode: z.string().regex(/^\d{6}$/, 'Pincode must be 6 digits'),
+  address: z.string().min(10, 'Address must be at least 10 characters').optional(),
+  city: z.string().min(2, 'City is required').optional(),
+  state: z.string().min(2, 'State is required').optional(),
+  pincode: z.string().regex(/^\d{6}$/, 'Pincode must be 6 digits').optional(),
   meterNumber: z.string().optional(), // Optional - will be auto-generated if not provided
   connectionType: z.enum(['Residential', 'Commercial', 'Industrial', 'Agricultural']).optional().default('Residential'),
+  adminSecretKey: z.string().optional(), // Secret key for admin registration
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -86,8 +87,8 @@ export async function POST(request: NextRequest) {
 
     // Handle meter number logic (auto-assign or validate existing)
     console.log('[Registration API] Processing meter number...');
-    let finalMeterNumber: string;
-    let customerStatus: 'active' | 'suspended' | 'inactive' = 'active';
+    let finalMeterNumber: string | null;
+    let customerStatus: 'pending_installation' | 'active' | 'suspended' | 'inactive' = 'pending_installation';
 
     if (data.meterNumber && data.meterNumber.trim()) {
       console.log('[Registration API] User provided meter number:', data.meterNumber);
@@ -112,14 +113,26 @@ export async function POST(request: NextRequest) {
       finalMeterNumber = data.meterNumber;
       customerStatus = 'active'; // Existing meter = active connection
     } else {
-      console.log('[Registration API] Auto-generating meter number for city:', data.city);
-      // New customer flow - auto-generate meter number
-      finalMeterNumber = await generateMeterNumber(data.city);
-      customerStatus = 'active'; // New meter = active (database doesn't have pending_installation)
+      console.log('[Registration API] New registration - pending meter installation');
+      // New customer flow - no meter yet, will be assigned during installation
+      finalMeterNumber = null; // No meter number until installation
+      customerStatus = 'pending_installation'; // Pending admin approval and installation
     }
 
     console.log('[Registration API] Final meter number:', finalMeterNumber);
     console.log('[Registration API] Customer status:', customerStatus);
+
+    // Check if admin secret key provided and valid
+    const ADMIN_SECRET_KEY = process.env.ADMIN_SECRET_KEY;
+    const isAdminRegistration = data.adminSecretKey && data.adminSecretKey === ADMIN_SECRET_KEY;
+
+    if (data.adminSecretKey && !isAdminRegistration) {
+      console.log('[Registration API] Invalid admin secret key provided');
+      // Security: Don't reveal that key is wrong, just create as customer
+      // This prevents attackers from knowing they have wrong key
+    }
+
+    console.log('[Registration API] Registration type:', isAdminRegistration ? 'ADMIN' : 'CUSTOMER');
 
     // Generate secure password hash
     console.log('[Registration API] Hashing password...');
@@ -135,19 +148,33 @@ export async function POST(request: NextRequest) {
       const [insertResult] = await db.insert(users).values({
         email: data.email,
         password: hashedPassword,
-        userType: 'customer',
+        userType: isAdminRegistration ? 'admin' : 'customer',
         name: data.fullName,
         phone: data.phone,
         isActive: 1,
       });
 
       // Get user ID from insert result
-      const userId = (insertResult as any).insertId;
+      const userId = insertResult.id;
       console.log('[Registration API] User created with ID:', userId);
 
       // Get the newly created user
       [newUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
       console.log('[Registration API] User retrieved:', newUser?.email);
+
+      // If admin registration, skip customer record creation
+      if (isAdminRegistration) {
+        console.log('[Registration API] Admin registration completed successfully');
+        return NextResponse.json({
+          success: true,
+          message: 'Admin account created successfully! You can now login.',
+          data: {
+            email: data.email,
+            fullName: data.fullName,
+            userType: 'admin',
+          },
+        }, { status: 201 });
+      }
 
       // Generate unique account number (not meter - use customer's meter)
       const timestamp = Date.now();
@@ -163,7 +190,7 @@ export async function POST(request: NextRequest) {
         return 'Zone A'; // Default zone
       };
 
-      const assignedZone = getZoneFromCity(data.city);
+      const assignedZone = getZoneFromCity((data.city || 'Unknown') as string);
       console.log('[Registration API] Assigned zone:', assignedZone, 'for city:', data.city);
 
       // Create customer record
@@ -190,14 +217,39 @@ export async function POST(request: NextRequest) {
 
       console.log('[Registration API] Creating customer record...');
       await db.insert(customers).values(customerData);
+
+      // Create notification for admin about new registration
+      if (customerStatus === 'pending_installation') {
+        const { notifications } = await import('@/lib/drizzle/schema');
+
+        // Get admin user
+        const [adminUser] = await db
+          .select()
+          .from(users)
+          .where(eq(users.userType, 'admin'))
+          .limit(1);
+
+        if (adminUser) {
+          await db.insert(notifications).values({
+            userId: adminUser.id,
+            notificationType: 'system',
+            title: 'New Registration Pending Approval',
+            message: `New customer ${data.fullName} has registered and requires meter installation approval.`,
+            priority: 'high',
+            actionUrl: '/admin/pending-registrations',
+            actionText: 'Review Registration',
+            isRead: 0,
+          } as any);
+        }
+      }
       console.log('[Registration API] Customer record created successfully');
 
       // Return success response with status information
       console.log('[Registration API] Registration completed successfully');
       return NextResponse.json({
         success: true,
-        message: !data.meterNumber
-          ? 'Registration successful! Your meter has been assigned. You can now login with your email and password.'
+        message: customerStatus === 'pending_installation'
+          ? 'Registration submitted successfully! Your account is pending approval. You will receive an email once your meter is installed.'
           : 'Registration successful! You can now login with your email and password.',
         data: {
           email: data.email,

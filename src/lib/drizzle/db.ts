@@ -15,8 +15,6 @@ export const pool = mysql.createPool({
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
-  acquireTimeout: 60000,
-  timeout: 60000,
 });
 
 // Initialize Drizzle ORM with the connection pool

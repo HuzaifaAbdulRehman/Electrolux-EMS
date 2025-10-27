@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
       .from(bills)
       .where(and(
         eq(bills.customerId, customer.id),
-        gte(bills.billingMonth, startDateStr)
+        gte(bills.billingMonth, new Date(startDateStr))
       ))
       .orderBy(desc(bills.billingMonth))
       .limit(billLimit);
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       .from(bills)
       .where(and(
         eq(bills.customerId, customer.id),
-        gte(bills.billingMonth, startDateStr)
+        gte(bills.billingMonth, new Date(startDateStr))
       ))
       .orderBy(desc(bills.billingMonth))
       .limit(extendedBillLimit);
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
       .innerJoin(bills, eq(payments.billId, bills.id))
       .where(and(
         eq(bills.customerId, customer.id),
-        gte(payments.paymentDate, startDateStr)
+        gte(payments.paymentDate, new Date(startDateStr))
       ))
       .orderBy(desc(payments.paymentDate))
       .limit(Math.min(billLimit, 5));
@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
       .innerJoin(bills, eq(payments.billId, bills.id))
       .where(and(
         eq(bills.customerId, customer.id),
-        gte(payments.paymentDate, startDateStr)
+        gte(payments.paymentDate, new Date(startDateStr))
       ))
       .groupBy(sql`DATE_FORMAT(${payments.paymentDate}, '%Y-%m')`)
       .orderBy(sql`DATE_FORMAT(${payments.paymentDate}, '%Y-%m') DESC`)

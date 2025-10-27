@@ -259,7 +259,7 @@ export async function PATCH(request: NextRequest) {
 
         // Create customer with pending_installation status
         const [newCustomer] = await db.insert(customers).values({
-          userId: newUser.insertId,
+          userId: newUser.id,
           accountNumber,
           meterNumber: null, // Will be assigned after installation
           fullName: connectionRequest.applicantName,
@@ -275,7 +275,7 @@ export async function PATCH(request: NextRequest) {
           connectionDate: new Date().toISOString().split('T')[0],
         } as any);
 
-        const customerId = newCustomer.insertId;
+        const customerId = newCustomer.id;
         console.log('[Connection Request] Customer created with ID:', customerId);
 
         // Update connection request status
@@ -328,7 +328,7 @@ export async function PATCH(request: NextRequest) {
         .insert(workOrders)
         .values(workOrderData as any);
 
-      workOrderId = (workOrder as any).insertId;
+      workOrderId = workOrder.id;
       console.log('[Admin Connection Requests] Work order created:', workOrderId);
     }
 

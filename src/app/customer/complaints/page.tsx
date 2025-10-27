@@ -16,7 +16,8 @@ import {
   DollarSign,
   Wrench,
   Plug,
-  FileText
+  FileText,
+  RefreshCw
 } from 'lucide-react';
 
 export default function CustomerComplaints() {
@@ -161,13 +162,23 @@ export default function CustomerComplaints() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Complaints</h1>
               <p className="text-gray-600 dark:text-gray-400">Submit and track your service complaints</p>
             </div>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition-all flex items-center space-x-2"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Submit Complaint</span>
-            </button>
+            <div className="mt-4 sm:mt-0 flex items-center space-x-2">
+              <button
+                onClick={fetchComplaints}
+                disabled={loading}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </button>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition-all flex items-center space-x-2"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Submit Complaint</span>
+              </button>
+            </div>
           </div>
         </div>
 

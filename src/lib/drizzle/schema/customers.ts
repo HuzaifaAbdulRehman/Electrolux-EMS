@@ -1,5 +1,6 @@
 import { mysqlTable, varchar, timestamp, int, decimal, date, mysqlEnum } from 'drizzle-orm/mysql-core';
 import { users } from './users';
+import { employees } from './employees';
 
 export const customers = mysqlTable('customers', {
   id: int('id').primaryKey().autoincrement(),
@@ -14,6 +15,7 @@ export const customers = mysqlTable('customers', {
   state: varchar('state', { length: 100 }).notNull(),
   pincode: varchar('pincode', { length: 10 }).notNull(),
   zone: varchar('zone', { length: 50 }), // Load shedding zone: Zone A, Zone B, Zone C, etc.
+  assignedEmployeeId: int('assigned_employee_id').references(() => employees.id, { onDelete: 'set null' }), // Employee assigned for meter installation
   connectionType: mysqlEnum('connection_type', ['Residential', 'Commercial', 'Industrial', 'Agricultural']).notNull(),
   status: mysqlEnum('status', ['pending_installation', 'active', 'suspended', 'inactive']).default('active').notNull(),
   connectionDate: date('connection_date').notNull(),

@@ -13,3 +13,4 @@ export * from './notifications';
 export * from './billRequests';
 export * from './connectionRequests';
 export * from './outages';
+export * from './systemSettings';

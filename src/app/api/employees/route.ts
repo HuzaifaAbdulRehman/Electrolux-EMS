@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     // Create employee record
     const [newEmployee] = await db.insert(employees).values({
-      userId: newUser.insertId,
+      userId: newUser.id,
       employeeName,
       email,
       phone,
@@ -123,7 +123,13 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Employee created successfully',
       data: {
-        employeeId: newEmployee.insertId,
+        employeeId: newEmployee.id,
+        email: email,
+        employeeName: employeeName,
+        designation: designation,
+        department: department,
+        assignedZone: assignedZone || 'Not Assigned',
+        temporaryPassword: randomPassword, // Return password to admin
       },
     }, { status: 201 });
   } catch (error) {

@@ -56,7 +56,9 @@
       "Bash(while read file)",
       "Bash(head:*)",
       "Bash(timeout 10 bash:*)",
-      "Bash(npx next build:*)"
+      "Bash(npx next build:*)",
+      "Bash(echo:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

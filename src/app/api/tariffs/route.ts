@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Tariff created successfully',
       data: {
-        tariffId: newTariff.insertId,
+        tariffId: newTariff.id,
       },
     }, { status: 201 });
   } catch (error) {

@@ -3,6 +3,8 @@ import { Inter, JetBrains_Mono, Poppins } from "next/font/google";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
 import { Providers } from "@/components/providers/SessionProvider";
+import { ToastProvider } from "@/lib/toast";
+import { ToastTestButton } from "@/components/ToastTestButton";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -62,6 +64,7 @@ export default function RootLayout({
         <Providers>
           <ThemeProvider>
             {children}
+            <ToastProvider />
           </ThemeProvider>
         </Providers>
       </body>

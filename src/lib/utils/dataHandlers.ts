@@ -49,17 +49,17 @@ export const formatNumber = (
 /**
  * Format currency with symbol
  * @param value - Amount to format
- * @param symbol - Currency symbol (default: '₹')
+ * @param symbol - Currency symbol (default: 'Rs')
  * @param decimals - Decimal places (default: 2)
  * @returns Formatted currency string
  */
 export const formatCurrency = (
   value: any,
-  symbol: string = '₹',
+  symbol: string = 'Rs',
   decimals: number = 2
 ): string => {
   const num = safeNumber(value);
-  return `${symbol}${num.toLocaleString('en-IN', {
+  return `${symbol} ${num.toLocaleString('en-PK', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
   })}`;

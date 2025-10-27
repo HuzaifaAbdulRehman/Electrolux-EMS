@@ -21,14 +21,16 @@ import {
   Download,
   Loader2,
   X,
-  Mail
+  Mail,
+  User,
+  MapPin
 } from 'lucide-react';
 
 export default function CustomerSettings() {
   const { data: session } = useSession();
   const router = useRouter();
 
-  const [activeSection, setActiveSection] = useState('security');
+  const [activeSection, setActiveSection] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -43,29 +45,30 @@ export default function CustomerSettings() {
     confirmPassword: ''
   });
 
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    smsNotifications: false,
-    pushNotifications: true,
-    billReminders: true,
-    paymentConfirmations: true,
-    serviceAlerts: true,
-    promotionalOffers: false,
-    newsletter: false
+  const [profileData, setProfileData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+    accountNumber: '',
+    meterNumber: '',
+    connectionType: ''
   });
 
   const [preferences, setPreferences] = useState({
     dateFormat: 'DD/MM/YYYY',
-    theme: 'auto',
-    autoPayment: false,
-    paperlessBilling: true
+    theme: 'auto'
   });
 
-  // Load theme from localStorage on mount
+  // Load theme and profile on mount
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') || 'auto';
     setPreferences(prev => ({ ...prev, theme: savedTheme }));
     applyTheme(savedTheme);
+    fetchProfile();
   }, []);
 
   // Apply theme to document
@@ -84,6 +87,73 @@ export default function CustomerSettings() {
       } else {
         root.classList.remove('dark');
       }
+    }
+  };
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch('/api/profile');
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setProfileData({
+          name: result.data.name || '',
+          email: result.data.email || '',
+          phone: result.data.phone || '',
+          address: result.data.address || '',
+          city: result.data.city || '',
+          state: result.data.state || '',
+          pincode: result.data.pincode || '',
+          accountNumber: result.data.accountNumber || '',
+          meterNumber: result.data.meterNumber || '',
+          connectionType: result.data.connectionType || ''
+        });
+      }
+    } catch (err: any) {
+      console.error('Error fetching profile:', err);
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    // Validation
+    if (!profileData.name || !profileData.phone) {
+      setError('Name and phone are required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const response = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: profileData.name,
+          phone: profileData.phone,
+          address: profileData.address,
+          city: profileData.city,
+          state: profileData.state,
+          pincode: profileData.pincode
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update profile');
+      }
+
+      setSuccess('Profile updated successfully!');
+      setTimeout(() => setSuccess(null), 5000);
+
+    } catch (err: any) {
+      setError(err.message || 'Failed to update profile. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -204,35 +274,6 @@ export default function CustomerSettings() {
     }
   };
 
-  const handleSaveNotifications = async () => {
-    setError(null);
-    setSuccess(null);
-
-    try {
-      setLoading(true);
-
-      const response = await fetch('/api/customers/preferences', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notificationSettings }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to save notification preferences');
-      }
-
-      setSuccess('Notification preferences saved successfully!');
-      setTimeout(() => setSuccess(null), 3000);
-
-    } catch (err: any) {
-      setError(err.message || 'Failed to save preferences. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSavePreferences = async () => {
     setError(null);
     setSuccess(null);
@@ -263,8 +304,8 @@ export default function CustomerSettings() {
   };
 
   const menuItems = [
+    { id: 'profile', label: 'Profile Information', icon: User },
     { id: 'security', label: 'Security', icon: Shield },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'preferences', label: 'Preferences', icon: Monitor },
     { id: 'billing', label: 'Billing Settings', icon: CreditCard }
   ];
@@ -338,66 +379,158 @@ export default function CustomerSettings() {
           {/* Content Area */}
           <div className="lg:col-span-3">
             <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-              {/* Notifications Section */}
-              {activeSection === 'notifications' && (
+              {/* Profile Section */}
+              {activeSection === 'profile' && (
                 <div className="space-y-6">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-                    Notification Preferences
+                    Profile Information
                   </h2>
 
-                  <div className="space-y-4">
-                    {Object.entries({
-                      emailNotifications: 'Email Notifications',
-                      smsNotifications: 'SMS Notifications',
-                      pushNotifications: 'Push Notifications',
-                      billReminders: 'Bill Reminders',
-                      paymentConfirmations: 'Payment Confirmations',
-                      serviceAlerts: 'Service Alerts',
-                      promotionalOffers: 'Promotional Offers',
-                      newsletter: 'Newsletter'
-                    }).map(([key, label]) => (
-                      <label key={key} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer">
-                        <div className="flex items-center space-x-3">
-                          {key.includes('email') && <Mail className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
-                          {key.includes('sms') && <Smartphone className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
-                          {key.includes('push') && <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
-                          {!key.includes('email') && !key.includes('sms') && !key.includes('push') &&
-                            <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                          }
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white">{label}</p>
+                  <form onSubmit={handleUpdateProfile} className="space-y-6">
+                    {/* Account Info (Read-only) */}
+                    <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                      <h3 className="text-sm font-semibold text-blue-400 mb-3">Account Details (Read-only)</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                            Account Number
+                          </label>
+                          <div className="text-gray-900 dark:text-white font-mono">
+                            {profileData.accountNumber || 'N/A'}
                           </div>
                         </div>
-                        <input
-                          type="checkbox"
-                          checked={notificationSettings[key as keyof typeof notificationSettings]}
-                          onChange={(e) => setNotificationSettings({
-                            ...notificationSettings,
-                            [key]: e.target.checked
-                          })}
-                          className="w-5 h-5"
-                        />
-                      </label>
-                    ))}
-                  </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                            Meter Number
+                          </label>
+                          <div className="text-gray-900 dark:text-white font-mono">
+                            {profileData.meterNumber || 'N/A'}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                            Connection Type
+                          </label>
+                          <div className="text-gray-900 dark:text-white">
+                            {profileData.connectionType || 'N/A'}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                            Email Address
+                          </label>
+                          <div className="text-gray-900 dark:text-white">
+                            {profileData.email || 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                  <button
-                    onClick={handleSaveNotifications}
-                    disabled={loading}
-                    className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-5 h-5" />
-                        <span>Save Preferences</span>
-                      </>
-                    )}
-                  </button>
+                    {/* Editable Fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Full Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={profileData.name}
+                          onChange={(e) => setProfileData({...profileData, name: e.target.value})}
+                          className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400"
+                          placeholder="Enter your full name"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Phone Number <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="tel"
+                          value={profileData.phone}
+                          onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                          className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400"
+                          placeholder="Enter your phone number"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Address
+                      </label>
+                      <textarea
+                        value={profileData.address}
+                        onChange={(e) => setProfileData({...profileData, address: e.target.value})}
+                        rows={3}
+                        className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400"
+                        placeholder="Enter your complete address"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          City
+                        </label>
+                        <input
+                          type="text"
+                          value={profileData.city}
+                          onChange={(e) => setProfileData({...profileData, city: e.target.value})}
+                          className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400"
+                          placeholder="City"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          State
+                        </label>
+                        <input
+                          type="text"
+                          value={profileData.state}
+                          onChange={(e) => setProfileData({...profileData, state: e.target.value})}
+                          className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400"
+                          placeholder="State"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          PIN Code
+                        </label>
+                        <input
+                          type="text"
+                          value={profileData.pincode}
+                          onChange={(e) => setProfileData({...profileData, pincode: e.target.value})}
+                          className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400"
+                          placeholder="PIN Code"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <span>Updating...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-5 h-5" />
+                            <span>Update Profile</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               )}
 
@@ -573,46 +706,12 @@ export default function CustomerSettings() {
               {activeSection === 'billing' && (
                 <div className="space-y-6">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-                    Billing Settings
+                    Billing History
                   </h2>
-
-                  <div className="space-y-4">
-                    <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer">
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">Auto Payment</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Automatically pay bills on due date
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={preferences.autoPayment}
-                        onChange={(e) => setPreferences({...preferences, autoPayment: e.target.checked})}
-                        className="w-5 h-5"
-                      />
-                    </label>
-
-                    <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer">
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">Paperless Billing</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Receive bills via email only
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={preferences.paperlessBilling}
-                        onChange={(e) => setPreferences({...preferences, paperlessBilling: e.target.checked})}
-                        className="w-5 h-5"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="pt-6 border-t border-gray-200 dark:border-white/10">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                      Billing History
-                    </h3>
-                    <button
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    Download your complete billing history as a CSV file for record keeping.
+                  </p>
+                  <button
                       onClick={handleDownloadStatements}
                       disabled={loading}
                       className="px-6 py-3 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -629,7 +728,6 @@ export default function CustomerSettings() {
                         </>
                       )}
                     </button>
-                  </div>
                 </div>
               )}
             </div>

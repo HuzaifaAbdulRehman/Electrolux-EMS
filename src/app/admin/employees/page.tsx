@@ -23,7 +23,10 @@ import {
   Loader2,
   AlertCircle,
   Save,
-  X
+  X,
+  Copy,
+  Key,
+  Briefcase
 } from 'lucide-react';
 
 export default function EmployeeManagement() {
@@ -36,6 +39,7 @@ export default function EmployeeManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [createdEmployee, setCreatedEmployee] = useState<any>(null); // Store created employee with password
   const [newEmployee, setNewEmployee] = useState({
     employeeName: '',
     email: '',
@@ -105,8 +109,14 @@ export default function EmployeeManagement() {
       });
 
       if (response.ok) {
+        const result = await response.json();
         await fetchEmployees(); // Refresh the list
         setShowAddModal(false);
+
+        // Show success modal with password
+        setCreatedEmployee(result.data);
+
+        // Reset form
         setNewEmployee({
           employeeName: '',
           email: '',
@@ -124,6 +134,15 @@ export default function EmployeeManagement() {
       console.error('Error creating employee:', err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      console.log(`${label} copied to clipboard`);
+    } catch (err) {
+      console.error('Failed to copy:', err);
     }
   };
 
@@ -546,6 +565,115 @@ export default function EmployeeManagement() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Employee Created Success Modal */}
+        {createdEmployee && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-lg border-2 border-green-500 dark:border-green-400">
+              {/* Success Icon */}
+              <div className="flex flex-col items-center mb-6">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center">Employee Created Successfully!</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
+                  Please provide the following credentials to the employee
+                </p>
+              </div>
+
+              {/* Employee Details */}
+              <div className="space-y-4 mb-6">
+                {/* Email */}
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <Mail className="w-4 h-4 text-blue-500" />
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Email</span>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(createdEmployee.email, 'Email')}
+                      className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                      title="Copy Email"
+                    >
+                      <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+                  </div>
+                  <p className="text-lg font-mono font-bold text-gray-900 dark:text-white">{createdEmployee.email}</p>
+                </div>
+
+                {/* Temporary Password */}
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border-2 border-yellow-300 dark:border-yellow-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <Key className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                      <span className="text-sm font-medium text-yellow-800 dark:text-yellow-400">Temporary Password</span>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(createdEmployee.temporaryPassword, 'Password')}
+                      className="p-1.5 hover:bg-yellow-200 dark:hover:bg-yellow-800 rounded transition-colors"
+                      title="Copy Password"
+                    >
+                      <Copy className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                    </button>
+                  </div>
+                  <p className="text-lg font-mono font-bold text-yellow-900 dark:text-yellow-200">{createdEmployee.temporaryPassword}</p>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-500 mt-2 flex items-center">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    Employee should change this password after first login
+                  </p>
+                </div>
+
+                {/* Employee Info */}
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Name:</span>
+                    <p className="font-medium text-gray-900 dark:text-white">{createdEmployee.employeeName}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Designation:</span>
+                    <p className="font-medium text-gray-900 dark:text-white">{createdEmployee.designation}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Department:</span>
+                    <p className="font-medium text-gray-900 dark:text-white">{createdEmployee.department}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Zone:</span>
+                    <p className="font-medium text-gray-900 dark:text-white">{createdEmployee.assignedZone}</p>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                  <p className="text-xs text-blue-800 dark:text-blue-300 flex items-start">
+                    <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
+                    <span>The employee can now login and access their assigned tasks. Make sure to provide both email and password securely.</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    const details = `Email: ${createdEmployee.email}\nPassword: ${createdEmployee.temporaryPassword}\nName: ${createdEmployee.employeeName}\nDesignation: ${createdEmployee.designation}\nDepartment: ${createdEmployee.department}`;
+                    copyToClipboard(details, 'All Details');
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all flex items-center justify-center space-x-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  <span>Copy All Details</span>
+                </button>
+                <button
+                  onClick={() => setCreatedEmployee(null)}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all flex items-center justify-center space-x-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Done</span>
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -41,13 +41,13 @@ export async function processPaymentTransaction(
         billId,
         paymentAmount: amount.toString(),
         paymentMethod,
-        paymentDate: new Date().toISOString().split('T')[0],
+        paymentDate: new Date(),
         transactionId,
         receiptNumber: `RCP-${Date.now()}`,
         status: 'completed',
       } as any);
 
-      paymentId = paymentResult.insertId;
+      paymentId = paymentResult.id;
 
       // Step 2: Get bill details
       const [billData] = await tx
@@ -95,7 +95,7 @@ export async function processPaymentTransaction(
       await tx
         .update(customers)
         .set({
-          lastPaymentDate: new Date().toISOString().split('T')[0],
+          lastPaymentDate: new Date(),
           outstandingBalance: outstanding.toString(),
           paymentStatus: outstanding > 0 ? 'pending' : 'paid',
           updatedAt: new Date(),
@@ -170,7 +170,7 @@ export async function registerCustomerTransaction(userData: {
         isActive: 1,
       });
 
-      userId = userResult.insertId;
+      userId = userResult.id;
 
       // Step 4: Generate unique account and meter numbers
       const timestamp = Date.now();
@@ -191,7 +191,7 @@ export async function registerCustomerTransaction(userData: {
         pincode: userData.pincode,
         connectionType: userData.connectionType,
         status: 'active',
-        connectionDate: new Date().toISOString().split('T')[0],
+        connectionDate: new Date(),
         lastBillAmount: '0',
         outstandingBalance: '0',
         averageMonthlyUsage: '0',
@@ -202,7 +202,7 @@ export async function registerCustomerTransaction(userData: {
       return {
         success: true,
         userId,
-        customerId: customerResult.insertId,
+        customerId: customerResult.id,
         accountNumber,
         meterNumber,
       };
@@ -315,7 +315,7 @@ export async function generateBillTransaction(
       // Transaction commits automatically
       return {
         success: true,
-        billId: billResult.insertId,
+        billId: billResult.id,
         billNumber,
         totalAmount: finalAmount,
       };
@@ -356,7 +356,7 @@ export async function updateWorkOrderTransaction(
       };
 
       if (status === 'completed') {
-        updateData.completionDate = new Date().toISOString().split('T')[0];
+        updateData.completionDate = new Date();
         if (completionNotes) {
           updateData.completionNotes = completionNotes;
         }

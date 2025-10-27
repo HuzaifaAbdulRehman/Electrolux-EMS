@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (status !== 'all') {
-      whereConditions.push(eq(customers.status, status));
+      whereConditions.push(eq(customers.status, status as any));
     }
 
     const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         averageMonthlyUsage: customers.averageMonthlyUsage,
         createdAt: customers.createdAt,
         userEmail: users.email,
-        userStatus: users.status
+        userStatus: sql`1`
       })
       .from(customers)
       .innerJoin(users, eq(customers.userId, users.id))
@@ -195,41 +195,61 @@ export async function POST(request: NextRequest) {
     const newAccountNumber = `ELX-2024-${String(lastNumber + 1).padStart(6, '0')}`;
 
     // Create user first (DBMS: Foreign Key constraint)
-    const [newUser] = await db
+    const [userResult] = await db
       .insert(users)
       .values({
         email,
         password: 'temp_password_123', // Should be hashed in production
         userType: 'customer',
-        fullName,
-        phone,
-        status: 'active'
-      })
-      .returning({ id: users.id });
+        name: fullName,
+        phone
+      } as any)
+      .$returningId();
 
+    const newUserId = userResult.id;
+    
     // Create customer record (DBMS: Transaction with Foreign Key)
-    const [newCustomer] = await db
+    const [customerResult] = await db
       .insert(customers)
       .values({
-        userId: newUser.id,
+        userId: newUserId,
         accountNumber: newAccountNumber,
         meterNumber,
+        fullName,
+        phone,
         address,
         city,
         state,
+        pincode: '123456',
         connectionType,
+        connectionDate: new Date(),
         status: 'active',
         averageMonthlyUsage: '0.00'
-      })
-      .returning();
+      } as any)
+      .$returningId();
 
-    console.log('[Admin Customers API] Customer created successfully:', newCustomer.id);
+    const newCustomerId = customerResult.id;
+
+    console.log('[Admin Customers API] Customer created successfully:', newCustomerId);
 
     return NextResponse.json({
       success: true,
       data: {
         customer: {
-          ...newCustomer,
+          id: newCustomerId,
+          userId: newUserId,
+          accountNumber: newAccountNumber,
+          meterNumber,
+          fullName,
+          phone,
+          address,
+          city,
+          state,
+          pincode: '123456',
+          connectionType,
+          connectionDate: new Date(),
+          status: 'active',
+          averageMonthlyUsage: '0.00',
           userEmail: email,
           userStatus: 'active'
         }

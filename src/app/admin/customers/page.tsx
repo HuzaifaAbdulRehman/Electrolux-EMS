@@ -9,8 +9,6 @@ import {
   Filter,
   Download,
   Eye,
-  Edit,
-  Trash2,
   Plus,
   Mail,
   Phone,
@@ -29,7 +27,10 @@ import {
   PieChart,
   Loader2,
   Save,
-  X
+  X,
+  Copy,
+  Key,
+  CreditCard
 } from 'lucide-react';
 
 export default function AdminCustomers() {
@@ -44,6 +45,7 @@ export default function AdminCustomers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [createdCustomer, setCreatedCustomer] = useState<any>(null); // Store created customer details with password
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -132,8 +134,19 @@ export default function AdminCustomers() {
       });
 
       if (response.ok) {
+        const result = await response.json();
         await fetchCustomers(); // Refresh the list
         setShowAddCustomer(false);
+
+        // Show success modal with password
+        setCreatedCustomer({
+          ...result.data,
+          fullName: newCustomer.fullName,
+          email: newCustomer.email,
+          phone: newCustomer.phone
+        });
+
+        // Reset form
         setNewCustomer({
           fullName: '',
           email: '',
@@ -153,6 +166,16 @@ export default function AdminCustomers() {
       console.error('Error creating customer:', err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // You could add a toast notification here
+      console.log(`${label} copied to clipboard`);
+    } catch (err) {
+      console.error('Failed to copy:', err);
     }
   };
 
@@ -448,17 +471,12 @@ export default function AdminCustomers() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center space-x-2">
-                            <button 
+                            <button
                               onClick={() => setSelectedCustomer(customer.id)}
                               className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10 rounded-lg transition-all"
+                              title="View customer details"
                             >
                               <Eye className="w-4 h-4" />
-                            </button>
-                            <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10 rounded-lg transition-all">
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all">
-                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
@@ -603,13 +621,10 @@ export default function AdminCustomers() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex space-x-4 pt-6 border-t border-gray-200 dark:border-white/10">
-                      <button className="flex-1 px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all">
-                        Edit Customer
-                      </button>
-                      <button 
+                    <div className="flex justify-center pt-6 border-t border-gray-200 dark:border-white/10">
+                      <button
                         onClick={() => router.push(`/customer/view-bills?customerId=${customer.id}`)}
-                        className="flex-1 px-4 py-2 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:bg-white/20 transition-all"
+                        className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all"
                       >
                         View Bills
                       </button>
@@ -756,6 +771,118 @@ export default function AdminCustomers() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Customer Created Success Modal */}
+        {createdCustomer && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-lg border-2 border-green-500 dark:border-green-400">
+              {/* Success Icon */}
+              <div className="flex flex-col items-center mb-6">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center">Customer Created Successfully!</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
+                  Please provide the following credentials to the customer
+                </p>
+              </div>
+
+              {/* Customer Details */}
+              <div className="space-y-4 mb-6">
+                {/* Account Number */}
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <CreditCard className="w-4 h-4 text-blue-500" />
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Account Number</span>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(createdCustomer.accountNumber, 'Account Number')}
+                      className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                      title="Copy Account Number"
+                    >
+                      <Copy className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+                  </div>
+                  <p className="text-lg font-mono font-bold text-gray-900 dark:text-white">{createdCustomer.accountNumber}</p>
+                </div>
+
+                {/* Temporary Password */}
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 border-2 border-yellow-300 dark:border-yellow-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <Key className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                      <span className="text-sm font-medium text-yellow-800 dark:text-yellow-400">Temporary Password</span>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(createdCustomer.temporaryPassword, 'Password')}
+                      className="p-1.5 hover:bg-yellow-200 dark:hover:bg-yellow-800 rounded transition-colors"
+                      title="Copy Password"
+                    >
+                      <Copy className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                    </button>
+                  </div>
+                  <p className="text-lg font-mono font-bold text-yellow-900 dark:text-yellow-200">{createdCustomer.temporaryPassword}</p>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-500 mt-2 flex items-center">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    Customer should change this password after first login
+                  </p>
+                </div>
+
+                {/* Customer Info */}
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Name:</span>
+                    <p className="font-medium text-gray-900 dark:text-white">{createdCustomer.fullName}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Status:</span>
+                    <p className="font-medium text-gray-900 dark:text-white capitalize">{createdCustomer.status}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Email:</span>
+                    <p className="font-medium text-gray-900 dark:text-white">{createdCustomer.email}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600 dark:text-gray-400">Phone:</span>
+                    <p className="font-medium text-gray-900 dark:text-white">{createdCustomer.phone}</p>
+                  </div>
+                </div>
+
+                {createdCustomer.status === 'pending_installation' && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-800 dark:text-blue-300 flex items-start">
+                      <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
+                      <span>Meter number will be assigned after installation by employee. Customer can login but cannot view bills until meter is installed.</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    // Copy all details
+                    const details = `Account Number: ${createdCustomer.accountNumber}\nPassword: ${createdCustomer.temporaryPassword}\nEmail: ${createdCustomer.email}`;
+                    copyToClipboard(details, 'All Details');
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all flex items-center justify-center space-x-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  <span>Copy All Details</span>
+                </button>
+                <button
+                  onClick={() => setCreatedCustomer(null)}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all flex items-center justify-center space-x-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Done</span>
+                </button>
+              </div>
             </div>
           </div>
         )}

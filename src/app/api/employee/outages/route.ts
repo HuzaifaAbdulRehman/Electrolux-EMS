@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { outages, customers, notifications } from '@/lib/drizzle/schema';
+import { outages, customers, notifications, users } from '@/lib/drizzle/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 
 // GET /api/employee/outages - Get outages assigned to employee or in their area
@@ -115,35 +115,51 @@ export async function PATCH(request: NextRequest) {
     // Send notifications for status changes
     if (status && status !== currentOutage.status) {
       try {
+        // Get affected customers in the zone
         const affectedCustomers = await db
           .select({ userId: customers.userId, fullName: customers.fullName })
           .from(customers)
           .where(eq(customers.zone, currentOutage.zone));
 
-        let notificationTitle = '';
-        let notificationMessage = '';
+        // Get all admin users
+        const adminUsers = await db
+          .select({ userId: users.id, name: users.name })
+          .from(users)
+          .where(eq(users.userType, 'admin'));
+
+        let customerNotificationTitle = '';
+        let customerNotificationMessage = '';
+        let adminNotificationTitle = '';
+        let adminNotificationMessage = '';
         let priority = 'medium';
+
+        const employeeName = session.user.name || session.user.email;
 
         switch (status) {
           case 'ongoing':
-            notificationTitle = `Power Outage Started - ${currentOutage.areaName}`;
-            notificationMessage = `The scheduled power outage in ${currentOutage.areaName} has started. Expected restoration: ${currentOutage.scheduledEndTime ? new Date(currentOutage.scheduledEndTime).toLocaleString() : 'TBD'}`;
+            customerNotificationTitle = `Power Outage Started - ${currentOutage.areaName}`;
+            customerNotificationMessage = `The scheduled power outage in ${currentOutage.areaName} has started. Expected restoration: ${currentOutage.scheduledEndTime ? new Date(currentOutage.scheduledEndTime).toLocaleString() : 'TBD'}`;
+            adminNotificationTitle = `Employee Started Outage - ${currentOutage.areaName}`;
+            adminNotificationMessage = `${employeeName} marked outage in ${currentOutage.areaName} (${currentOutage.zone}) as ongoing. Affected customers: ${currentOutage.affectedCustomerCount || 0}`;
             priority = currentOutage.severity === 'critical' ? 'urgent' : 'high';
             break;
           case 'restored':
-            notificationTitle = `Power Restored - ${currentOutage.areaName}`;
-            notificationMessage = `Power has been restored in ${currentOutage.areaName}. ${restorationNotes ? `Notes: ${restorationNotes}` : ''}`;
+            customerNotificationTitle = `Power Restored - ${currentOutage.areaName}`;
+            customerNotificationMessage = `Power has been restored in ${currentOutage.areaName}. ${restorationNotes ? `Notes: ${restorationNotes}` : ''}`;
+            adminNotificationTitle = `Employee Resolved Outage - ${currentOutage.areaName}`;
+            adminNotificationMessage = `${employeeName} restored power in ${currentOutage.areaName} (${currentOutage.zone}). ${restorationNotes ? `Notes: ${restorationNotes}` : 'No additional notes.'}`;
             priority = 'medium';
             break;
         }
 
-        if (notificationTitle) {
-          const notificationPromises = affectedCustomers.map(customer => 
+        if (customerNotificationTitle) {
+          // Send notifications to affected customers
+          const customerNotificationPromises = affectedCustomers.map(customer =>
             db.insert(notifications).values({
               userId: customer.userId,
               notificationType: 'outage',
-              title: notificationTitle,
-              message: notificationMessage,
+              title: customerNotificationTitle,
+              message: customerNotificationMessage,
               priority,
               actionUrl: '/customer/outage-schedule',
               actionText: 'View Details',
@@ -151,8 +167,22 @@ export async function PATCH(request: NextRequest) {
             })
           );
 
-          await Promise.all(notificationPromises);
-          console.log(`[Employee Outage API] Sent status update notifications to ${affectedCustomers.length} customers`);
+          // Send notifications to all admin users
+          const adminNotificationPromises = adminUsers.map(admin =>
+            db.insert(notifications).values({
+              userId: admin.userId,
+              notificationType: 'outage',
+              title: adminNotificationTitle,
+              message: adminNotificationMessage,
+              priority: 'high', // Always high priority for admin notifications
+              actionUrl: '/admin/outages',
+              actionText: 'View Outages',
+              isRead: 0
+            })
+          );
+
+          await Promise.all([...customerNotificationPromises, ...adminNotificationPromises]);
+          console.log(`[Employee Outage API] Sent status update notifications to ${affectedCustomers.length} customers and ${adminUsers.length} admins`);
         }
       } catch (notificationError) {
         console.error('[Employee Outage API] Error sending status notifications:', notificationError);

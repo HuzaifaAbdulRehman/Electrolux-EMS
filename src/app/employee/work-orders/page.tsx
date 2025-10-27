@@ -490,7 +490,7 @@ export default function WorkOrders() {
                           onClick={() => {
                             // Redirect to meter reading page with customer info
                             const params = new URLSearchParams({
-                              customerId: order.customerId?.toString() || '',
+                              customerId: (order as any).customerId?.toString() || '',
                               customerName: order.customerName || '',
                               accountNumber: order.customerAccount || '',
                               workOrderId: order.id.toString()

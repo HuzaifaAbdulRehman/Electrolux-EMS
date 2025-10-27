@@ -37,12 +37,12 @@ export async function POST(request: NextRequest) {
         const userData = Array.from({ length: count }, () => ({
           email: faker.internet.email(),
           password: 'password123', // In production, this should be hashed
-          userType: faker.helpers.arrayElement(['customer', 'employee', 'admin']),
-          fullName: faker.person.fullName(),
+          userType: faker.helpers.arrayElement(['customer', 'employee', 'admin'] as const),
+          name: faker.person.fullName(),
           phone: faker.phone.number(),
-          status: 'active'
+          isActive: 1
         }));
-        
+
         await db.insert(users).values(userData);
         generatedCount = userData.length;
         break;
@@ -61,12 +61,15 @@ export async function POST(request: NextRequest) {
           accountNumber: `ELX-2024-${faker.string.numeric(6)}`,
           meterNumber: `MTR-${faker.string.alpha(3).toUpperCase()}-${faker.string.numeric(6)}`,
           fullName: faker.person.fullName(),
+          email: faker.internet.email(),
           phone: faker.phone.number(),
           address: faker.location.streetAddress(),
           city: faker.location.city(),
           state: faker.location.state(),
-          connectionType: faker.helpers.arrayElement(['Residential', 'Commercial', 'Industrial']),
-          status: 'active',
+          pincode: faker.location.zipCode(),
+          connectionType: faker.helpers.arrayElement(['Residential', 'Commercial', 'Industrial', 'Agricultural'] as const),
+          status: faker.helpers.arrayElement(['active', 'pending_installation', 'suspended', 'inactive'] as const),
+          connectionDate: faker.date.past({ years: 2 }),
           averageMonthlyUsage: faker.number.float({ min: 100, max: 2000, fractionDigits: 2 }).toString()
         }));
         
@@ -87,13 +90,16 @@ export async function POST(request: NextRequest) {
           const customerId = faker.helpers.arrayElement(existingCustomers).id;
           const previousReading = faker.number.int({ min: 1000, max: 5000 });
           const currentReading = previousReading + faker.number.int({ min: 50, max: 500 });
-          
+          const readingDateTime = faker.date.recent({ refDate: new Date() });
+
           return {
             customerId,
-            readingDate: faker.date.recent({ days: 30 }).toISOString().split('T')[0],
-            currentReading,
-            previousReading,
-            unitsConsumed: currentReading - previousReading
+            meterNumber: `MTR-${faker.string.alpha(3).toUpperCase()}-${faker.string.numeric(6)}`,
+            readingDate: readingDateTime,
+            readingTime: readingDateTime,
+            currentReading: currentReading.toString(),
+            previousReading: previousReading.toString(),
+            unitsConsumed: (currentReading - previousReading).toString()
           };
         });
         
@@ -114,13 +120,23 @@ export async function POST(request: NextRequest) {
           const customerId = faker.helpers.arrayElement(customersForBills).id;
           const totalAmount = faker.number.float({ min: 50, max: 1000, fractionDigits: 2 });
           
+          const billDate = faker.date.recent({ refDate: new Date() });
+          const dueDate = new Date(billDate);
+          dueDate.setDate(dueDate.getDate() + 30);
+          const unitsConsumed = faker.number.int({ min: 50, max: 500 });
+          const baseAmount = faker.number.float({ min: 30, max: 800, fractionDigits: 2 });
+
           return {
             customerId,
             billNumber: `BILL-${faker.string.numeric(8)}`,
-            billingMonth: faker.date.recent({ days: 90 }).toISOString().substring(0, 7),
-            totalAmount,
-            status: faker.helpers.arrayElement(['pending', 'paid', 'overdue']),
-            dueDate: faker.date.future({ days: 30 }).toISOString().split('T')[0]
+            billingMonth: billDate,
+            issueDate: billDate,
+            dueDate: dueDate,
+            unitsConsumed: unitsConsumed.toString(),
+            baseAmount: baseAmount.toString(),
+            fixedCharges: '50.00',
+            totalAmount: totalAmount.toString(),
+            status: faker.helpers.arrayElement(['generated', 'issued', 'paid', 'overdue'] as const)
           };
         });
         
@@ -139,17 +155,23 @@ export async function POST(request: NextRequest) {
           }, { status: 400 });
         }
 
-        const workOrderData = Array.from({ length: count }, () => ({
-          employeeId: faker.helpers.arrayElement(employeesForWork).id,
-          customerId: faker.helpers.arrayElement(customersForWork).id,
-          workType: faker.helpers.arrayElement(['meter_reading', 'maintenance', 'complaint_resolution', 'new_connection']),
-          title: faker.lorem.sentence(4),
-          description: faker.lorem.paragraph(),
-          status: faker.helpers.arrayElement(['assigned', 'in_progress', 'completed']),
-          priority: faker.helpers.arrayElement(['low', 'medium', 'high', 'urgent']),
-          assignedDate: faker.date.recent({ days: 30 }).toISOString().split('T')[0],
-          dueDate: faker.date.future({ days: 7 }).toISOString().split('T')[0]
-        }));
+        const workOrderData = Array.from({ length: count }, () => {
+          const assignedDate = faker.date.recent({ refDate: new Date() });
+          const dueDate = new Date(assignedDate);
+          dueDate.setDate(dueDate.getDate() + 7);
+
+          return {
+            employeeId: faker.helpers.arrayElement(employeesForWork).id,
+            customerId: faker.helpers.arrayElement(customersForWork).id,
+            workType: faker.helpers.arrayElement(['meter_reading', 'maintenance', 'complaint_resolution', 'new_connection'] as const),
+            title: faker.lorem.sentence(4),
+            description: faker.lorem.paragraph(),
+            status: faker.helpers.arrayElement(['assigned', 'in_progress', 'completed'] as const),
+            priority: faker.helpers.arrayElement(['low', 'medium', 'high', 'urgent'] as const),
+            assignedDate,
+            dueDate
+          };
+        });
         
         await db.insert(workOrders).values(workOrderData);
         generatedCount = workOrderData.length;

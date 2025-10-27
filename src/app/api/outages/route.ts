@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       customerCount = countResult.count;
     }
 
-    const newOutage = await db.insert(outages).values({
+    const insertResult = await db.insert(outages).values({
       areaName,
       zone,
       outageType,
@@ -138,7 +138,9 @@ export async function POST(request: NextRequest) {
       createdBy: userId
     });
 
-    const outageId = newOutage.insertId;
+    // Get the newly created outage to retrieve its ID
+    const [newOutage] = await db.select().from(outages).orderBy(desc(outages.id)).limit(1);
+    const outageId = newOutage?.id;
 
     // Send notifications to affected customers
     try {
@@ -153,7 +155,7 @@ export async function POST(request: NextRequest) {
           notificationType: 'outage',
           title: `Power Outage Scheduled - ${areaName}`,
           message: `A ${outageType} power outage is scheduled for ${areaName} on ${scheduledStartTime ? new Date(scheduledStartTime).toLocaleDateString() : 'TBD'}. ${reason ? `Reason: ${reason}` : ''}`,
-          priority: severity === 'critical' ? 'urgent' : severity === 'high' ? 'high' : 'medium',
+          priority: severity === 'critical' || severity === 'high' ? 'high' : 'medium',
           actionUrl: '/customer/outage-schedule',
           actionText: 'View Details',
           isRead: 0
@@ -259,7 +261,7 @@ export async function PATCH(request: NextRequest) {
           case 'ongoing':
             notificationTitle = `Power Outage Started - ${currentOutage.areaName}`;
             notificationMessage = `The scheduled power outage in ${currentOutage.areaName} has started. Expected restoration: ${currentOutage.scheduledEndTime ? new Date(currentOutage.scheduledEndTime).toLocaleString() : 'TBD'}`;
-            priority = currentOutage.severity === 'critical' ? 'urgent' : 'high';
+            priority = 'high';
             break;
           case 'restored':
             notificationTitle = `Power Restored - ${currentOutage.areaName}`;
@@ -280,8 +282,7 @@ export async function PATCH(request: NextRequest) {
               notificationType: 'outage',
               title: notificationTitle,
               message: notificationMessage,
-              priority,
-              actionUrl: '/customer/outage-schedule',
+              priority: priority as any, actionUrl: '/customer/outage-schedule',
               actionText: 'View Details',
               isRead: 0
             })

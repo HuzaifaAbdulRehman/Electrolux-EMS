@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
     // Check which categories have tariffs
     const tariffCategories = new Set(availableTariffs.map(t => t.category));
     Object.keys(categoryAnalysis).forEach(category => {
-      categoryAnalysis[category].hasTariff = tariffCategories.has(category);
+      categoryAnalysis[category].hasTariff = tariffCategories.has(category as any);
     });
 
     // 6. Calculate eligible customers (have reading, no existing bill)
@@ -128,25 +128,25 @@ export async function GET(request: NextRequest) {
     
     for (const customer of eligibleCustomers) {
       const category = customer.connectionType || 'Residential';
-      const tariff = tariffMap.get(category);
-      
+      const tariff = tariffMap.get(category as 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural');
+
       if (tariff) {
-        const units = parseFloat(customer.unitsConsumed || '0');
-        const fixedCharges = parseFloat(tariff.fixedCharge);
-        
+        const units = Number(customer.unitsConsumed || '0');
+        const fixedCharges = Number(tariff.fixedCharge);
+
         // Simple calculation for preview (first slab only)
         let baseAmount = 0;
-        if (units <= parseFloat(tariff.slab1End)) {
-          baseAmount = units * parseFloat(tariff.slab1Rate);
+        if (units <= Number(tariff.slab1End)) {
+          baseAmount = units * Number(tariff.slab1Rate);
         } else {
-          baseAmount = parseFloat(tariff.slab1End) * parseFloat(tariff.slab1Rate) +
-                      (units - parseFloat(tariff.slab1End)) * parseFloat(tariff.slab2Rate);
+          baseAmount = Number(tariff.slab1End) * Number(tariff.slab1Rate) +
+                      (units - Number(tariff.slab1End)) * Number(tariff.slab2Rate);
         }
-        
-        const electricityDuty = baseAmount * (parseFloat(tariff.electricityDutyPercent) / 100);
-        const gstAmount = (baseAmount + fixedCharges + electricityDuty) * (parseFloat(tariff.gstPercent) / 100);
+
+        const electricityDuty = baseAmount * (Number(tariff.electricityDutyPercent ?? 0) / 100);
+        const gstAmount = (baseAmount + fixedCharges + electricityDuty) * (Number(tariff.gstPercent ?? 0) / 100);
         const totalAmount = baseAmount + fixedCharges + electricityDuty + gstAmount;
-        
+
         estimatedRevenue += totalAmount;
       }
     }

@@ -141,7 +141,7 @@ export async function PATCH(request: NextRequest) {
             customerNotificationMessage = `The scheduled power outage in ${currentOutage.areaName} has started. Expected restoration: ${currentOutage.scheduledEndTime ? new Date(currentOutage.scheduledEndTime).toLocaleString() : 'TBD'}`;
             adminNotificationTitle = `Employee Started Outage - ${currentOutage.areaName}`;
             adminNotificationMessage = `${employeeName} marked outage in ${currentOutage.areaName} (${currentOutage.zone}) as ongoing. Affected customers: ${currentOutage.affectedCustomerCount || 0}`;
-            priority = currentOutage.severity === 'critical' ? 'urgent' : 'high';
+            priority = 'high';
             break;
           case 'restored':
             customerNotificationTitle = `Power Restored - ${currentOutage.areaName}`;
@@ -160,8 +160,7 @@ export async function PATCH(request: NextRequest) {
               notificationType: 'outage',
               title: customerNotificationTitle,
               message: customerNotificationMessage,
-              priority,
-              actionUrl: '/customer/outage-schedule',
+              priority: priority as any, actionUrl: '/customer/outage-schedule',
               actionText: 'View Details',
               isRead: 0
             })

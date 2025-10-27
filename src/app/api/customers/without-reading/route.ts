@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
       customersWithoutBills = customersWithoutBills.filter(customer =>
         customer.fullName.toLowerCase().includes(searchLower) ||
         customer.accountNumber.toLowerCase().includes(searchLower) ||
-        customer.meterNumber.toLowerCase().includes(searchLower) ||
+        customer.meterNumber?.toLowerCase().includes(searchLower) ||
         customer.phone.toLowerCase().includes(searchLower)
       );
       console.log('[API] After search filter:', customersWithoutBills.length, '(filtered from', globalStats.customersWithoutReading, ')');

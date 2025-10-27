@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
           .from(workOrders)
           .where(
             and(
-              eq(workOrders.customerId, session.user.customerId),
+              eq(workOrders.customerId, session.user.customerId ?? 0),
               eq(workOrders.workType, 'meter_reading'),
               eq(workOrders.status, 'assigned')
             )
@@ -185,17 +185,17 @@ export async function POST(request: NextRequest) {
       // Create notification for admin/employees about new request
       if (workType === 'meter_reading') {
         // Notify all employees about new meter reading request
-        const employees = await db.select({ id: employees.id, userId: employees.userId })
+        const employeeRecords = await db.select({ id: employees.id, userId: employees.userId })
           .from(employees)
           .where(eq(employees.status, 'active'));
 
-        for (const employee of employees) {
+        for (const employee of employeeRecords) {
           if (employee.userId) {
             await db.insert(notifications).values({
               userId: employee.userId,
               notificationType: 'work_order',
               title: 'New Meter Reading Request',
-              message: `Customer ${session.user.fullName || 'Unknown'} has requested a meter reading. Please check your work orders.`,
+              message: `Customer ${session.user.name || 'Unknown'} has requested a meter reading. Please check your work orders.`,
               priority: 'medium',
               actionUrl: '/employee/meter-reading',
               actionText: 'View Request',
@@ -205,17 +205,17 @@ export async function POST(request: NextRequest) {
         }
       } else if (workType === 'complaint_resolution') {
         // Notify all employees about new complaint
-        const employees = await db.select({ id: employees.id, userId: employees.userId })
+        const employeeRecords = await db.select({ id: employees.id, userId: employees.userId })
           .from(employees)
           .where(eq(employees.status, 'active'));
 
-        for (const employee of employees) {
+        for (const employee of employeeRecords) {
           if (employee.userId) {
             await db.insert(notifications).values({
               userId: employee.userId,
               notificationType: 'work_order',
               title: 'New Customer Complaint',
-              message: `Customer ${session.user.fullName || 'Unknown'} has submitted a complaint: "${title}". Please check your work orders.`,
+              message: `Customer ${session.user.name || 'Unknown'} has submitted a complaint: "${title}". Please check your work orders.`,
               priority: 'high',
               actionUrl: '/employee/work-orders',
               actionText: 'View Complaint',

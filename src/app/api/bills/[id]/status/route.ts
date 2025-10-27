@@ -94,7 +94,7 @@ export async function PATCH(
         {
           error: 'Bill is already marked as paid',
           details: {
-            paidDate: existingBill.paidDate,
+            paymentDate: existingBill.paymentDate,
             message: 'This bill was already paid. Cannot mark as paid again.'
           }
         },
@@ -111,7 +111,7 @@ export async function PATCH(
     // If marking as paid, set paid date
     const currentPaidDate = paidDate ? new Date(paidDate) : new Date();
     if (status === 'paid') {
-      updateData.paidDate = currentPaidDate;
+      updateData.paymentDate = currentPaidDate;
     }
 
     // CRITICAL: Create payment record if marking as paid
@@ -130,30 +130,38 @@ export async function PATCH(
         });
 
         // Insert payment record
-        const [newPayment] = await db
+        const paymentData = {
+          customerId: existingBill.customerId,
+          billId: billId,
+          paymentAmount: existingBill.totalAmount,
+          paymentMethod: paymentMethod,
+          paymentDate: currentPaidDate,
+          transactionId: transactionRef,
+          receiptNumber: receiptNumber,
+          status: 'completed' as const,
+          notes: notes || `Admin payment - Bill #${billId}`,
+        };
+
+        const insertResult = await db
           .insert(payments)
-          .values({
-            customerId: existingBill.customerId,
-            billId: billId,
-            paymentAmount: existingBill.totalAmount,
-            paymentMethod: paymentMethod,
-            paymentDate: currentPaidDate.toISOString().split('T')[0],
-            transactionId: transactionRef,
-            receiptNumber: receiptNumber,
-            status: 'completed',
-            notes: notes || `Admin payment - Bill #${billId}`,
-          })
-          .returning();
+          .values(paymentData);
+
+        // Fetch the inserted payment record
+        const [newPayment] = await db
+          .select()
+          .from(payments)
+          .where(eq(payments.receiptNumber, receiptNumber))
+          .limit(1);
 
         paymentRecord = newPayment;
-        console.log('[Payment Creation] ✅ Payment record created:', paymentRecord.id);
+        console.log('[Payment Creation] ✅ Payment record created:', paymentRecord?.id);
 
         // Update customer outstanding balance
         await db
           .update(customers)
           .set({
             outstandingBalance: sql`GREATEST(CAST(${customers.outstandingBalance} AS DECIMAL(10,2)) - ${existingBill.totalAmount}, 0)`,
-            lastPaymentDate: currentPaidDate.toISOString().split('T')[0]
+            lastPaymentDate: currentPaidDate
           })
           .where(eq(customers.id, existingBill.customerId));
 
@@ -207,7 +215,7 @@ export async function PATCH(
       data: {
         id: billId,
         status,
-        paidDate: updateData.paidDate,
+        paymentDate: updateData.paymentDate,
         paymentRecord: paymentRecord ? {
           id: paymentRecord.id,
           receiptNumber: paymentRecord.receiptNumber,

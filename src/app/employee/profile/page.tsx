@@ -179,7 +179,7 @@ export default function EmployeeProfile() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{profileData.fullName}</h1>
-                <p className="text-gray-600 dark:text-gray-400">{employeeInfo?.position || 'N/A'} • {employeeInfo?.department || 'N/A'}</p>
+                <p className="text-gray-600 dark:text-gray-400">{employeeInfo?.designation || 'N/A'} • {employeeInfo?.department || 'N/A'}</p>
                 <div className="flex items-center space-x-4 mt-2">
                   <span className="px-3 py-1 bg-green-500/20 text-green-400 text-sm rounded-full font-semibold border border-green-500/50">
                     {employeeInfo?.status || 'Active'}
@@ -432,30 +432,7 @@ export default function EmployeeProfile() {
               <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Performance History</h2>
                 <div className="space-y-4">
-                  {recentPerformance.map((month, index) => (
-                    <div key={index} className="p-4 bg-white dark:bg-white/5 rounded-xl">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-white font-semibold">{month.month} 2024</h3>
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          month.score >= 90
-                            ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                            : 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
-                        }`}>
-                          {month.score}% Score
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm">Tasks Completed</p>
-                          <p className="text-white font-semibold">{month.tasks}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm">Customer Rating</p>
-                          <p className="text-white font-semibold">⭐ {month.rating}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                  <p className="text-gray-600 dark:text-gray-400">Performance history will be available soon.</p>
                 </div>
               </div>
             )}

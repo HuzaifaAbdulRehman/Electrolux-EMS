@@ -1,0 +1,1024 @@
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/api/employee/profile". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\api\employee\profile\route'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\node-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\route-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\routes\app-route.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/api/employee/settings". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\api\employee\settings\route'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\node-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\route-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\routes\app-route.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/api/employees". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\api\employees\route'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\node-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\route-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\routes\app-route.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/api/admin/generate-sample-data". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\api\admin\generate-sample-data\route'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\node-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\route-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\routes\app-route.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/api/notifications". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\api\notifications\route'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\node-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\route-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\routes\app-route.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+   Generating static pages (35/85) [   =]
+
+Error occurred prerendering page "/api/meter-readings". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\api\meter-readings\route'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\node-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\route-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\routes\app-route.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/api/payments". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\api\payments\route'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\node-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\route-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\routes\app-route.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+   Generating static pages (37/85) [  ==]
+
+Error occurred prerendering page "/api/outages". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\api\outages\route'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\node-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\route-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\routes\app-route.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/api/tariffs". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\api\tariffs\route'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\node-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\route-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\routes\app-route.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/api/test-database". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\api\test-database\route'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\node-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\route-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\routes\app-route.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/api/test-customers". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\api\test-customers\route'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\node-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\route-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\routes\app-route.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+   Generating static pages (41/85) [ ===]
+
+Error occurred prerendering page "/api/work-orders". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\api\work-orders\route'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\node-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\route-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\routes\app-route.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/favicon.ico". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\favicon.ico\route'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\node-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\future\helpers\module-loader\route-module-loader.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\routes\app-route.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/_not-found". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/admin/bills/generate". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\admin\bills\generate\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/admin/complaints". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\admin\complaints\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/admin/connection-requests". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/admin/customers". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\admin\customers\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+   Generating static pages (48/85) [====]
+
+Error occurred prerendering page "/admin/dashboard". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\admin\dashboard\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/admin/data-import". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/admin/analytics". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\admin\analytics\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/admin/employees". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\admin\employees\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/admin/notifications". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\admin\notifications\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+   Generating static pages (53/85) [=== ]
+
+Error occurred prerendering page "/admin/outages". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\admin\outages\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/admin/profile". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/admin/settings". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/apply-connection". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\apply-connection\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/admin/tariffs". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/customer/analytics". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/customer/bill-calculator". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\customer\bill-calculator\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/admin/bills". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\admin\bills\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+   Generating static pages (60/85) [==  ]
+
+Error occurred prerendering page "/customer/bill-view". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/customer/complaints". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\customer\complaints\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/customer/notifications". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\customer\notifications\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/customer/outage-schedule". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\customer\outage-schedule\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/customer/payment". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\customer\payment\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/customer/profile". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/customer/request-reading". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/customer/dashboard". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/customer/settings". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/customer/view-bills". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+   Generating static pages (71/85) [=   ]
+
+Error occurred prerendering page "/employee/bill-generation". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/employee/customers". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/employee/dashboard". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/employee/meter-reading". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/employee/notifications". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+   Generating static pages (76/85) [    ]
+
+Error occurred prerendering page "/employee/profile". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\employee\profile\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/employee/settings". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\employee\settings\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/employee/work-orders". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\employee\work-orders\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/forgot-password". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\forgot-password\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/login". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+    at async Object.exportPage (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:238:20)
+
+Error occurred prerendering page "/employee/outages". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\employee\outages\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+
+Error occurred prerendering page "/register". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: ENOENT: no such file or directory, open 'D:\Programming\Projects\electrolux_ems\.next\server\font-manifest.json'
+    at readFileSync (node:fs:441:20)
+    at loadManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-manifest.js:35:54)
+    at requireFontManifest (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:117:57)
+    at exportPageImpl (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:190:76)
+    at async D:\Programming\Projects\electrolux_ems\node_modules\next\dist\export\worker.js:239:16
+    at async Span.traceAsyncFn (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20)
+   Generating static pages (84/85) [=   ]
+
+Error occurred prerendering page "/unauthorized". Read more: https://nextjs.org/docs/messages/prerender-error
+
+Error: Cannot find module 'D:\Programming\Projects\electrolux_ems\.next\server\app\unauthorized\page.js'
+Require stack:
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\worker.js
+- D:\Programming\Projects\electrolux_ems\node_modules\next\dist\compiled\jest-worker\processChild.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1365:15)
+    at D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1021:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1026:22)
+    at Function._load (node:internal/modules/cjs/loader:1175:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1445:12)
+    at mod.require (D:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require-hook.js:65:28)
+ ✓ Generating static pages (85/85)
+
+> Export encountered errors on following paths:
+        /_not-found
+        /admin/analytics/page: /admin/analytics
+        /admin/bills/generate/page: /admin/bills/generate
+        /admin/bills/page: /admin/bills
+        /admin/complaints/page: /admin/complaints
+        /admin/connection-requests/page: /admin/connection-requests
+        /admin/customers/page: /admin/customers
+        /admin/dashboard/page: /admin/dashboard
+        /admin/data-import/page: /admin/data-import
+        /admin/employees/page: /admin/employees
+        /admin/notifications/page: /admin/notifications
+        /admin/outages/page: /admin/outages
+        /admin/profile/page: /admin/profile
+        /admin/settings/page: /admin/settings
+        /admin/tariffs/page: /admin/tariffs
+        /api/admin/generate-sample-data/route: /api/admin/generate-sample-data
+        /api/bills/generate-bulk/route: /api/bills/generate-bulk
+        /api/bills/generate/route: /api/bills/generate
+        /api/bills/preview/route: /api/bills/preview
+        /api/bills/request/route: /api/bills/request
+        /api/bills/route: /api/bills
+        /api/complaints/analytics/route: /api/complaints/analytics
+        /api/complaints/route: /api/complaints
+        /api/connection-requests/route: /api/connection-requests
+        /api/customer/dashboard/route: /api/customer/dashboard
+        /api/customers/profile/route: /api/customers/profile
+        /api/customers/route: /api/customers
+        /api/customers/without-reading/route: /api/customers/without-reading
+        /api/dashboard/route: /api/dashboard
+        /api/debug-customers/route: /api/debug-customers
+        /api/debug-stats/route: /api/debug-stats
+        /api/employee/bill-requests/route: /api/employee/bill-requests
+        /api/employee/dashboard/route: /api/employee/dashboard
+        /api/employee/notifications/route: /api/employee/notifications
+        /api/employee/outages/route: /api/employee/outages
+        /api/employee/profile/route: /api/employee/profile
+        /api/employee/settings/route: /api/employee/settings
+        /api/employees/route: /api/employees
+        /api/meter-readings/route: /api/meter-readings
+        /api/notifications/route: /api/notifications
+        /api/outages/route: /api/outages
+        /api/payments/route: /api/payments
+        /api/tariffs/route: /api/tariffs
+        /api/test-customers/route: /api/test-customers
+        /api/test-database/route: /api/test-database
+        /api/work-orders/route: /api/work-orders
+        /apply-connection/page: /apply-connection
+        /customer/analytics/page: /customer/analytics
+        /customer/bill-calculator/page: /customer/bill-calculator
+        /customer/bill-view/page: /customer/bill-view
+        /customer/complaints/page: /customer/complaints
+        /customer/dashboard/page: /customer/dashboard
+        /customer/notifications/page: /customer/notifications
+        /customer/outage-schedule/page: /customer/outage-schedule
+        /customer/payment/page: /customer/payment
+        /customer/profile/page: /customer/profile
+        /customer/request-reading/page: /customer/request-reading
+        /customer/settings/page: /customer/settings
+        /customer/view-bills/page: /customer/view-bills
+        /employee/bill-generation/page: /employee/bill-generation
+        /employee/customers/page: /employee/customers
+        /employee/dashboard/page: /employee/dashboard
+        /employee/meter-reading/page: /employee/meter-reading
+        /employee/notifications/page: /employee/notifications
+        /employee/outages/page: /employee/outages
+        /employee/profile/page: /employee/profile
+        /employee/settings/page: /employee/settings
+        /employee/work-orders/page: /employee/work-orders
+        /favicon.ico/route: /favicon.ico
+        /forgot-password/page: /forgot-password
+        /login/page: /login
+        /page: /
+        /register/page: /register
+        /unauthorized/page: /unauthorized
+
+D:\Programming\Projects\electrolux_ems>

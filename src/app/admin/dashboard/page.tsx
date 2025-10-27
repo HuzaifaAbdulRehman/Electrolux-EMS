@@ -16,6 +16,7 @@ import {
   Loader2,
   RefreshCw
 } from 'lucide-react';
+import { DashboardData, ChartData, ApiResponse } from '@/types';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -47,7 +48,7 @@ ChartJS.register(
 export default function AdminDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -68,7 +69,7 @@ export default function AdminDashboard() {
         throw new Error(errorData.error || 'Failed to fetch dashboard data');
       }
 
-      const result = await response.json();
+      const result: ApiResponse<DashboardData> = await response.json();
 
       if (!result.success) {
         throw new Error(result.error || 'API returned error');
@@ -169,9 +170,11 @@ export default function AdminDashboard() {
 
   // Chart data from API - Revenue by Connection Type
   const categoryLabels = Object.keys(revenueByCategory);
-  const categoryValues = Object.values(revenueByCategory).map((item: any) => item.total || item);
+  const categoryValues = Object.values(revenueByCategory).map((item) => 
+    typeof item === 'object' && item !== null ? item.total : item
+  );
 
-  const categoryData = {
+  const categoryData: ChartData = {
     labels: categoryLabels.map(label => {
       // Capitalize and format labels
       return label.charAt(0).toUpperCase() + label.slice(1);
@@ -192,9 +195,8 @@ export default function AdminDashboard() {
           'rgba(34, 197, 94, 1)',
           'rgba(250, 204, 21, 1)'
         ],
-        borderWidth: 2,
-        borderRadius: 8
-      }
+        borderWidth: 2
+      } as any
     ]
   };
 
@@ -226,7 +228,7 @@ export default function AdminDashboard() {
   // Payment Methods from actual data
   const paymentMethodLabels = Object.keys(paymentMethods);
   const paymentMethodCounts = paymentMethodLabels.map(method => {
-    const data = paymentMethods[method];
+    const data = paymentMethods[method] as any;
     return typeof data === 'object' ? (data.count || 0) : data;
   });
 
@@ -267,7 +269,7 @@ export default function AdminDashboard() {
   // Bills Status Distribution from actual data
   const billsStatusLabels = Object.keys(billsStatus);
   const billsStatusCounts = billsStatusLabels.map(status => {
-    const data = billsStatus[status];
+    const data = billsStatus[status] as any;
     return typeof data === 'object' ? (data.count || 0) : data;
   });
 
@@ -297,7 +299,7 @@ export default function AdminDashboard() {
   // Connection Type Distribution from actual data
   const connectionTypeLabels = Object.keys(connectionTypeDistribution);
   const connectionTypeCounts = connectionTypeLabels.map(type => {
-    const data = connectionTypeDistribution[type];
+    const data = connectionTypeDistribution[type] as any;
     return typeof data === 'object' ? (data.count || 0) : data;
   });
 
@@ -489,7 +491,7 @@ export default function AdminDashboard() {
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Monthly Revenue</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-              Rs {(parseFloat(metrics?.monthlyRevenue || 0) / 1000).toFixed(1)}K
+              Rs {((metrics?.monthlyRevenue || 0) / 1000).toFixed(1)}K
             </p>
           </div>
 
@@ -501,7 +503,7 @@ export default function AdminDashboard() {
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Outstanding</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
-              Rs {(parseFloat(metrics?.outstandingAmount || 0) / 1000).toFixed(1)}K
+              Rs {((metrics?.outstandingAmount || 0) / 1000).toFixed(1)}K
             </p>
           </div>
 
@@ -639,7 +641,7 @@ export default function AdminDashboard() {
                             const label = context.label || '';
                             const value = context.parsed.x || 0;
                             const typeKey = connectionTypeLabels[context.dataIndex];
-                            const activeCount = connectionTypeDistribution[typeKey]?.activeCount || 0;
+                            const activeCount = (connectionTypeDistribution[typeKey] as any)?.activeCount || 0;
                             return [
                               `Total: ${value} customers`,
                               `Active: ${activeCount} customers`
@@ -698,7 +700,7 @@ export default function AdminDashboard() {
                             const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
                             const percentage = ((value / total) * 100).toFixed(1);
                             const statusKey = billsStatusLabels[context.dataIndex];
-                            const amount = billsStatus[statusKey]?.amount || 0;
+                            const amount = (billsStatus[statusKey] as any)?.amount || 0;
                             return [
                               `${label}: ${value} bills (${percentage}%)`,
                               `Amount: Rs ${amount.toLocaleString('en-IN', {minimumFractionDigits: 2})}`
@@ -757,7 +759,7 @@ export default function AdminDashboard() {
                         <p className="text-gray-500 dark:text-gray-400 text-sm">{bill.accountNumber}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-gray-900 dark:text-white font-semibold">Rs {parseFloat(bill.totalAmount).toFixed(2)}</p>
+                        <p className="text-gray-900 dark:text-white font-semibold">Rs {Number(bill.totalAmount).toFixed(2)}</p>
                       </td>
                       <td className="px-6 py-4">
                         <p className="text-gray-600 dark:text-gray-400">{new Date(bill.dueDate).toLocaleDateString()}</p>

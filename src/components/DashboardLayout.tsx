@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
+import { DashboardLayoutProps, Notification, UserType } from '@/types';
 import {
   Zap,
   Home,
@@ -37,12 +38,6 @@ import {
   Eye
 } from 'lucide-react';
 
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-  userType: 'customer' | 'employee' | 'admin';
-  userName?: string;
-}
-
 export default function DashboardLayout({ children, userType, userName }: DashboardLayoutProps) {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -69,7 +64,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
   const [hasActiveConnection, setHasActiveConnection] = useState(initialStatus === 'active');
   const [connectionStatus, setConnectionStatus] = useState<string>(initialStatus);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const pathname = usePathname();
 

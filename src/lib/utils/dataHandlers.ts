@@ -14,7 +14,7 @@
  * @param defaultValue - Default value if conversion fails (default: 0)
  * @returns A valid number or the default value
  */
-export const safeNumber = (value: any, defaultValue: number = 0): number => {
+export const safeNumber = (value: unknown, defaultValue: number = 0): number => {
   // Handle null, undefined, empty string
   if (value === null || value === undefined || value === '') {
     return defaultValue;
@@ -35,7 +35,7 @@ export const safeNumber = (value: any, defaultValue: number = 0): number => {
  * @returns Formatted number string
  */
 export const formatNumber = (
-  value: any,
+  value: unknown,
   decimals: number = 2,
   defaultValue: string = '0.00'
 ): string => {
@@ -54,7 +54,7 @@ export const formatNumber = (
  * @returns Formatted currency string
  */
 export const formatCurrency = (
-  value: any,
+  value: unknown,
   symbol: string = '₹',
   decimals: number = 2
 ): string => {
@@ -71,7 +71,7 @@ export const formatCurrency = (
  * @param decimals - Decimal places (default: 1)
  * @returns Formatted string (e.g., "1.5K", "2.3M")
  */
-export const formatCompactNumber = (value: any, decimals: number = 1): string => {
+export const formatCompactNumber = (value: unknown, decimals: number = 1): string => {
   const num = safeNumber(value);
 
   if (num >= 1_000_000_000) {
@@ -94,7 +94,7 @@ export const formatCompactNumber = (value: any, decimals: number = 1): string =>
  * @param defaultValue - Default if value is invalid (default: 'N/A')
  * @returns String or default value
  */
-export const safeString = (value: any, defaultValue: string = 'N/A'): string => {
+export const safeString = (value: unknown, defaultValue: string = 'N/A'): string => {
   if (value === null || value === undefined || value === '') {
     return defaultValue;
   }
@@ -109,7 +109,7 @@ export const safeString = (value: any, defaultValue: string = 'N/A'): string => 
  * @returns Truncated string
  */
 export const truncateString = (
-  value: any,
+  value: unknown,
   maxLength: number,
   ellipsis: string = '...'
 ): string => {
@@ -128,14 +128,14 @@ export const truncateString = (
  * @returns Formatted date string
  */
 export const safeDate = (
-  value: any,
+  value: unknown,
   defaultValue: string = 'N/A',
   format: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' }
 ): string => {
   if (!value) return defaultValue;
 
   try {
-    const date = new Date(value);
+    const date = new Date(value as string | number | Date);
     if (isNaN(date.getTime())) return defaultValue;
     return date.toLocaleDateString('en-IN', format);
   } catch {
@@ -148,7 +148,7 @@ export const safeDate = (
  * @param value - Date value
  * @returns Formatted date (e.g., "Jan 15, 2024")
  */
-export const formatDate = (value: any): string => {
+export const formatDate = (value: unknown): string => {
   return safeDate(value, 'N/A', { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
@@ -157,7 +157,7 @@ export const formatDate = (value: any): string => {
  * @param value - Date value
  * @returns Formatted datetime (e.g., "Jan 15, 2024, 3:30 PM")
  */
-export const formatDateTime = (value: any): string => {
+export const formatDateTime = (value: unknown): string => {
   return safeDate(value, 'N/A', {
     year: 'numeric',
     month: 'short',
@@ -175,7 +175,7 @@ export const formatDateTime = (value: any): string => {
  * @param decimals - Decimal places (default: 1)
  * @returns Formatted percentage (e.g., "15.0%")
  */
-export const formatPercentage = (value: any, decimals: number = 1): string => {
+export const formatPercentage = (value: unknown, decimals: number = 1): string => {
   const num = safeNumber(value) * 100;
   return `${num.toFixed(decimals)}%`;
 };
@@ -187,7 +187,7 @@ export const formatPercentage = (value: any, decimals: number = 1): string => {
  * @param value - Value that should be an array
  * @returns Array or empty array
  */
-export const safeArray = <T = any>(value: any): T[] => {
+export const safeArray = <T = unknown>(value: unknown): T[] => {
   return Array.isArray(value) ? value : [];
 };
 
@@ -197,7 +197,7 @@ export const safeArray = <T = any>(value: any): T[] => {
  * @param decimals - Decimal places (default: 2)
  * @returns Average or 0 if array is empty
  */
-export const calculateAverage = (values: any[], decimals: number = 2): number => {
+export const calculateAverage = (values: unknown[], decimals: number = 2): number => {
   const arr = safeArray(values).map(v => safeNumber(v));
   if (arr.length === 0) return 0;
 
@@ -212,7 +212,7 @@ export const calculateAverage = (values: any[], decimals: number = 2): number =>
  * @param decimals - Decimal places (default: 2)
  * @returns Sum or 0 if array is empty
  */
-export const calculateSum = (values: any[], decimals: number = 2): number => {
+export const calculateSum = (values: unknown[], decimals: number = 2): number => {
   const arr = safeArray(values).map(v => safeNumber(v));
   const sum = arr.reduce((acc, val) => acc + val, 0);
   return parseFloat(sum.toFixed(decimals));
@@ -227,9 +227,9 @@ export const calculateSum = (values: any[], decimals: number = 2): number => {
  * @param defaultValue - Default if path not found
  * @returns Value at path or default
  */
-export const safeGet = (obj: any, path: string, defaultValue: any = null): any => {
+export const safeGet = (obj: unknown, path: string, defaultValue: unknown = null): unknown => {
   try {
-    return path.split('.').reduce((current, key) => current?.[key], obj) ?? defaultValue;
+    return path.split('.').reduce((current: any, key) => current?.[key], obj) ?? defaultValue;
   } catch {
     return defaultValue;
   }
@@ -242,7 +242,7 @@ export const safeGet = (obj: any, path: string, defaultValue: any = null): any =
  * @param value - Value to check
  * @returns true if valid, false otherwise
  */
-export const isValid = (value: any): boolean => {
+export const isValid = (value: unknown): boolean => {
   if (value === null || value === undefined) return false;
   if (typeof value === 'number' && (isNaN(value) || !isFinite(value))) return false;
   if (typeof value === 'string' && value.trim() === '') return false;
@@ -255,7 +255,7 @@ export const isValid = (value: any): boolean => {
  * @param defaultValue - Final fallback
  * @returns First valid value or default
  */
-export const firstValid = (...values: any[]): any => {
+export const firstValid = (...values: unknown[]): unknown => {
   for (const value of values) {
     if (isValid(value)) return value;
   }
@@ -269,7 +269,7 @@ export const firstValid = (...values: any[]): any => {
  * @param value - Units value
  * @returns Formatted units (e.g., "450 kWh")
  */
-export const formatUnits = (value: any): string => {
+export const formatUnits = (value: unknown): string => {
   const units = safeNumber(value);
   return `${units.toLocaleString()} kWh`;
 };
@@ -279,7 +279,7 @@ export const formatUnits = (value: any): string => {
  * @param value - Meter reading value
  * @returns Formatted reading (e.g., "12,345")
  */
-export const formatMeterReading = (value: any): string => {
+export const formatMeterReading = (value: unknown): string => {
   const reading = safeNumber(value);
   return reading.toLocaleString();
 };

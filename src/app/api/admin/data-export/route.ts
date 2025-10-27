@@ -111,12 +111,14 @@ export async function GET(request: NextRequest) {
         data = await db
           .select({
             id: employees.id,
-            fullName: employees.fullName,
+              employeeName: employees.employeeName,
             email: employees.email,
             phone: employees.phone,
             department: employees.department,
-            position: employees.position,
+              designation: employees.designation,
+              assignedZone: employees.assignedZone,
             status: employees.status,
+              hireDate: employees.hireDate,
             createdAt: employees.createdAt
           })
           .from(employees);
@@ -127,12 +129,15 @@ export async function GET(request: NextRequest) {
         data = await db
           .select({
             id: tariffs.id,
-            name: tariffs.name,
-            connectionType: tariffs.connectionType,
-            baseRate: tariffs.baseRate,
-            unitRate: tariffs.unitRate,
-            fixedCharges: tariffs.fixedCharges,
-            status: tariffs.status,
+            category: tariffs.category,
+            fixedCharge: tariffs.fixedCharge,
+            slab1Start: tariffs.slab1Start,
+            slab1End: tariffs.slab1End,
+            slab1Rate: tariffs.slab1Rate,
+            slab2Start: tariffs.slab2Start,
+            slab2End: tariffs.slab2End,
+            slab2Rate: tariffs.slab2Rate,
+            effectiveDate: tariffs.effectiveDate,
             createdAt: tariffs.createdAt
           })
           .from(tariffs);

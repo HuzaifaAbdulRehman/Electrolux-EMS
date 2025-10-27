@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
 import { bills, meterReadings, customers, billRequests, notifications, tariffs } from '@/lib/drizzle/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
+import { ApiResponse } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -173,16 +174,16 @@ export async function POST(request: NextRequest) {
     let baseAmount = 0;
 
     // Parse tariff values once for clarity
-    const slab1End = parseFloat(activeTariff.slab1End);
-    const slab2End = parseFloat(activeTariff.slab2End);
-    const slab3End = parseFloat(activeTariff.slab3End);
-    const slab4End = parseFloat(activeTariff.slab4End);
+    const slab1End = Number(activeTariff.slab1End);
+    const slab2End = Number(activeTariff.slab2End);
+    const slab3End = Number(activeTariff.slab3End);
+    const slab4End = Number(activeTariff.slab4End);
 
-    const slab1Rate = parseFloat(activeTariff.slab1Rate);
-    const slab2Rate = parseFloat(activeTariff.slab2Rate);
-    const slab3Rate = parseFloat(activeTariff.slab3Rate);
-    const slab4Rate = parseFloat(activeTariff.slab4Rate);
-    const slab5Rate = parseFloat(activeTariff.slab5Rate);
+    const slab1Rate = Number(activeTariff.slab1Rate);
+    const slab2Rate = Number(activeTariff.slab2Rate);
+    const slab3Rate = Number(activeTariff.slab3Rate);
+    const slab4Rate = Number(activeTariff.slab4Rate);
+    const slab5Rate = Number(activeTariff.slab5Rate);
 
     // Progressive slab-based calculation
     // Each slab charges only for units within that specific range
@@ -213,9 +214,9 @@ export async function POST(request: NextRequest) {
                    ((unitsConsumed - slab4End) * slab5Rate);
     }
 
-    const fixedCharges = parseFloat(activeTariff.fixedCharge);
-    const electricityDuty = baseAmount * (parseFloat(activeTariff.electricityDutyPercent) / 100);
-    const gstAmount = (baseAmount + fixedCharges + electricityDuty) * (parseFloat(activeTariff.gstPercent) / 100);
+    const fixedCharges = Number(activeTariff.fixedCharge);
+    const electricityDuty = baseAmount * (Number(activeTariff.electricityDutyPercent ?? 0) / 100);
+    const gstAmount = (baseAmount + fixedCharges + electricityDuty) * (Number(activeTariff.gstPercent ?? 0) / 100);
     const totalAmount = baseAmount + fixedCharges + electricityDuty + gstAmount;
 
     console.log('[Bill Generation] Calculation:', {
@@ -236,7 +237,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Generate unique bill number: BILL-YYYY-XXXXXXXX
-    let billNumber: string;
+    let billNumber: string = '';
     let attempts = 0;
     const maxAttempts = 5;
 

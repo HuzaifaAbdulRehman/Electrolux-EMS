@@ -56,8 +56,8 @@ export async function GET(request: NextRequest) {
         currentMonth,
         dateRange: { currentMonthStart, nextMonthStart },
         totalCustomers: allCustomers.length,
-        customersWithReadings: customersWithReadings.length,
-        customersWithoutReadings: customersWithoutReadings.length,
+        customersWithReadingsCount: customersWithReadings.length,
+        customersWithoutReadingsCount: customersWithoutReadings.length,
         allCustomers: allCustomers,
         customersWithReadings: customersWithReadings,
         customersWithoutReadings: customersWithoutReadings

@@ -55,12 +55,13 @@ export default function RegisterPage() {
   // Password strength calculator
   const calculatePasswordStrength = (password: string) => {
     let strength = 0;
-    if (password.length >= 8) strength++;
+    if (password.length >= 6) strength++; // Minimum 6 characters
+    if (password.length >= 8) strength++; // Bonus for 8+ characters
     if (password.match(/[a-z]/)) strength++;
     if (password.match(/[A-Z]/)) strength++;
     if (password.match(/[0-9]/)) strength++;
     if (password.match(/[^a-zA-Z0-9]/)) strength++;
-    return strength;
+    return Math.min(strength, 5); // Cap at 5 for display
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,11 +97,13 @@ export default function RegisterPage() {
   const validateForm = () => {
     const newErrors: FormErrors = {};
     
+    console.log('🔍 Frontend validation - Form data:', formData);
+    
     // Full Name validation
     if (!formData.fullName) {
       newErrors.fullName = 'Full name is required';
-    } else if (formData.fullName.length < 3) {
-      newErrors.fullName = 'Full name must be at least 3 characters';
+    } else if (formData.fullName.length < 2) {
+      newErrors.fullName = 'Full name must be at least 2 characters';
     }
     
     // Email validation
@@ -114,8 +117,8 @@ export default function RegisterPage() {
     // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
     }
     
     // Confirm Password validation
@@ -130,7 +133,7 @@ export default function RegisterPage() {
     if (!formData.phoneNumber) {
       newErrors.phoneNumber = 'Phone number is required';
     } else if (!phoneRegex.test(formData.phoneNumber.replace(/\D/g, ''))) {
-      newErrors.phoneNumber = 'Phone number must be 11 digits (e.g., 03001234567)';
+      newErrors.phoneNumber = 'Phone number must be 11 digits starting with 0 (e.g., 03001234567)';
     }
     
     // Address validation
@@ -173,8 +176,11 @@ export default function RegisterPage() {
       newErrors.termsAccepted = 'You must accept the terms and conditions';
     }
     
+    console.log('🔍 Frontend validation - Errors found:', newErrors);
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const isValid = Object.keys(newErrors).length === 0;
+    console.log('🔍 Frontend validation - Is valid:', isValid);
+    return isValid;
   };
 
   const [isLoading, setIsLoading] = useState(false);
@@ -200,7 +206,7 @@ export default function RegisterPage() {
           password: formData.password,
           confirmPassword: formData.confirmPassword,
           fullName: formData.fullName,
-          phone: formData.phoneNumber.replace(/\D/g, '').substring(1), // Remove leading 0, send 10 digits
+          phone: formData.phoneNumber.replace(/\D/g, ''), // Send full 11 digits with leading 0
           address: formData.fullAddress,
           city: formData.city,
           state: formData.state,
@@ -212,7 +218,8 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
+        console.error('Registration error:', data);
+        throw new Error(data.error || data.details || 'Registration failed');
       }
 
       setSuccessMessage('Registration successful! Redirecting to login...');

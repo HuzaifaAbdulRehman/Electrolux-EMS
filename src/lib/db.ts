@@ -14,10 +14,10 @@ export const pool = mysql.createPool({
 });
 
 // Query helper function
-export async function query(sql: string, params?: any[]) {
+export async function query(sql: string, params?: unknown[]): Promise<unknown[]> {
   try {
     const [rows] = await pool.execute(sql, params || []);
-    return rows;
+    return rows as unknown[];
   } catch (error) {
     console.error('Database query error:', error);
     throw error;
@@ -25,7 +25,9 @@ export async function query(sql: string, params?: any[]) {
 }
 
 // Transaction helper
-export async function transaction(callback: (connection: any) => Promise<any>) {
+export async function transaction<T>(
+  callback: (connection: mysql.PoolConnection) => Promise<T>
+): Promise<T> {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();

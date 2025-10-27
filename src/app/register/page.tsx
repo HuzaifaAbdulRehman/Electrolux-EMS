@@ -17,33 +17,21 @@ import {
   Shield,
   AlertCircle
 } from 'lucide-react';
-
-interface FormErrors {
-  fullName?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-  phoneNumber?: string;
-  fullAddress?: string;
-  city?: string;
-  state?: string;
-  pincode?: string;
-  meterNumber?: string;
-  termsAccepted?: string;
-}
+import { RegisterForm, FormErrors } from '@/types';
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
-    fullName: '',
+  const [formData, setFormData] = useState<RegisterForm>({
+    firstName: '',
+    lastName: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
-    phoneNumber: '',
-    fullAddress: '',
+    address: '',
     city: '',
     state: '',
-    pincode: '',
-    meterNumber: '',
+    zipCode: '',
+    connectionType: 'residential',
     termsAccepted: false
   });
 
@@ -99,11 +87,18 @@ export default function RegisterPage() {
     
     console.log('🔍 Frontend validation - Form data:', formData);
     
-    // Full Name validation
-    if (!formData.fullName) {
-      newErrors.fullName = 'Full name is required';
-    } else if (formData.fullName.length < 2) {
-      newErrors.fullName = 'Full name must be at least 2 characters';
+    // First Name validation
+    if (!formData.firstName) {
+      newErrors.firstName = 'First name is required';
+    } else if (formData.firstName.length < 2) {
+      newErrors.firstName = 'First name must be at least 2 characters';
+    }
+
+    // Last Name validation
+    if (!formData.lastName) {
+      newErrors.lastName = 'Last name is required';
+    } else if (formData.lastName.length < 2) {
+      newErrors.lastName = 'Last name must be at least 2 characters';
     }
     
     // Email validation
@@ -130,15 +125,15 @@ export default function RegisterPage() {
     
     // Phone Number validation (Pakistani format: 11 digits starting with 0)
     const phoneRegex = /^0\d{10}$/;
-    if (!formData.phoneNumber) {
-      newErrors.phoneNumber = 'Phone number is required';
-    } else if (!phoneRegex.test(formData.phoneNumber.replace(/\D/g, ''))) {
-      newErrors.phoneNumber = 'Phone number must be 11 digits starting with 0 (e.g., 03001234567)';
+    if (!formData.phone) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!phoneRegex.test(formData.phone.replace(/\D/g, ''))) {
+      newErrors.phone = 'Phone number must be 11 digits starting with 0 (e.g., 03001234567)';
     }
     
     // Address validation
-    if (!formData.fullAddress) {
-      newErrors.fullAddress = 'Full address is required';
+    if (!formData.address) {
+      newErrors.address = 'Address is required';
     }
 
     // City validation
@@ -155,20 +150,12 @@ export default function RegisterPage() {
       newErrors.state = 'State must be at least 2 characters';
     }
 
-    // Pincode validation
-    const pincodeRegex = /^\d{6}$/;
-    if (!formData.pincode) {
-      newErrors.pincode = 'Pincode is required';
-    } else if (!pincodeRegex.test(formData.pincode)) {
-      newErrors.pincode = 'Pincode must be 6 digits';
-    }
-
-    // Meter Number validation (Optional - auto-generated if empty)
-    if (formData.meterNumber && formData.meterNumber.trim()) {
-      const meterRegex = /^MTR-[A-Z]{3}-\d{6}$/;
-      if (!meterRegex.test(formData.meterNumber)) {
-        newErrors.meterNumber = 'Meter number must be in format MTR-XXX-XXXXXX (e.g., MTR-KHI-000001)';
-      }
+    // Zip Code validation
+    const zipCodeRegex = /^\d{5,6}$/;
+    if (!formData.zipCode) {
+      newErrors.zipCode = 'Zip code is required';
+    } else if (!zipCodeRegex.test(formData.zipCode)) {
+      newErrors.zipCode = 'Zip code must be 5-6 digits';
     }
 
     // Terms validation
@@ -205,13 +192,14 @@ export default function RegisterPage() {
           email: formData.email,
           password: formData.password,
           confirmPassword: formData.confirmPassword,
-          fullName: formData.fullName,
-          phone: formData.phoneNumber.replace(/\D/g, ''), // Send full 11 digits with leading 0
-          address: formData.fullAddress,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone.replace(/\D/g, ''), // Send full 11 digits with leading 0
+          address: formData.address,
           city: formData.city,
           state: formData.state,
-          pincode: formData.pincode,
-          meterNumber: formData.meterNumber.trim() || undefined, // Send undefined if empty for auto-generation
+          zipCode: formData.zipCode,
+          connectionType: formData.connectionType,
         }),
       });
 
@@ -335,23 +323,44 @@ export default function RegisterPage() {
               <form onSubmit={handleSubmit} className="space-y-3">
                 {/* Two Column Grid for Name and Email */}
                 <div className="grid grid-cols-2 gap-3">
-                  {/* Full Name */}
+                  {/* First Name */}
                   <div>
-                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">Full Name *</label>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">First Name *</label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 dark:text-gray-400" />
                       <input
                         type="text"
-                        value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                         className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-                        placeholder="Huzaifa Abdul Rehman"
+                        placeholder="Huzaifa"
                       />
                     </div>
-                    {errors.fullName && (
+                    {errors.firstName && (
                       <p className="text-red-400 text-xs mt-1 flex items-center">
                         <AlertCircle className="w-3 h-3 mr-1" />
-                        {errors.fullName}
+                        {errors.firstName}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Last Name */}
+                  <div>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">Last Name *</label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 dark:text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
+                        placeholder="Abdul Rehman"
+                      />
+                    </div>
+                    {errors.lastName && (
+                      <p className="text-red-400 text-xs mt-1 flex items-center">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        {errors.lastName}
                       </p>
                     )}
                   </div>
@@ -468,46 +477,36 @@ export default function RegisterPage() {
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 dark:text-gray-400" />
                       <input
                         type="tel"
-                        value={formData.phoneNumber}
-                        onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                         placeholder="03001234567"
                         maxLength={11}
                       />
                     </div>
-                    {errors.phoneNumber && (
+                    {errors.phone && (
                       <p className="text-red-400 text-xs mt-1 flex items-center">
                         <AlertCircle className="w-3 h-3 mr-1" />
-                        {errors.phoneNumber}
+                        {errors.phone}
                       </p>
                     )}
                   </div>
 
-                  {/* Meter Number */}
+                  {/* Connection Type */}
                   <div>
                     <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">
-                      Meter Number <span className="text-gray-500">(Optional)</span>
+                      Connection Type *
                     </label>
-                    <div className="relative">
-                      <Gauge className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      <input
-                        type="text"
-                        value={formData.meterNumber}
-                        onChange={(e) => setFormData({ ...formData, meterNumber: e.target.value.toUpperCase() })}
-                        className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-                        placeholder="MTR-KHI-000001 (leave empty for auto-assignment)"
-                        maxLength={14}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      💡 Leave empty if you don't have a meter yet - we'll assign one for you
-                    </p>
-                    {errors.meterNumber && (
-                      <p className="text-red-400 text-xs mt-1 flex items-center">
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                        {errors.meterNumber}
-                      </p>
-                    )}
+                    <select
+                      value={formData.connectionType}
+                      onChange={(e) => setFormData({ ...formData, connectionType: e.target.value as 'residential' | 'commercial' | 'industrial' | 'agricultural' })}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm focus:outline-none focus:border-yellow-400 transition-colors"
+                    >
+                      <option value="residential">Residential</option>
+                      <option value="commercial">Commercial</option>
+                      <option value="industrial">Industrial</option>
+                      <option value="agricultural">Agricultural</option>
+                    </select>
                   </div>
                 </div>
 
@@ -517,17 +516,17 @@ export default function RegisterPage() {
                   <div className="relative">
                     <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-600 dark:text-gray-400" />
                     <textarea
-                      value={formData.fullAddress}
-                      onChange={(e) => setFormData({ ...formData, fullAddress: e.target.value })}
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                       className="w-full pl-10 pr-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors resize-none"
                       placeholder="House 123, Street 5, Gulshan-e-Iqbal"
                       rows={2}
                     />
                   </div>
-                  {errors.fullAddress && (
+                  {errors.address && (
                     <p className="text-red-400 text-xs mt-1 flex items-center">
                       <AlertCircle className="w-3 h-3 mr-1" />
-                      {errors.fullAddress}
+                      {errors.address}
                     </p>
                   )}
                 </div>
@@ -572,19 +571,19 @@ export default function RegisterPage() {
 
                   {/* Pincode */}
                   <div>
-                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">Pincode *</label>
+                    <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">Zip Code *</label>
                     <input
                       type="text"
-                      value={formData.pincode}
-                      onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                      value={formData.zipCode}
+                      onChange={(e) => setFormData({ ...formData, zipCode: e.target.value })}
                       className="w-full px-3 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
                       placeholder="75300"
                       maxLength={6}
                     />
-                    {errors.pincode && (
+                    {errors.zipCode && (
                       <p className="text-red-400 text-xs mt-1 flex items-center">
                         <AlertCircle className="w-3 h-3 mr-1" />
-                        {errors.pincode}
+                        {errors.zipCode}
                       </p>
                     )}
                   </div>

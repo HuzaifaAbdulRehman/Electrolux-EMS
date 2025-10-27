@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     // 1. TOP 10 REVENUE CUSTOMERS (DBMS: JOIN + ORDER BY + LIMIT)
     console.log('[Analytics API] Fetching top revenue customers...');
-    let topRevenueCustomers = [];
+    let topRevenueCustomers: any[] = [];
     try {
       topRevenueCustomers = await db
         .select({
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     // 2. COLLECTION RATE TREND (Simplified)
     console.log('[Analytics API] Fetching collection trend...');
-    let collectionTrend = [];
+    let collectionTrend: any[] = [];
     try {
       collectionTrend = await db
         .select({
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. MONTHLY CONSUMPTION PATTERN (Simplified)
-    let consumptionPattern = [];
+    let consumptionPattern: any[] = [];
     try {
       consumptionPattern = await db
         .select({
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. WORK ORDERS STATUS (Simplified to avoid MySQL function issues)
-    let workOrderStats = [];
+    let workOrderStats: any[] = [];
     try {
       workOrderStats = await db
         .select({
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 5. REVENUE BY CONNECTION TYPE WITH TRENDS (Enhanced)
-    let revenueByConnectionType = [];
+    let revenueByConnectionType: any[] = [];
     try {
       revenueByConnectionType = await db
         .select({
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 6. PAYMENT DISTRIBUTION (Simplified - all time)
-    let paymentDistribution = [];
+    let paymentDistribution: any[] = [];
     try {
       paymentDistribution = await db
         .select({

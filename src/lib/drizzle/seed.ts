@@ -501,7 +501,7 @@ async function seed() {
 
     // Strategy: Create bill requests for customers who have meter readings but no bills for specific months
     // We'll create ~15 pending bill requests for realistic testing
-    const billRequestRecords = [];
+    const billRequestRecords: any[] = [];
 
     for (let customerId = 1; customerId <= 50; customerId++) {
       // Only create bill requests for ~30% of customers (15 customers)
@@ -701,7 +701,7 @@ async function seed() {
       });
     }
 
-    await db.insert(outages).values(outageData);
+    await db.insert(outages).values(outageData as any);
     console.log(`✅ Seeded ${outageData.length} outages (10 completed + 2 ongoing + 8 scheduled)\n`);
 
     console.log('🎉 Database seeding completed successfully!\n');

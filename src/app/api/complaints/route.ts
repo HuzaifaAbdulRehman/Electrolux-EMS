@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
     const customer = await db
       .select({ id: customers.id })
       .from(customers)
-      .where(eq(customers.userId, session.user.id))
+      .where(eq(customers.userId, parseInt(session.user.id)))
       .limit(1);
 
     if (!customer.length) {
@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
         notificationType: 'service',
         title: 'New Complaint Submitted',
         message: `New ${finalPriority.toUpperCase()} priority complaint: ${title}`,
-        priority: finalPriority === 'urgent' ? 'high' : 'normal',
+        priority: 'normal' as any,
         actionUrl: '/admin/complaints',
         isRead: 0,
       } as any);

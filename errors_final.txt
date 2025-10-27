@@ -1,0 +1,14 @@
+src/app/api/bills/preview/route.ts(116,67): error TS2345: Argument of type 'string' is not assignable to parameter of type '"Residential" | "Commercial" | "Industrial" | "Agricultural"'.
+src/app/api/complaints/route.ts(203,20): error TS2367: This comparison appears to be unintentional because the types '"medium"' and '"urgent"' have no overlap.
+src/app/api/complaints/route.ts(203,50): error TS2367: This comparison appears to be unintentional because the types '"medium"' and '"high"' have no overlap.
+src/app/api/employee/outages/route.ts(158,38): error TS2769: No overload matches this call.
+src/app/api/outages/route.ts(280,38): error TS2769: No overload matches this call.
+src/app/employee/profile/page.tsx(182,80): error TS2339: Property 'position' does not exist on type '{ employeeId: any; department: any; designation: any; email: any; phone: any; hireDate: any; experience: any; assignedZone: any; status: any; workStats: any; performanceScore: number; }'.
+src/app/employee/profile/page.tsx(435,20): error TS2304: Cannot find name 'recentPerformance'.
+src/app/employee/profile/page.tsx(435,43): error TS7006: Parameter 'month' implicitly has an 'any' type.
+src/app/employee/profile/page.tsx(435,50): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/app/employee/work-orders/page.tsx(493,49): error TS2551: Property 'customerId' does not exist on type 'WorkOrder'. Did you mean 'customerCity'?
+src/lib/drizzle/db.ts(8,27): error TS2769: No overload matches this call.
+src/lib/drizzle/seed.ts(504,11): error TS7034: Variable 'billRequestRecords' implicitly has type 'any[]' in some locations where its type cannot be determined.
+src/lib/drizzle/seed.ts(530,31): error TS7005: Variable 'billRequestRecords' implicitly has an 'any[]' type.
+src/lib/drizzle/seed.ts(704,37): error TS2769: No overload matches this call.

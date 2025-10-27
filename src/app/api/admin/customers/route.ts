@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db } from '@/lib/drizzle/db';
+import { db, pool } from '@/lib/drizzle/db';
 import { customers, users } from '@/lib/drizzle/schema';
 import { eq, sql, desc, and, like, or } from 'drizzle-orm';
 
@@ -19,12 +19,12 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
-    const status = searchParams.get('status') || 'all';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const statusParam = searchParams.get('status') || 'all';
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
     const offset = (page - 1) * limit;
 
-    console.log('[Admin Customers API] Fetching customers with filters:', { search, status, page, limit });
+    console.log('[Admin Customers API] Fetching customers with filters:', { search, status: statusParam, page, limit });
 
     // Build where conditions (DBMS: Dynamic Query Building)
     const whereConditions = [];
@@ -40,8 +40,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (status !== 'all') {
-      whereConditions.push(eq(customers.status, status));
+    if (statusParam !== 'all') {
+      const validStatuses = ['active', 'inactive', 'pending_installation', 'suspended'] as const;
+      if (validStatuses.includes(statusParam as typeof validStatuses[number])) {
+        whereConditions.push(eq(customers.status, statusParam as typeof validStatuses[number]));
+      }
     }
 
     const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
@@ -68,7 +71,7 @@ export async function GET(request: NextRequest) {
         averageMonthlyUsage: customers.averageMonthlyUsage,
         createdAt: customers.createdAt,
         userEmail: users.email,
-        userStatus: users.status
+        userIsActive: users.isActive
       })
       .from(customers)
       .innerJoin(users, eq(customers.userId, users.id))
@@ -195,43 +198,41 @@ export async function POST(request: NextRequest) {
     const newAccountNumber = `ELX-2024-${String(lastNumber + 1).padStart(6, '0')}`;
 
     // Create user first (DBMS: Foreign Key constraint)
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        email,
-        password: 'temp_password_123', // Should be hashed in production
-        userType: 'customer',
-        fullName,
-        phone,
-        status: 'active'
-      })
-      .returning({ id: users.id });
+      const [userInsertResult] = await pool.execute(
+        'INSERT INTO users (email, password, user_type, name, phone, is_active) VALUES (?, ?, ?, ?, ?, ?)',
+        [email, 'temp_password_123', 'customer', fullName, phone, 1]
+      ) as any;
+      const newUserId = userInsertResult.insertId;
 
     // Create customer record (DBMS: Transaction with Foreign Key)
-    const [newCustomer] = await db
-      .insert(customers)
-      .values({
-        userId: newUser.id,
-        accountNumber: newAccountNumber,
-        meterNumber,
-        address,
-        city,
-        state,
-        connectionType,
-        status: 'active',
-        averageMonthlyUsage: '0.00'
-      })
-      .returning();
+      const [customerInsertResult] = await pool.execute(
+        `INSERT INTO customers (user_id, account_number, meter_number, full_name, phone, address, city, state, connection_type, connection_date, status, average_monthly_usage) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [newUserId, newAccountNumber, meterNumber, fullName, phone, address, city, state, connectionType, new Date(), 'active', '0.00']
+      ) as any;
+      const newCustomerId = customerInsertResult.insertId;
 
-    console.log('[Admin Customers API] Customer created successfully:', newCustomer.id);
+    console.log('[Admin Customers API] Customer created successfully:', newCustomerId);
 
     return NextResponse.json({
       success: true,
       data: {
         customer: {
-          ...newCustomer,
+          id: newCustomerId,
+          userId: newUserId,
+          accountNumber: newAccountNumber,
+          meterNumber,
+          fullName,
+          phone,
+          address,
+          city,
+          state,
+          connectionType,
+          connectionDate: new Date(),
+          status: 'active',
+          averageMonthlyUsage: '0.00',
           userEmail: email,
-          userStatus: 'active'
+          userIsActive: 1
         }
       },
       message: 'Customer created successfully'

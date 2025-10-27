@@ -179,7 +179,7 @@ export async function PATCH(
     // Mark old tariff as expired (soft delete for audit trail)
     await db
       .update(tariffs)
-      .set({ validUntil: formattedEffectiveDate }) // Use formatted date
+      .set({ validUntil: new Date(effectiveDate) }) // Use Date object
       .where(
         and(
           eq(tariffs.id, tariffId),

@@ -154,9 +154,11 @@ export default function EmployeeBillGeneration() {
       priority: 'high',
       notes: 'Customer needs urgent bill for loan application',
       meterReading: {
+        id: 1,
         previous: 12485,
         current: 12945,
-        consumption: 460
+        consumption: 460,
+        readingDate: '2024-10-10'
       }
     },
     {
@@ -170,9 +172,11 @@ export default function EmployeeBillGeneration() {
       status: 'pending',
       priority: 'medium',
       meterReading: {
+        id: 2,
         previous: 10230,
         current: 10650,
-        consumption: 420
+        consumption: 420,
+        readingDate: '2024-10-09'
       }
     },
     {
@@ -198,9 +202,11 @@ export default function EmployeeBillGeneration() {
       priority: 'high',
       notes: 'Urgent - Customer moving abroad',
       meterReading: {
+        id: 4,
         previous: 8900,
         current: 9400,
-        consumption: 500
+        consumption: 500,
+        readingDate: '2024-10-09'
       }
     }
   ];

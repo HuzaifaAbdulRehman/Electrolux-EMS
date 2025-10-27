@@ -18,14 +18,15 @@ import {
   Plug,
   FileText
 } from 'lucide-react';
+import { Complaint, ComplaintForm, ApiResponse } from '@/types';
 
 export default function CustomerComplaints() {
-  const [complaints, setComplaints] = useState<any[]>([]);
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [newComplaint, setNewComplaint] = useState({
+  const [newComplaint, setNewComplaint] = useState<ComplaintForm>({
     category: 'power_outage',
     title: '',
     description: ''
@@ -49,9 +50,9 @@ export default function CustomerComplaints() {
         return;
       }
 
-      const result = await response.json();
+      const result: ApiResponse<Complaint[]> = await response.json();
 
-      if (result.success) {
+      if (result.success && result.data) {
         setComplaints(result.data);
       } else {
         console.error('Fetch failed:', result);
@@ -265,15 +266,15 @@ export default function CustomerComplaints() {
                       <p className="text-gray-600 dark:text-gray-400 mb-3">{complaint.description}</p>
                       <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                         <span>Category: {getCategoryName(complaint.category)}</span>
-                        <span>Submitted: {new Date(complaint.submittedAt).toLocaleDateString()}</span>
+                        <span>Submitted: {new Date(complaint.createdAt).toLocaleDateString()}</span>
                         {complaint.resolvedAt && (
                           <span>Resolved: {new Date(complaint.resolvedAt).toLocaleDateString()}</span>
                         )}
                       </div>
-                      {complaint.resolutionNotes && (
+                      {complaint.resolution && (
                         <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                           <p className="text-sm text-green-800 dark:text-green-200">
-                            <strong>Resolution:</strong> {complaint.resolutionNotes}
+                            <strong>Resolution:</strong> {complaint.resolution}
                           </p>
                         </div>
                       )}
@@ -305,12 +306,12 @@ export default function CustomerComplaints() {
                   <select
                     required
                     value={newComplaint.category}
-                    onChange={(e) => setNewComplaint({...newComplaint, category: e.target.value})}
+                    onChange={(e) => setNewComplaint({...newComplaint, category: e.target.value as 'power_outage' | 'billing_issue' | 'meter_problem' | 'service_request' | 'other'})}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-white [&>option]:dark:bg-gray-800 [&>option]:text-gray-900 [&>option]:dark:text-white"
                   >
                     <option value="power_outage" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Power Outage</option>
-                    <option value="meter_issue" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Meter Issue</option>
-                    <option value="billing" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Billing Issue</option>
+                    <option value="meter_problem" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Meter Problem</option>
+                    <option value="billing_issue" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Billing Issue</option>
                     <option value="service" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Service Request</option>
                     <option value="connection" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Connection Issue</option>
                     <option value="other" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Other</option>

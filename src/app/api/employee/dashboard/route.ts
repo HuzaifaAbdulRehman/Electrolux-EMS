@@ -19,7 +19,11 @@ export async function GET(request: NextRequest) {
 
     console.log('[Employee Dashboard API] Fetching dashboard data for employee:', session.user.id);
 
-    const employeeId = session.user.id;
+    const employeeId = session.user.employeeId;
+
+    if (!employeeId) {
+      return NextResponse.json({ error: 'Employee ID not found' }, { status: 404 });
+    }
 
     // Get today's date for filtering
     const today = new Date();

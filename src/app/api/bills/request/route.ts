@@ -59,11 +59,11 @@ export async function POST(request: NextRequest) {
       await db.insert(billRequests).values({
         requestId,
         customerId,
-        billingMonth,
+        billingMonth: new Date(billingMonth),
         priority: (priority as 'low' | 'medium' | 'high') || 'medium',
         notes: notes || null,
         status: 'pending',
-        requestDate: new Date().toISOString().split('T')[0],
+        requestDate: new Date(),
         createdBy: parseInt(session.user.id),
       });
     } catch (error: any) {

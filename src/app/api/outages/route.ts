@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
       createdBy: userId
     });
 
-    const outageId = newOutage.insertId;
+    const outageId = newOutage.id;
 
     // Send notifications to affected customers
     try {

@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Meter reading recorded successfully',
       data: {
-        readingId: reading.insertId,
+        readingId: reading.id,
         unitsConsumed,
       },
     }, { status: 201 });

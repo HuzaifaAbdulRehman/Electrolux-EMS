@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   DollarSign,
@@ -65,7 +66,11 @@ export default function AdminDashboard() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch dashboard data');
+        const errorMsg = errorData.error || 'Failed to fetch dashboard data';
+        toast.error(errorMsg, {
+          duration: 5000,
+        });
+        throw new Error(errorMsg);
       }
 
       const result = await response.json();
@@ -94,7 +99,11 @@ export default function AdminDashboard() {
       console.log('[Dashboard] Dashboard data loaded successfully');
     } catch (err: any) {
       console.error('[Dashboard] Error fetching dashboard data:', err);
-      setError(err.message || 'Failed to load dashboard data');
+      const errorMsg = err.message || 'Failed to load dashboard data';
+      setError(errorMsg);
+      toast.error(errorMsg, {
+        duration: 5000,
+      });
 
       // Try to load cached data if API fails
       try {
@@ -712,8 +721,8 @@ export default function AdminDashboard() {
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-500">
                   <p>No bills data available</p>
-                </div>
-              )}
+          </div>
+        )}
             </div>
           </div>
         </div>

@@ -34,7 +34,8 @@ import {
   Database,
   Plus,
   Loader2,
-  Eye
+  Eye,
+  UserPlus
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -114,6 +115,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
         ]},
         { section: 'CORE OPERATIONS', items: [
           { name: 'Meter Reading', href: '/employee/meter-reading', icon: Gauge, description: 'Record customer readings' },
+          { name: 'Meter Installations', href: '/employee/meter-installations', icon: Zap, description: 'Install new meters' },
           { name: 'Work Orders', href: '/employee/work-orders', icon: ClipboardList, description: 'Manage assigned tasks' },
           { name: 'Bill Generation', href: '/employee/bill-generation', icon: FileText, description: 'Generate customer bills' },
           { name: 'Outage Management', href: '/employee/outages', icon: ZapOff, description: 'Manage power outages' },
@@ -135,6 +137,7 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
         { section: 'USER MANAGEMENT', items: [
           { name: 'Customers', href: '/admin/customers', icon: Users, description: 'Manage all customers' },
           { name: 'Employees', href: '/admin/employees', icon: Building, description: 'Manage staff members' },
+          { name: 'Pending Registrations', href: '/admin/pending-registrations', icon: UserPlus, description: 'Approve new customer registrations' },
           { name: 'Connection Requests', href: '/admin/connection-requests', icon: Zap, description: 'Review new connection applications' },
           { name: 'Complaints', href: '/admin/complaints', icon: MessageSquare, description: 'Review & assign complaints' },
         ]},

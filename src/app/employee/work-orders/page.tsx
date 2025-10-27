@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-
+import toast from 'react-hot-toast';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   ClipboardList,
@@ -22,7 +22,8 @@ import {
   Navigation,
   Loader2,
   AlertTriangle,
-  Gauge
+  Gauge,
+  RefreshCw
 } from 'lucide-react';
 
 interface WorkOrder {
@@ -246,7 +247,7 @@ export default function WorkOrders() {
                 </>
               ) : (
                 <>
-                  <Plus className="w-5 h-5" />
+                  <RefreshCw className="w-5 h-5" />
                   <span>Refresh Orders</span>
                 </>
               )}

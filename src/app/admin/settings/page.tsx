@@ -85,19 +85,99 @@ export default function AdminSettings() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [showApiKey, setShowApiKey] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load settings from localStorage on mount
+  // Load settings from database on mount
   useEffect(() => {
-    const storedSettings = localStorage.getItem('admin_settings');
-    if (storedSettings) {
-      try {
-        const parsed = JSON.parse(storedSettings);
-        setSettings(parsed);
-      } catch (err) {
-        console.error('Error loading settings:', err);
-      }
-    }
+    fetchSettings();
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/admin/settings');
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Convert snake_case keys from database to camelCase for frontend
+        const formattedSettings = {
+          general: {
+            companyName: result.data.general.company_name || DEFAULT_SETTINGS.general.companyName,
+            timezone: result.data.general.timezone || DEFAULT_SETTINGS.general.timezone,
+            currency: result.data.general.currency || DEFAULT_SETTINGS.general.currency,
+            language: result.data.general.language || DEFAULT_SETTINGS.general.language,
+            dateFormat: result.data.general.date_format || DEFAULT_SETTINGS.general.dateFormat,
+            fiscalYearStart: result.data.general.fiscal_year_start || DEFAULT_SETTINGS.general.fiscalYearStart,
+            autoLogout: result.data.general.auto_logout || DEFAULT_SETTINGS.general.autoLogout,
+            maintenanceMode: result.data.general.maintenance_mode || DEFAULT_SETTINGS.general.maintenanceMode,
+          },
+          billing: {
+            billingCycle: result.data.billing.billing_cycle || DEFAULT_SETTINGS.billing.billingCycle,
+            paymentDueDays: result.data.billing.payment_due_days || DEFAULT_SETTINGS.billing.paymentDueDays,
+            lateFeePercentage: result.data.billing.late_fee_percentage || DEFAULT_SETTINGS.billing.lateFeePercentage,
+            gracePeriod: result.data.billing.grace_period || DEFAULT_SETTINGS.billing.gracePeriod,
+            autoGenerateBills: result.data.billing.auto_generate_bills || DEFAULT_SETTINGS.billing.autoGenerateBills,
+            enableAutoPay: result.data.billing.enable_auto_pay || DEFAULT_SETTINGS.billing.enableAutoPay,
+            taxRate: result.data.billing.tax_rate || DEFAULT_SETTINGS.billing.taxRate,
+            minimumPayment: result.data.billing.minimum_payment || DEFAULT_SETTINGS.billing.minimumPayment,
+          },
+          security: {
+            passwordMinLength: result.data.security.password_min_length || DEFAULT_SETTINGS.security.passwordMinLength,
+            passwordComplexity: result.data.security.password_complexity || DEFAULT_SETTINGS.security.passwordComplexity,
+            twoFactorAuth: result.data.security.two_factor_auth || DEFAULT_SETTINGS.security.twoFactorAuth,
+            sessionTimeout: result.data.security.session_timeout || DEFAULT_SETTINGS.security.sessionTimeout,
+            maxLoginAttempts: result.data.security.max_login_attempts || DEFAULT_SETTINGS.security.maxLoginAttempts,
+            ipWhitelist: result.data.security.ip_whitelist || DEFAULT_SETTINGS.security.ipWhitelist,
+            apiRateLimit: result.data.security.api_rate_limit || DEFAULT_SETTINGS.security.apiRateLimit,
+            dataEncryption: result.data.security.data_encryption || DEFAULT_SETTINGS.security.dataEncryption,
+            auditLogging: result.data.security.audit_logging || DEFAULT_SETTINGS.security.auditLogging,
+            backupFrequency: result.data.security.backup_frequency || DEFAULT_SETTINGS.security.backupFrequency,
+          },
+          system: {
+            apiKey: DEFAULT_SETTINGS.system.apiKey, // Don't fetch API key from DB
+            databaseBackup: result.data.system.database_backup || DEFAULT_SETTINGS.system.databaseBackup,
+            logRetention: result.data.system.log_retention || DEFAULT_SETTINGS.system.logRetention,
+            cacheEnabled: result.data.system.cache_enabled || DEFAULT_SETTINGS.system.cacheEnabled,
+            cdnEnabled: result.data.system.cdn_enabled || DEFAULT_SETTINGS.system.cdnEnabled,
+            debugMode: result.data.system.debug_mode || DEFAULT_SETTINGS.system.debugMode,
+            performanceMonitoring: result.data.system.performance_monitoring || DEFAULT_SETTINGS.system.performanceMonitoring,
+            errorTracking: result.data.system.error_tracking || DEFAULT_SETTINGS.system.errorTracking,
+            analyticsEnabled: result.data.system.analytics_enabled || DEFAULT_SETTINGS.system.analyticsEnabled,
+          },
+        };
+        setSettings(formattedSettings);
+      } else {
+        // If no settings found, initialize with defaults
+        if (response.status === 500 || !result.success) {
+          await initializeSettings();
+        }
+      }
+    } catch (err: any) {
+      console.error('Error fetching settings:', err);
+      // Try to initialize if fetch fails
+      await initializeSettings();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const initializeSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/settings', {
+        method: 'POST',
+      });
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Fetch settings again after initialization
+        await fetchSettings();
+      }
+    } catch (err: any) {
+      console.error('Error initializing settings:', err);
+      setError('Failed to initialize settings. Using defaults.');
+    }
+  };
 
   const sections = [
     { id: 'general', name: 'General Settings', icon: Settings },
@@ -106,19 +186,30 @@ export default function AdminSettings() {
     { id: 'system', name: 'System', icon: Server }
   ];
 
-  const handleSaveSettings = () => {
+  const handleSaveSettings = async () => {
     setSaveStatus('saving');
 
-    // Save to localStorage
     try {
-      localStorage.setItem('admin_settings', JSON.stringify(settings));
+      const response = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ settings }),
+      });
 
-      setTimeout(() => {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
         setSaveStatus('saved');
+        setError(null);
         setTimeout(() => setSaveStatus('idle'), 2000);
-      }, 1000);
-    } catch (err) {
+      } else {
+        throw new Error(result.error || 'Failed to save settings');
+      }
+    } catch (err: any) {
       console.error('Error saving settings:', err);
+      setError(err.message || 'Failed to save settings');
       setSaveStatus('idle');
     }
   };
@@ -133,6 +224,19 @@ export default function AdminSettings() {
     });
   };
 
+  if (loading) {
+    return (
+      <DashboardLayout userType="admin" userName="Admin User">
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <RefreshCw className="w-12 h-12 text-red-500 animate-spin mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400">Loading settings...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout userType="admin" userName="Admin User">
       <div className="space-y-6">
@@ -144,6 +248,12 @@ export default function AdminSettings() {
               <p className="text-gray-600 dark:text-gray-400">Configure global system settings and preferences</p>
             </div>
             <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+              {error && (
+                <div className="flex items-center space-x-2 px-3 py-2 bg-red-500/20 rounded-lg border border-red-500/50">
+                  <AlertTriangle className="w-5 h-5 text-red-400" />
+                  <span className="text-red-400">{error}</span>
+                </div>
+              )}
               {saveStatus === 'saved' && (
                 <div className="flex items-center space-x-2 px-3 py-2 bg-green-500/20 rounded-lg border border-green-500/50">
                   <CheckCircle className="w-5 h-5 text-green-400" />
@@ -609,9 +719,6 @@ export default function AdminSettings() {
                           className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-900 dark:hover:text-white transition-colors"
                         >
                           {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                        <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-900 dark:hover:text-white transition-colors">
-                          <RefreshCw className="w-4 h-4" />
                         </button>
                       </div>
                     </div>

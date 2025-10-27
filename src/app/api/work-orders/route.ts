@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message,
         data: {
-          workOrderId: workOrder.insertId,
+          workOrderId: workOrder.id,
         },
       }, { status: 201 });
     }
@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Work order created successfully',
       data: {
-        workOrderId: workOrder.insertId,
+        workOrderId: workOrder.id,
       },
     }, { status: 201 });
   } catch (error: any) {

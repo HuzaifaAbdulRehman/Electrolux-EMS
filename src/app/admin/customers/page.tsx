@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import DashboardLayout from '@/components/DashboardLayout';
+import { formatCurrency } from '@/lib/utils/dataHandlers';
 import {
   Users,
   Search,
@@ -137,6 +139,11 @@ export default function AdminCustomers() {
         const result = await response.json();
         await fetchCustomers(); // Refresh the list
         setShowAddCustomer(false);
+
+        // Show success toast
+        toast.success(`Customer ${newCustomer.fullName} created successfully!`, {
+          duration: 4000,
+        });
 
         // Show success modal with password
         setCreatedCustomer({
@@ -306,7 +313,7 @@ export default function AdminCustomers() {
             },
             {
               label: 'Total Outstanding',
-              value: loading ? '...' : `Rs ${allCustomers.reduce((sum, c) => sum + (parseFloat(c.outstandingBalance) || 0), 0).toLocaleString()}`,
+              value: loading ? '...' : formatCurrency(allCustomers.reduce((sum, c) => sum + (parseFloat(c.outstandingBalance) || 0), 0)),
               icon: DollarSign,
               color: 'from-yellow-500 to-orange-500'
             },

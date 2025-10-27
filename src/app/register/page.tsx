@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import {
   Eye,
   EyeOff,
@@ -223,13 +224,24 @@ export default function RegisterPage() {
       }
 
       setSuccessMessage('Registration successful! Redirecting to login...');
+      
+      // Show success toast
+      toast.success('Registration successful! Welcome to ElectroLux!', {
+        duration: 4000,
+      });
 
       // Redirect to login after 2 seconds
       setTimeout(() => {
         window.location.href = '/login';
       }, 2000);
     } catch (error: any) {
-      setErrorMessage(error.message || 'Registration failed. Please try again.');
+      const errorMsg = error.message || 'Registration failed. Please try again.';
+      setErrorMessage(errorMsg);
+      
+      // Show error toast
+      toast.error(errorMsg, {
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }

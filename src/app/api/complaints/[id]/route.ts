@@ -248,9 +248,9 @@ export async function PATCH(
         } as any);
 
         // Link work order to complaint
-        updateData.workOrderId = newWorkOrder.insertId;
+        updateData.workOrderId = newWorkOrder.id;
 
-        console.log(`✅ Work order ${newWorkOrder.insertId} created with priority: ${finalPriority} (${daysToAdd} days)`);
+        console.log(`✅ Work order ${newWorkOrder.id} created with priority: ${finalPriority} (${daysToAdd} days)`);
       } catch (workOrderError) {
         console.error('Failed to create work order:', workOrderError);
         // Don't fail complaint assignment if work order creation fails

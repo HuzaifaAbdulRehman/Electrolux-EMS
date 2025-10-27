@@ -11,6 +11,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession(authOptions);
+    let receiptNumber: string = '';
 
     if (!session?.user?.email) {
       return NextResponse.json(
@@ -94,7 +95,7 @@ export async function PATCH(
         {
           error: 'Bill is already marked as paid',
           details: {
-            paidDate: existingBill.paidDate,
+            paidDate: existingBill.paymentDate,
             message: 'This bill was already paid. Cannot mark as paid again.'
           }
         },
@@ -111,7 +112,7 @@ export async function PATCH(
     // If marking as paid, set paid date
     const currentPaidDate = paidDate ? new Date(paidDate) : new Date();
     if (status === 'paid') {
-      updateData.paidDate = currentPaidDate;
+      updateData.paymentDate = currentPaidDate;
     }
 
     // CRITICAL: Create payment record if marking as paid
@@ -119,7 +120,7 @@ export async function PATCH(
     if (status === 'paid') {
       try {
         // Generate unique receipt number: RCPT-YYYY-XXXXXXXX
-        const receiptNumber = `RCPT-${new Date().getFullYear()}-${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}`;
+        receiptNumber = `RCPT-${new Date().getFullYear()}-${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}`;
 
         console.log('[Payment Creation] Creating payment record:', {
           billId,
@@ -130,30 +131,30 @@ export async function PATCH(
         });
 
         // Insert payment record
-        const [newPayment] = await db
+        const paymentResult = await db
           .insert(payments)
           .values({
             customerId: existingBill.customerId,
             billId: billId,
             paymentAmount: existingBill.totalAmount,
             paymentMethod: paymentMethod,
-            paymentDate: currentPaidDate.toISOString().split('T')[0],
+            paymentDate: currentPaidDate,
             transactionId: transactionRef,
             receiptNumber: receiptNumber,
             status: 'completed',
             notes: notes || `Admin payment - Bill #${billId}`,
           })
-          .returning();
+          .$returningId();
 
-        paymentRecord = newPayment;
-        console.log('[Payment Creation] ✅ Payment record created:', paymentRecord.id);
+        paymentRecord = { id: paymentResult };
+        console.log('[Payment Creation] ✅ Payment record created:', paymentResult);
 
         // Update customer outstanding balance
         await db
           .update(customers)
           .set({
             outstandingBalance: sql`GREATEST(CAST(${customers.outstandingBalance} AS DECIMAL(10,2)) - ${existingBill.totalAmount}, 0)`,
-            lastPaymentDate: currentPaidDate.toISOString().split('T')[0]
+            lastPaymentDate: currentPaidDate
           })
           .where(eq(customers.id, existingBill.customerId));
 
@@ -207,12 +208,12 @@ export async function PATCH(
       data: {
         id: billId,
         status,
-        paidDate: updateData.paidDate,
+        paidDate: updateData.paymentDate,
         paymentRecord: paymentRecord ? {
           id: paymentRecord.id,
-          receiptNumber: paymentRecord.receiptNumber,
-          amount: paymentRecord.paymentAmount,
-          method: paymentRecord.paymentMethod
+          receiptNumber: receiptNumber,
+          amount: existingBill.totalAmount,
+          method: paymentMethod
         } : null
       }
     });

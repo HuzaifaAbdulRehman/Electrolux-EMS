@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Payment processed successfully',
       data: {
-        paymentId: payment.insertId,
+        paymentId: payment.id,
         transactionId,
         receiptNumber,
       },

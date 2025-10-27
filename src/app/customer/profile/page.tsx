@@ -52,10 +52,7 @@ export default function CustomerProfile() {
     address: '',
     city: '',
     state: '',
-    pincode: '',
-    secondaryEmail: '',
-    emergencyContact: '',
-    dateOfBirth: ''
+    pincode: ''
   });
 
   useEffect(() => {
@@ -82,10 +79,7 @@ export default function CustomerProfile() {
           address: profileResult.data.address || '',
           city: profileResult.data.city || '',
           state: profileResult.data.state || '',
-          pincode: profileResult.data.pincode || '',
-          secondaryEmail: profileResult.data.secondaryEmail || '',
-          emergencyContact: profileResult.data.emergencyContact || '',
-          dateOfBirth: profileResult.data.dateOfBirth || ''
+          pincode: profileResult.data.pincode || ''
         });
       }
 
@@ -121,10 +115,7 @@ export default function CustomerProfile() {
         address: '',
         city: '',
         state: '',
-        pincode: '',
-        secondaryEmail: '',
-        emergencyContact: '',
-        dateOfBirth: ''
+        pincode: ''
       });
     } finally {
       setLoading(false);
@@ -498,23 +489,6 @@ export default function CustomerProfile() {
                       <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <span className="text-gray-900 dark:text-white">{profileData.phone}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Date of Birth</label>
-                    {isEditing ? (
-                      <input
-                        type="date"
-                        value={profileData.dateOfBirth}
-                        onChange={(e) => setProfileData({ ...profileData, dateOfBirth: e.target.value })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
-                      />
-                    ) : (
-                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
-                        <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                        <span className="text-gray-900 dark:text-white">{profileData.dateOfBirth}</span>
                       </div>
                     )}
                   </div>

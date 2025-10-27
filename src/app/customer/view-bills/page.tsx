@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import toast from 'react-hot-toast';
 import DashboardLayout from '@/components/DashboardLayout';
 import { safeNumber, formatCurrency, safeDate, formatUnits, calculateTariffSlabs, TariffSlab } from '@/lib/utils/dataHandlers';
 import {
@@ -89,7 +90,11 @@ export default function ViewBills() {
       const response = await fetch('/api/bills?limit=50');
 
       if (!response.ok) {
-        throw new Error('Failed to fetch bills');
+        const errorMsg = 'Failed to fetch bills';
+        toast.error(errorMsg, {
+          duration: 4000,
+        });
+        throw new Error(errorMsg);
       }
 
       const result = await response.json();

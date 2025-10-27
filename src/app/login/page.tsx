@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import { Zap, Mail, Lock, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 
@@ -29,6 +30,9 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError(result.error); // Show actual error from NextAuth
+        toast.error(result.error, {
+          duration: 4000,
+        });
 
         // Check if error is about email verification
         if (result.error.toLowerCase().includes('verify your email')) {
@@ -42,6 +46,11 @@ export default function LoginPage() {
         const session = await response.json();
 
         if (session?.user?.userType) {
+          // Show success toast
+          toast.success(`Welcome back, ${session.user.name || 'User'}!`, {
+            duration: 3000,
+          });
+          
           // Redirect based on user type
           switch (session.user.userType) {
             case 'admin':

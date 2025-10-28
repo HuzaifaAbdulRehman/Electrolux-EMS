@@ -207,12 +207,7 @@ export default function CustomerProfile() {
 
   const usageStats = calculateUsageStats();
 
-  // Achievements - Only database-calculable achievements
-  const achievements = [
-    { icon: CreditCard, title: 'Prompt Payer', description: '98% on-time payments', color: 'from-blue-500 to-cyan-500' },
-    { icon: Shield, title: 'Loyal Customer', description: '4+ years with us', color: 'from-purple-500 to-pink-500' }
-    // Removed: Green Consumer, Energy Saver (require comparison data not in billing system)
-  ];
+  // Achievements removed (dummy content)
 
   // Recent activities - Compiled from real data
   const compileRecentActivities = () => {
@@ -431,7 +426,7 @@ export default function CustomerProfile() {
 
         {/* Tabs */}
         <div className="flex space-x-1 bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-1">
-          {['personal', 'account', 'usage', 'achievements'].map((tab) => (
+          {['personal', 'account', 'usage'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -597,64 +592,11 @@ export default function CustomerProfile() {
               </div>
             )}
 
-            {activeTab === 'achievements' && (
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Achievements & Badges</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {achievements.map((achievement, index) => (
-                    <div key={index} className="p-4 bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-12 h-12 bg-gradient-to-r ${achievement.color} rounded-lg flex items-center justify-center`}>
-                          <achievement.icon className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-white font-semibold">{achievement.title}</h3>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm">{achievement.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Achievements removed */}
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Quick Actions */}
-            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
-                  <span className="flex items-center space-x-3">
-                    <Key className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    <span className="text-gray-900 dark:text-white">Change Password</span>
-                  </span>
-                  <span className="text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
-                </button>
-                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
-                  <span className="flex items-center space-x-3">
-                    <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    <span className="text-gray-900 dark:text-white">Notification Settings</span>
-                  </span>
-                  <span className="text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
-                </button>
-                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
-                  <span className="flex items-center space-x-3">
-                    <CreditCard className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    <span className="text-gray-900 dark:text-white">Payment Methods</span>
-                  </span>
-                  <span className="text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
-                </button>
-                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
-                  <span className="flex items-center space-x-3">
-                    <Shield className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    <span className="text-gray-900 dark:text-white">Privacy Settings</span>
-                  </span>
-                  <span className="text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
-                </button>
-              </div>
-            </div>
 
             {/* Recent Activity */}
             <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">

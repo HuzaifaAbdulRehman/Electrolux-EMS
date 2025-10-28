@@ -63,7 +63,8 @@
       "Bash(mkdir:*)",
       "Bash(rm:*)",
       "Bash(touch:*)",
-      "Bash(do echo \"=== Branch: $branch ===\")"
+      "Bash(do echo \"=== Branch: $branch ===\")",
+      "Bash(xargs cat:*)"
     ],
     "deny": [],
     "ask": []

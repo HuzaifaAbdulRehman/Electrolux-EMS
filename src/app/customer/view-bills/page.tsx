@@ -132,7 +132,10 @@ export default function ViewBills() {
     }
   };
 
-  const filteredBills = bills.filter(bill => {
+  // Exclude zero-unit installation/connection fee bills from analytics/graphs
+  const billsWithConsumptionOnly = bills.filter(b => safeNumber(b.units, 0) > 0);
+
+  const filteredBills = billsWithConsumptionOnly.filter(bill => {
     const matchesSearch = bill.billNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          bill.month.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filterStatus === 'all' || bill.status === filterStatus;
@@ -140,21 +143,21 @@ export default function ViewBills() {
   });
 
   // Analytics calculations with safe checks
-  const totalPaid = bills.filter(b => b.status === 'paid').reduce((sum, b) => sum + safeNumber(b.amount, 0), 0);
-  const avgConsumption = bills.length > 0 ? Math.round(bills.reduce((sum, b) => sum + safeNumber(b.units, 0), 0) / bills.length) : 0;
-  const avgAmount = bills.length > 0 ? (bills.reduce((sum, b) => sum + safeNumber(b.amount, 0), 0) / bills.length) : 0;
-  const currentMonth = bills[0];
-  const lastMonth = bills[1];
+  const totalPaid = billsWithConsumptionOnly.filter(b => b.status === 'paid').reduce((sum, b) => sum + safeNumber(b.amount, 0), 0);
+  const avgConsumption = billsWithConsumptionOnly.length > 0 ? Math.round(billsWithConsumptionOnly.reduce((sum, b) => sum + safeNumber(b.units, 0), 0) / billsWithConsumptionOnly.length) : 0;
+  const avgAmount = billsWithConsumptionOnly.length > 0 ? (billsWithConsumptionOnly.reduce((sum, b) => sum + safeNumber(b.amount, 0), 0) / billsWithConsumptionOnly.length) : 0;
+  const currentMonth = billsWithConsumptionOnly[0];
+  const lastMonth = billsWithConsumptionOnly[1];
   const consumptionChange = currentMonth && lastMonth && safeNumber(lastMonth.units, 0) > 0 ? ((safeNumber(currentMonth.units, 0) - safeNumber(lastMonth.units, 0)) / safeNumber(lastMonth.units, 1) * 100).toFixed(1) : '0';
   const amountChange = currentMonth && lastMonth && safeNumber(lastMonth.amount, 0) > 0 ? ((safeNumber(currentMonth.amount, 0) - safeNumber(lastMonth.amount, 0)) / safeNumber(lastMonth.amount, 1) * 100).toFixed(1) : '0';
 
   // Combined Chart Data - Shows both consumption and cost
   const combinedTrendData = {
-    labels: bills.map(b => b.month.split(' ')[0]).reverse(),
+    labels: billsWithConsumptionOnly.map(b => b.month.split(' ')[0]).reverse(),
     datasets: [
       {
         label: 'Units Consumed (kWh)',
-        data: bills.map(b => safeNumber(b.units, 0)).reverse(),
+        data: billsWithConsumptionOnly.map(b => safeNumber(b.units, 0)).reverse(),
         backgroundColor: 'rgba(59, 130, 246, 0.8)',
         borderColor: 'rgb(59, 130, 246)',
         borderWidth: 2,
@@ -163,7 +166,7 @@ export default function ViewBills() {
       },
       {
         label: 'Bill Amount (Rs.)',
-        data: bills.map(b => safeNumber(b.amount, 0)).reverse(),
+        data: billsWithConsumptionOnly.map(b => safeNumber(b.amount, 0)).reverse(),
         backgroundColor: 'rgba(251, 191, 36, 0.8)',
         borderColor: 'rgb(251, 191, 36)',
         borderWidth: 2,

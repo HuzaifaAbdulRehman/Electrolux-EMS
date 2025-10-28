@@ -101,16 +101,20 @@ export default function UsageAnalytics() {
   const consumptionHistory = analyticsData?.data?.consumptionHistory || [];
   const extendedConsumptionHistory = analyticsData?.data?.extendedConsumptionHistory || [];
   const recentBills = analyticsData?.data?.recentBills || [];
+  // Exclude installation/connection fee (zero-unit) entries from analytics visuals
+  const consumptionHistoryFiltered = (consumptionHistory || []).filter((item: any) => safeNumber(item?.unitsConsumed, 0) > 0);
+  const extendedConsumptionHistoryFiltered = (extendedConsumptionHistory || []).filter((item: any) => safeNumber(item?.unitsConsumed, 0) > 0);
+  const billsWithConsumption = (recentBills || []).filter((bill: any) => safeNumber(bill?.unitsConsumed, 0) > 0);
   const currentBill = analyticsData?.data?.currentBill || null;
   const avgConsumptionFromAPI = analyticsData?.data?.avgConsumption || 0;
 
   // Calculate metrics from real data
-  const currentMonthUsage = consumptionHistory.length > 0
-    ? safeNumber(consumptionHistory[0]?.unitsConsumed, 0)
+  const currentMonthUsage = consumptionHistoryFiltered.length > 0
+    ? safeNumber(consumptionHistoryFiltered[0]?.unitsConsumed, 0)
     : 0;
 
-  const lastMonthUsage = consumptionHistory.length > 1
-    ? safeNumber(consumptionHistory[1]?.unitsConsumed, 0)
+  const lastMonthUsage = consumptionHistoryFiltered.length > 1
+    ? safeNumber(consumptionHistoryFiltered[1]?.unitsConsumed, 0)
     : 0;
 
   const avgConsumption = analyticsData?.data?.avgConsumption || 0;
@@ -126,14 +130,14 @@ export default function UsageAnalytics() {
 
   // Monthly Usage Trend - Use real consumptionHistory from database
   const monthlyUsageTrendData = {
-    labels: consumptionHistory.map((item: any) => {
+    labels: consumptionHistoryFiltered.map((item: any) => {
       const date = new Date(item.billingPeriod);
       return date.toLocaleDateString('en-US', { month: 'short' });
     }).reverse().slice(0, 6),
     datasets: [
       {
         label: 'Monthly Usage (kWh)',
-        data: consumptionHistory.map((item: any) => safeNumber(item.unitsConsumed, 0)).reverse().slice(0, 6),
+        data: consumptionHistoryFiltered.map((item: any) => safeNumber(item.unitsConsumed, 0)).reverse().slice(0, 6),
         borderColor: 'rgb(251, 146, 60)',
         backgroundColor: 'rgba(251, 146, 60, 0.1)',
         tension: 0.4,
@@ -150,14 +154,14 @@ export default function UsageAnalytics() {
 
   // Cost Breakdown (Vertical Bar Chart) - Use real bill data
   const costBreakdownData = {
-    labels: consumptionHistory.map((item: any) => {
+    labels: consumptionHistoryFiltered.map((item: any) => {
       const date = new Date(item.billingPeriod);
       return date.toLocaleDateString('en-US', { month: 'short' });
     }).reverse().slice(0, 6),
     datasets: [
       {
         label: 'Total Amount (Rs.)',
-        data: consumptionHistory.map((item: any) => item.totalAmount).reverse().slice(0, 6),
+        data: consumptionHistoryFiltered.map((item: any) => item.totalAmount).reverse().slice(0, 6),
         backgroundColor: 'rgba(251, 146, 60, 0.8)',
         borderRadius: 4,
       }
@@ -166,29 +170,29 @@ export default function UsageAnalytics() {
 
   // Bill Components Breakdown (Stacked Bar Chart) - Real data
   const billComponentsData = {
-    labels: extendedConsumptionHistory.map((item: any) => {
+    labels: extendedConsumptionHistoryFiltered.map((item: any) => {
       const date = new Date(item.billingPeriod);
       return date.toLocaleDateString('en-US', { month: 'short' });
     }).slice(-6),
     datasets: [
       {
         label: 'Energy Charges',
-        data: extendedConsumptionHistory.map((item: any) => safeNumber(item.baseAmount, 0)).slice(-6),
+        data: extendedConsumptionHistoryFiltered.map((item: any) => safeNumber(item.baseAmount, 0)).slice(-6),
         backgroundColor: 'rgba(59, 130, 246, 0.8)',
       },
       {
         label: 'Fixed Charges',
-        data: extendedConsumptionHistory.map((item: any) => safeNumber(item.fixedCharges, 0)).slice(-6),
+        data: extendedConsumptionHistoryFiltered.map((item: any) => safeNumber(item.fixedCharges, 0)).slice(-6),
         backgroundColor: 'rgba(251, 146, 60, 0.8)',
       },
       {
         label: 'Electricity Duty',
-        data: extendedConsumptionHistory.map((item: any) => safeNumber(item.electricityDuty, 0)).slice(-6),
+        data: extendedConsumptionHistoryFiltered.map((item: any) => safeNumber(item.electricityDuty, 0)).slice(-6),
         backgroundColor: 'rgba(239, 68, 68, 0.8)',
       },
       {
         label: 'GST',
-        data: extendedConsumptionHistory.map((item: any) => safeNumber(item.gstAmount, 0)).slice(-6),
+        data: extendedConsumptionHistoryFiltered.map((item: any) => safeNumber(item.gstAmount, 0)).slice(-6),
         backgroundColor: 'rgba(34, 197, 94, 0.8)',
       }
     ]
@@ -196,14 +200,14 @@ export default function UsageAnalytics() {
 
   // Usage vs Average Comparison (Grouped Bar Chart) - Real data
   const usageComparisonData = {
-    labels: extendedConsumptionHistory.map((item: any) => {
+    labels: extendedConsumptionHistoryFiltered.map((item: any) => {
       const date = new Date(item.billingPeriod);
       return date.toLocaleDateString('en-US', { month: 'short' });
     }).slice(-6),
     datasets: [
       {
         label: 'Your Usage (kWh)',
-        data: extendedConsumptionHistory.map((item: any) => safeNumber(item.unitsConsumed, 0)).slice(-6),
+        data: extendedConsumptionHistoryFiltered.map((item: any) => safeNumber(item.unitsConsumed, 0)).slice(-6),
         backgroundColor: 'rgba(251, 146, 60, 0.8)',
         borderRadius: 4,
       },
@@ -326,7 +330,7 @@ export default function UsageAnalytics() {
   };
 
   // Empty state for brand-new customers (no readings/bills)
-  if (consumptionHistory.length === 0 && recentBills.length === 0) {
+  if (consumptionHistoryFiltered.length === 0 && billsWithConsumption.length === 0) {
     return (
       <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
         <div className="max-w-4xl mx-auto space-y-6">

@@ -27,11 +27,14 @@ export async function GET(request: NextRequest) {
     const settings = await db.select().from(systemSettings);
 
     // Format settings into the structure expected by the frontend
-    const formattedSettings = {
-      general: {} as Record<string, any>,
-      billing: {} as Record<string, any>,
-      security: {} as Record<string, any>,
-      system: {} as Record<string, any>,
+    const formattedSettings: Record<string, Record<string, any>> = {
+      general: {},
+      billing: {},
+      security: {},
+      system: {},
+      notifications: {},
+      tariffs: {},
+      electricity: {},
     };
 
     settings.forEach((setting) => {
@@ -44,6 +47,11 @@ export async function GET(request: NextRequest) {
         value = value === 'true' || value === '1';
       } else if (setting.dataType === 'number') {
         value = value;
+      }
+
+      // Initialize category if it doesn't exist
+      if (!formattedSettings[category]) {
+        formattedSettings[category] = {};
       }
 
       formattedSettings[category][key] = value;

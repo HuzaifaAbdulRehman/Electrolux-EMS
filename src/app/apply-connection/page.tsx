@@ -41,8 +41,23 @@ export default function ApplyConnection() {
     state: '',
     pincode: '',
     landmark: '',
-    preferredDate: ''
+    preferredDate: '',
+    zone: ''
   });
+
+  // Helpers: formatting without storing hyphens in state
+  const onlyDigits = (v: string) => v.replace(/\D+/g, '');
+  const formatPKPhone = (digits: string) => {
+    const d = onlyDigits(digits).slice(0, 11);
+    if (d.length <= 4) return d;
+    return `${d.slice(0, 4)}-${d.slice(4)}`;
+  };
+  const formatCNIC = (digits: string) => {
+    const d = onlyDigits(digits).slice(0, 13);
+    if (d.length <= 5) return d;
+    if (d.length <= 12) return `${d.slice(0, 5)}-${d.slice(5)}`;
+    return `${d.slice(0, 5)}-${d.slice(5, 12)}-${d.slice(12)}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,7 +250,7 @@ export default function ApplyConnection() {
                   value={formData.applicantName}
                   onChange={(e) => setFormData({ ...formData, applicantName: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="Enter full name"
+                  placeholder="Full name as per ID"
                 />
               </div>
 
@@ -248,7 +263,7 @@ export default function ApplyConnection() {
                   value={formData.fatherName}
                   onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="Enter father's name"
+                  placeholder="Father's full name"
                 />
               </div>
 
@@ -264,7 +279,8 @@ export default function ApplyConnection() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="your.email@example.com"
+                    suppressHydrationWarning
+                    placeholder="customer@example.com"
                   />
                 </div>
               </div>
@@ -277,11 +293,15 @@ export default function ApplyConnection() {
                   <Phone className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
                   <input
                     type="tel"
+                    inputMode="numeric"
                     required
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    value={formatPKPhone(formData.phone)}
+                    onChange={(e) => {
+                      const raw = onlyDigits(e.target.value).slice(0, 11);
+                      setFormData({ ...formData, phone: raw });
+                    }}
                     className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="03001234567 (11 digits)"
+                    placeholder="e.g., 0300-1234567 (11 digits)"
                   />
                 </div>
               </div>
@@ -292,10 +312,14 @@ export default function ApplyConnection() {
                 </label>
                 <input
                   type="tel"
+                  inputMode="numeric"
                   value={formData.alternatePhone}
-                  onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
+                  onChange={(e) => {
+                    const raw = onlyDigits(e.target.value).slice(0, 11);
+                    setFormData({ ...formData, alternatePhone: raw });
+                  }}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="Optional (11 digits)"
+                  placeholder="e.g., 0300-1234567 (optional)"
                 />
               </div>
             </div>
@@ -332,12 +356,23 @@ export default function ApplyConnection() {
                 </label>
                 <input
                   type="text"
+                  inputMode={formData.idType === 'national_id' ? 'numeric' : 'text'}
                   required
-                  value={formData.idNumber}
-                  onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
+                  value={formData.idType === 'national_id' ? formatCNIC(formData.idNumber) : formData.idNumber}
+                  onChange={(e) => {
+                    if (formData.idType === 'national_id') {
+                      const raw = onlyDigits(e.target.value).slice(0, 13);
+                      setFormData({ ...formData, idNumber: raw });
+                    } else {
+                      setFormData({ ...formData, idNumber: e.target.value });
+                    }
+                  }}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="Enter ID number"
+                  placeholder={formData.idType === 'national_id' ? '42101-1234567-1 (13 digits)' : 'Enter ID number'}
                 />
+                {formData.idType === 'national_id' && (
+                  <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">CNIC must be 13 digits (formatted 5-7-1).</p>
+                )}
               </div>
             </div>
           </div>
@@ -406,7 +441,7 @@ export default function ApplyConnection() {
                   value={formData.propertyAddress}
                   onChange={(e) => setFormData({ ...formData, propertyAddress: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="House/Flat number, Street, Area"
+                  placeholder="House/Plot number, Street, Area"
                 />
               </div>
 
@@ -438,16 +473,35 @@ export default function ApplyConnection() {
                   />
                 </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Zone <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={formData.zone}
+                  onChange={(e) => setFormData({ ...formData, zone: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">Select Zone</option>
+                  <option value="Zone A">Zone A</option>
+                  <option value="Zone B">Zone B</option>
+                  <option value="Zone C">Zone C</option>
+                  <option value="Zone D">Zone D</option>
+                </select>
+              </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Pincode
                   </label>
                   <input
                     type="text"
+                    pattern="[0-9]{6}"
                     value={formData.pincode}
                     onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="54000"
+                    placeholder="6-digit pincode"
                   />
                 </div>
               </div>
@@ -458,12 +512,12 @@ export default function ApplyConnection() {
                 </label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                  <input
+                <input
                     type="text"
                     value={formData.landmark}
                     onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
                     className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="Near..."
+                  placeholder="Nearby landmark (optional)"
                   />
                 </div>
               </div>

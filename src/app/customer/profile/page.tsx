@@ -137,6 +137,7 @@ export default function CustomerProfile() {
   const accountInfo = {
     accountNumber: customerData?.accountNumber || 'Loading...',
     meterNumber: customerData?.meterNumber || 'Loading...',
+    zone: customerData?.zone || 'N/A',
     connectionType: customerData?.connectionType || 'Residential',
     loadSanction: '5 kW',
     connectionDate: customerData?.connectionDate || new Date().toISOString().split('T')[0],

@@ -231,17 +231,15 @@ export default function OnlinePayment() {
     );
   }
 
-  // Error state - no bill found
-  if (error && !currentBill) {
+  // Empty state or error - no pending bills yet
+  if (!currentBill) {
     return (
       <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
         <div className="h-full flex items-center justify-center">
           <div className="text-center max-w-md">
             <AlertCircle className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No Pending Bills</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              You don't have any outstanding bills at the moment. All your bills are paid!
-            </p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{error ? error : 'Once a bill is issued, it will appear here for payment.'}</p>
             <button
               onClick={() => router.push('/customer/view-bills')}
               className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"

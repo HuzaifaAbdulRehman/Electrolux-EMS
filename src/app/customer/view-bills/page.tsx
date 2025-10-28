@@ -316,6 +316,27 @@ export default function ViewBills() {
     );
   }
 
+  // Empty state for brand-new customers (no bills yet)
+  if (!error && bills.length === 0) {
+    return (
+      <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
+        <div className="max-w-[1920px] mx-auto space-y-6 pb-8">
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-10 border border-gray-200 dark:border-white/10 text-center">
+            <FileText className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No bills yet</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">Your first bill will appear after your first meter reading.</p>
+            <button
+              onClick={() => router.push('/customer/request-reading')}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl hover:shadow-lg hover:shadow-cyan-500/50 transition-all font-semibold"
+            >
+              Request First Reading
+            </button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
       <div className="max-w-[1920px] mx-auto space-y-6 pb-8">
@@ -468,7 +489,7 @@ export default function ViewBills() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-white/10">
-                {filteredBills.map((bill) => (
+                {filteredBills.length > 0 ? filteredBills.map((bill) => (
                   <tr key={bill.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                     <td className="px-6 py-4">
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">{bill.billNumber}</p>
@@ -506,7 +527,13 @@ export default function ViewBills() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                      No bills match your search/filter
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

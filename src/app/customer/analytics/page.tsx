@@ -325,6 +325,21 @@ export default function UsageAnalytics() {
     }
   };
 
+  // Empty state for brand-new customers (no readings/bills)
+  if (consumptionHistory.length === 0 && recentBills.length === 0) {
+    return (
+      <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-10 border border-gray-200 dark:border-white/10 text-center">
+            <Activity className="w-12 h-12 text-purple-400 mx-auto mb-3" />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No analytics yet</h2>
+            <p className="text-gray-600 dark:text-gray-400">Analytics will appear after your first meter reading and bill.</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
       <div className="h-full flex flex-col overflow-hidden">

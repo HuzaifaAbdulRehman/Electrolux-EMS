@@ -183,7 +183,7 @@ export default function BillView() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Bill Not Found</h2>
-          <p className="text-gray-600 dark:text-gray-400">The requested bill could not be loaded.</p>
+          <p className="text-gray-600 dark:text-gray-400">The requested bill could not be loaded or you have no bills yet.</p>
         </div>
       </div>
     );

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { useToast } from '@/hooks/useToast';
 import {
   FileText,
   Calendar,
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 
 export default function BulkBillGeneration() {
+  const toast = useToast();
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().slice(0, 7)
   );

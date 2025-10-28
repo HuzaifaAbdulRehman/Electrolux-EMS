@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { customers, bills, payments, meterReadings } from '@/lib/drizzle/schema';
+import { customers, users, bills, payments, meterReadings } from '@/lib/drizzle/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 
 // GET /api/customers/[id] - Get customer by ID
@@ -110,7 +110,7 @@ export async function GET(
   }
 }
 
-// PATCH /api/customers/[id] - Update customer
+// PATCH /api/customers/[id] - Update customer (Admin/Customer own profile)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -124,8 +124,7 @@ export async function PATCH(
 
     const customerId = parseInt(params.id);
 
-    // Only admin can update any customer
-    // Customers can update their own limited fields
+    // Customers can only update their own profile with limited fields
     if (session.user.userType === 'customer' && session.user.customerId !== customerId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -133,7 +132,20 @@ export async function PATCH(
     let body = await request.json();
 
     console.log('[UPDATE CUSTOMER] Request from:', session.user.userType, 'for customer:', customerId);
-    console.log('[UPDATE CUSTOMER] Update data:', JSON.stringify(body, null, 2));
+
+    // Get existing customer data
+    const [existingCustomer] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, customerId))
+      .limit(1);
+
+    if (!existingCustomer) {
+      return NextResponse.json({
+        success: false,
+        error: 'Customer not found'
+      }, { status: 404 });
+    }
 
     // If customer is updating their own profile, limit the fields they can update
     if (session.user.userType === 'customer') {
@@ -147,80 +159,88 @@ export async function PATCH(
       body = filteredBody;
     }
 
-    // Special handling for meter assignment (Employee/Admin only)
-    // DBMS Project: Meter assignment after installation
-    if (body.assignMeter === true) {
-      console.log('[UPDATE CUSTOMER] Meter assignment requested');
+    // Admin can update all fields
+    const updateData: any = {
+      updatedAt: new Date()
+    };
 
-      // Only employees and admins can assign meters
-      if (session.user.userType === 'customer') {
-        return NextResponse.json({ error: 'Forbidden - Only employees can assign meters' }, { status: 403 });
-      }
+    // Update allowed fields
+    if (body.fullName) updateData.fullName = body.fullName;
+    if (body.email) updateData.email = body.email;
+    if (body.phone) updateData.phone = body.phone;
+    if (body.address) updateData.address = body.address;
+    if (body.city) updateData.city = body.city;
+    if (body.state) updateData.state = body.state;
+    if (body.pincode) updateData.pincode = body.pincode;
+    if (body.zone) updateData.zone = body.zone;
+    if (body.connectionType) updateData.connectionType = body.connectionType;
+    if (body.status) updateData.status = body.status;
 
-      // Get current customer status
-      const [currentCustomer] = await db
-        .select({ status: customers.status, meterNumber: customers.meterNumber })
+    // Meter number update (Admin only)
+    if (body.meterNumber && session.user.userType === 'admin') {
+      // Check if meter number already exists (must be unique)
+      const [existingMeter] = await db
+        .select()
         .from(customers)
-        .where(eq(customers.id, customerId))
+        .where(eq(customers.meterNumber, body.meterNumber))
         .limit(1);
 
-      if (!currentCustomer) {
-        return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
-      }
-
-      if (currentCustomer.meterNumber) {
+      if (existingMeter && existingMeter.id !== customerId) {
         return NextResponse.json({
-          error: 'Meter already assigned',
-          currentMeterNumber: currentCustomer.meterNumber
+          success: false,
+          error: 'Meter number already exists'
         }, { status: 400 });
       }
 
-      // Generate meter number using customer ID (ensures uniqueness)
-      // Format: MTR-{CustomerID}-{Year}
-      const meterNumber = body.meterNumber || `MTR-${String(customerId).padStart(6, '0')}-${new Date().getFullYear()}`;
+      updateData.meterNumber = body.meterNumber;
 
-      console.log('[UPDATE CUSTOMER] Assigning meter number:', meterNumber);
-
-      // Update customer with meter number and activate
-      body = {
-        ...body,
-        meterNumber,
-        status: 'active',
-        connectionDate: body.connectionDate || new Date().toISOString().split('T')[0],
-      };
-
-      delete body.assignMeter; // Remove the flag before update
+      // If assigning meter for first time, set status to active
+      if (!existingCustomer.meterNumber && body.meterNumber) {
+        updateData.status = 'active';
+        console.log('[UPDATE CUSTOMER] Meter assigned, setting status to active');
+      }
     }
 
-    // Update customer
+    // Update customer record
     await db
       .update(customers)
-      .set({
-        ...body,
-        updatedAt: new Date(),
-      } as any)
+      .set(updateData)
       .where(eq(customers.id, customerId));
+
+    // If email or name changed, update user record too (Admin only)
+    if (session.user.userType === 'admin' && (body.email || body.fullName)) {
+      const userUpdateData: any = {
+        updatedAt: new Date()
+      };
+      if (body.email) userUpdateData.email = body.email;
+      if (body.fullName) userUpdateData.name = body.fullName;
+
+      await db
+        .update(users)
+        .set(userUpdateData)
+        .where(eq(users.id, existingCustomer.userId));
+
+      console.log('[UPDATE CUSTOMER] User record also updated');
+    }
 
     console.log('[UPDATE CUSTOMER] Customer updated successfully');
 
     return NextResponse.json({
       success: true,
-      message: body.meterNumber
-        ? 'Meter assigned and customer activated successfully'
-        : 'Customer updated successfully',
-      data: body.meterNumber ? { meterNumber: body.meterNumber } : undefined,
+      message: 'Customer updated successfully'
     });
 
-  } catch (error) {
-    console.error('Error updating customer:', error);
-    return NextResponse.json(
-      { error: 'Failed to update customer' },
-      { status: 500 }
-    );
+  } catch (error: any) {
+    console.error('[UPDATE CUSTOMER] Error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to update customer',
+      details: error.message
+    }, { status: 500 });
   }
 }
 
-// DELETE /api/customers/[id] - Delete customer (Admin only)
+// DELETE /api/customers/[id] - Soft delete customer (Admin only)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -234,30 +254,59 @@ export async function DELETE(
 
     // Only admin can delete customers
     if (session.user.userType !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
     const customerId = parseInt(params.id);
 
-    // Soft delete by setting status to inactive
+    console.log('[DELETE CUSTOMER] Soft deleting customer ID:', customerId);
+
+    // Get customer data first
+    const [existingCustomer] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.id, customerId))
+      .limit(1);
+
+    if (!existingCustomer) {
+      return NextResponse.json({
+        success: false,
+        error: 'Customer not found'
+      }, { status: 404 });
+    }
+
+    // SOFT DELETE: Set status to inactive instead of deleting
+    // This preserves data integrity - bills, payments, meter readings remain intact
     await db
       .update(customers)
       .set({
         status: 'inactive',
-        updatedAt: new Date(),
-      })
+        updatedAt: new Date()
+      } as any)
       .where(eq(customers.id, customerId));
+
+    // Also deactivate user account (can't login)
+    await db
+      .update(users)
+      .set({
+        isActive: 0,
+        updatedAt: new Date()
+      } as any)
+      .where(eq(users.id, existingCustomer.userId));
+
+    console.log('[DELETE CUSTOMER] Customer soft deleted (status: inactive, user account disabled)');
 
     return NextResponse.json({
       success: true,
-      message: 'Customer deactivated successfully',
+      message: 'Customer deactivated successfully'
     });
 
-  } catch (error) {
-    console.error('Error deleting customer:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete customer' },
-      { status: 500 }
-    );
+  } catch (error: any) {
+    console.error('[DELETE CUSTOMER] Error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to delete customer',
+      details: error.message
+    }, { status: 500 });
   }
 }

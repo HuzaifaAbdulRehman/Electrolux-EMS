@@ -43,29 +43,30 @@ export default function CustomerSettings() {
     confirmPassword: ''
   });
 
-  const [notificationSettings, setNotificationSettings] = useState({
-    emailNotifications: true,
-    smsNotifications: false,
-    pushNotifications: true,
-    billReminders: true,
-    paymentConfirmations: true,
-    serviceAlerts: true,
-    promotionalOffers: false,
-    newsletter: false
-  });
-
   const [preferences, setPreferences] = useState({
     dateFormat: 'DD/MM/YYYY',
-    theme: 'auto',
-    autoPayment: false,
-    paperlessBilling: true
+    theme: 'auto'
   });
 
-  // Load theme from localStorage on mount
+  // Load preferences from localStorage on mount
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'auto';
-    setPreferences(prev => ({ ...prev, theme: savedTheme }));
-    applyTheme(savedTheme);
+    const savedPreferencesStr = localStorage.getItem('customerPreferences');
+    if (savedPreferencesStr) {
+      try {
+        const savedPreferences = JSON.parse(savedPreferencesStr);
+        setPreferences(savedPreferences);
+        applyTheme(savedPreferences.theme);
+      } catch (e) {
+        console.error('Failed to parse saved preferences:', e);
+        const savedTheme = localStorage.getItem('theme') || 'auto';
+        setPreferences(prev => ({ ...prev, theme: savedTheme }));
+        applyTheme(savedTheme);
+      }
+    } else {
+      const savedTheme = localStorage.getItem('theme') || 'auto';
+      setPreferences(prev => ({ ...prev, theme: savedTheme }));
+      applyTheme(savedTheme);
+    }
   }, []);
 
   // Apply theme to document
@@ -204,67 +205,24 @@ export default function CustomerSettings() {
     }
   };
 
-  const handleSaveNotifications = async () => {
+  const handleSavePreferences = () => {
     setError(null);
     setSuccess(null);
 
     try {
-      setLoading(true);
-
-      const response = await fetch('/api/customers/preferences', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notificationSettings }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to save notification preferences');
-      }
-
-      setSuccess('Notification preferences saved successfully!');
-      setTimeout(() => setSuccess(null), 3000);
-
-    } catch (err: any) {
-      setError(err.message || 'Failed to save preferences. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSavePreferences = async () => {
-    setError(null);
-    setSuccess(null);
-
-    try {
-      setLoading(true);
-
-      const response = await fetch('/api/customers/preferences', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preferences }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to save preferences');
-      }
+      // Save preferences to localStorage (client-side only)
+      localStorage.setItem('customerPreferences', JSON.stringify(preferences));
 
       setSuccess('Preferences saved successfully!');
       setTimeout(() => setSuccess(null), 3000);
 
     } catch (err: any) {
       setError(err.message || 'Failed to save preferences. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
   const menuItems = [
     { id: 'security', label: 'Security', icon: Shield },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'preferences', label: 'Preferences', icon: Monitor },
     { id: 'billing', label: 'Billing Settings', icon: CreditCard }
   ];
@@ -338,69 +296,6 @@ export default function CustomerSettings() {
           {/* Content Area */}
           <div className="lg:col-span-3">
             <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-              {/* Notifications Section */}
-              {activeSection === 'notifications' && (
-                <div className="space-y-6">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-                    Notification Preferences
-                  </h2>
-
-                  <div className="space-y-4">
-                    {Object.entries({
-                      emailNotifications: 'Email Notifications',
-                      smsNotifications: 'SMS Notifications',
-                      pushNotifications: 'Push Notifications',
-                      billReminders: 'Bill Reminders',
-                      paymentConfirmations: 'Payment Confirmations',
-                      serviceAlerts: 'Service Alerts',
-                      promotionalOffers: 'Promotional Offers',
-                      newsletter: 'Newsletter'
-                    }).map(([key, label]) => (
-                      <label key={key} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer">
-                        <div className="flex items-center space-x-3">
-                          {key.includes('email') && <Mail className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
-                          {key.includes('sms') && <Smartphone className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
-                          {key.includes('push') && <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />}
-                          {!key.includes('email') && !key.includes('sms') && !key.includes('push') &&
-                            <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                          }
-                          <div>
-                            <p className="font-medium text-gray-900 dark:text-white">{label}</p>
-                          </div>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={notificationSettings[key as keyof typeof notificationSettings]}
-                          onChange={(e) => setNotificationSettings({
-                            ...notificationSettings,
-                            [key]: e.target.checked
-                          })}
-                          className="w-5 h-5"
-                        />
-                      </label>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={handleSaveNotifications}
-                    disabled={loading}
-                    className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-5 h-5" />
-                        <span>Save Preferences</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-
               {/* Security Section */}
               {activeSection === 'security' && (
                 <div className="space-y-6">
@@ -551,20 +446,10 @@ export default function CustomerSettings() {
 
                   <button
                     onClick={handleSavePreferences}
-                    disabled={loading}
-                    className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all flex items-center space-x-2"
                   >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Saving...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-5 h-5" />
-                        <span>Save Preferences</span>
-                      </>
-                    )}
+                    <Save className="w-5 h-5" />
+                    <span>Save Preferences</span>
                   </button>
                 </div>
               )}
@@ -576,39 +461,7 @@ export default function CustomerSettings() {
                     Billing Settings
                   </h2>
 
-                  <div className="space-y-4">
-                    <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer">
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">Auto Payment</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Automatically pay bills on due date
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={preferences.autoPayment}
-                        onChange={(e) => setPreferences({...preferences, autoPayment: e.target.checked})}
-                        className="w-5 h-5"
-                      />
-                    </label>
-
-                    <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-white/5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer">
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">Paperless Billing</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Receive bills via email only
-                        </p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={preferences.paperlessBilling}
-                        onChange={(e) => setPreferences({...preferences, paperlessBilling: e.target.checked})}
-                        className="w-5 h-5"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="pt-6 border-t border-gray-200 dark:border-white/10">
+                  <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                       Billing History
                     </h3>

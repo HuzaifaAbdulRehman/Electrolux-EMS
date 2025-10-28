@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/useToast';
 import { Zap, Mail, Lock, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
+  const toast = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -28,7 +30,9 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError(result.error); // Show actual error from NextAuth
+        const errorMessage = result.error; // Show actual error from NextAuth
+        setError(errorMessage);
+        toast.error(errorMessage);
 
         // Check if error is about email verification
         if (result.error.toLowerCase().includes('verify your email')) {
@@ -42,6 +46,9 @@ export default function LoginPage() {
         const session = await response.json();
 
         if (session?.user?.userType) {
+          // Show success toast
+          toast.success('Login successful!');
+          
           // Redirect based on user type
           switch (session.user.userType) {
             case 'admin':
@@ -62,7 +69,9 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('An error occurred. Please try again.');
+      const errorMessage = 'An error occurred. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
       setIsLoading(false);
     }
   };

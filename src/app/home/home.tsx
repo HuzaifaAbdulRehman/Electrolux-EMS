@@ -39,8 +39,8 @@ export default function HomePage() {
               <Link href="/login" className="px-6 py-2 text-gray-900 dark:text-white hover:text-gray-700 dark:text-gray-300 transition-colors">
                 Login
               </Link>
-              <Link href="/register" className="px-6 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300">
-                Register
+              <Link href="/apply-connection" className="px-6 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300">
+                Apply for Connection
               </Link>
             </div>
           </div>
@@ -70,8 +70,8 @@ export default function HomePage() {
               </p>
               
               <div className="flex flex-wrap gap-4">
-                <Link href="/register" className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300">
-                  <span className="font-semibold">Get Started</span>
+                <Link href="/apply-connection" className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300">
+                  <span className="font-semibold">Apply for New Connection</span>
                   <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <button className="inline-flex items-center px-8 py-4 bg-gray-50 dark:bg-white/10 backdrop-blur-sm text-gray-900 dark:text-white rounded-full border border-gray-300 dark:border-white/20 hover:bg-gray-200 dark:hover:bg-white/20 transition-all duration-300">
@@ -239,10 +239,18 @@ export default function HomePage() {
               <p className="text-xl text-gray-900 dark:text-white/90 mb-8 max-w-2xl mx-auto">
                 Join thousands of satisfied customers who trust Electrolux for their electricity management needs
               </p>
-              <Link href="/register" className="inline-flex items-center px-8 py-4 bg-white text-gray-900 rounded-full font-semibold hover:shadow-xl transition-all duration-300">
-                <span>Create Your Account</span>
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/apply-connection" className="inline-flex items-center px-8 py-4 bg-white text-gray-900 rounded-full font-semibold hover:shadow-xl transition-all duration-300">
+                  <Zap className="w-5 h-5 mr-2" />
+                  <span>Apply for New Connection</span>
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+                <Link href="/login" className="inline-flex items-center px-8 py-4 bg-white/90 text-gray-900 rounded-full font-semibold hover:shadow-xl transition-all duration-300">
+                  <CheckCircle className="w-5 h-5 mr-2" />
+                  <span>Already a Customer? Login</span>
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>

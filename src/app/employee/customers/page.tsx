@@ -7,6 +7,8 @@ import {
   Users,
   Search,
   Eye,
+  Edit2,
+  Trash2,
   Phone,
   Mail,
   MapPin,
@@ -325,12 +327,27 @@ export default function EmployeeCustomers() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <button
-                            onClick={() => openCustomerDetails(customer)}
-                            className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => openCustomerDetails(customer)}
+                              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                              title="Edit Customer"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                              title="Delete Customer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))

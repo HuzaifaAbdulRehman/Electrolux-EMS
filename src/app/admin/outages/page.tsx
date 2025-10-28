@@ -46,6 +46,7 @@ export default function AdminOutagesManagement() {
     affectedCustomerCount: '0',
     status: 'scheduled' as 'scheduled' | 'ongoing' | 'restored' | 'cancelled'
   });
+  const [zoneCountLoading, setZoneCountLoading] = useState(false);
 
   useEffect(() => {
     fetchOutages();
@@ -112,6 +113,26 @@ export default function AdminOutagesManagement() {
     }
     setShowModal(true);
   };
+  // Auto-calculate affected customers when zone changes
+  useEffect(() => {
+    const fetchZoneCount = async () => {
+      if (!formData.zone) return;
+      try {
+        setZoneCountLoading(true);
+        const resp = await fetch(`/api/customers?countOnly=true&zone=${encodeURIComponent(formData.zone)}`);
+        const json = await resp.json();
+        if (resp.ok && json?.success) {
+          const count = Number(json.data?.count || 0);
+          setFormData(prev => ({ ...prev, affectedCustomerCount: String(count) }));
+        }
+      } catch (e) {
+        // ignore UI errors here; API still computes server-side as fallback
+      } finally {
+        setZoneCountLoading(false);
+      }
+    };
+    fetchZoneCount();
+  }, [formData.zone]);
 
   const handleCloseModal = () => {
     setShowModal(false);
@@ -560,8 +581,12 @@ export default function AdminOutagesManagement() {
                     value={formData.affectedCustomerCount}
                     onChange={(e) => setFormData({ ...formData, affectedCustomerCount: e.target.value })}
                     min="0"
-                    className="w-full px-4 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
+                    readOnly
+                    className="w-full px-4 py-2 bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none"
                   />
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    {zoneCountLoading ? 'Calculating from selected zone…' : 'Auto-calculated from selected zone. Server will also validate.'}
+                  </p>
                 </div>
               </div>
 

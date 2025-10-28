@@ -251,7 +251,7 @@ export default function AdminProfile() {
                   value={editData.phone}
                   onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
                   className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-500 dark:focus:border-red-400"
-                  placeholder="Enter phone number"
+                  placeholder="03001234567 (11 digits)"
                 />
               ) : (
                 <div className="px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-lg">

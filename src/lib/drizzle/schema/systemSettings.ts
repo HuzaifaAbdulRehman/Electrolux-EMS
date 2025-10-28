@@ -4,7 +4,7 @@ export const systemSettings = mysqlTable('system_settings', {
   id: int('id').primaryKey().autoincrement(),
   settingKey: varchar('setting_key', { length: 100 }).notNull().unique(),
   settingValue: text('setting_value'),
-  category: mysqlEnum('category', ['general', 'billing', 'security', 'system']).notNull(),
+  category: mysqlEnum('category', ['general', 'billing', 'security', 'system', 'electricity', 'tariffs', 'notifications']).notNull(),
   dataType: mysqlEnum('data_type', ['string', 'number', 'boolean']).notNull(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

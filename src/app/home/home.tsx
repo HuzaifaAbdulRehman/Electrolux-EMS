@@ -36,7 +36,10 @@ export default function HomePage() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <Link href="/login" className="px-6 py-2 text-gray-900 dark:text-white hover:text-gray-700 dark:text-gray-300 transition-colors">
+              <Link href="/track-application" className="px-6 py-2 text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition-colors border border-gray-300 dark:border-white/20 rounded-full hover:bg-gray-100 dark:hover:bg-white/10">
+                Track Application
+              </Link>
+              <Link href="/login" className="px-6 py-2 text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                 Login
               </Link>
               <Link href="/apply-connection" className="px-6 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-full hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300">

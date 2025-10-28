@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/drizzle/db';
-import { connectionRequests, customers } from '@/lib/drizzle/schema';
-import { eq, and, or } from 'drizzle-orm';
+import { connectionRequests, customers, users, notifications } from '@/lib/drizzle/schema';
+import { eq, and, or, desc } from 'drizzle-orm';
 
 // POST - Create new connection application (public - no auth required)
 export async function POST(request: NextRequest) {
@@ -142,6 +142,27 @@ export async function POST(request: NextRequest) {
 
     console.log('[Connection Request] Application created successfully:', applicationNumber);
 
+    // Notify admins about new connection request
+    try {
+      const adminUsers = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.userType, 'admin' as any));
+
+      await Promise.all(adminUsers.map((admin) => db.insert(notifications).values({
+        userId: admin.id,
+        notificationType: 'service',
+        title: 'New Connection Request',
+        message: `Application ${applicationNumber} submitted by ${applicantName}`,
+        priority: 'normal',
+        actionUrl: '/admin/connection-requests',
+        actionText: 'Review',
+        isRead: 0
+      } as any)));
+    } catch (e) {
+      console.error('[Connection Request] Failed to send admin notifications:', e);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Application submitted successfully',
@@ -160,5 +181,36 @@ export async function POST(request: NextRequest) {
       error: 'Failed to submit application',
       details: error.message
     }, { status: 500 });
+  }
+}
+
+// Lightweight GET for verification: fetch by applicationNumber or email (no auth)
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const applicationNumber = searchParams.get('applicationNumber');
+    const email = searchParams.get('email');
+
+    if (!applicationNumber && !email) {
+      return NextResponse.json({
+        error: 'Provide applicationNumber or email to query',
+      }, { status: 400 });
+    }
+
+    const whereConds: any[] = [];
+    if (applicationNumber) whereConds.push(eq(connectionRequests.applicationNumber, applicationNumber));
+    if (email) whereConds.push(eq(connectionRequests.email, email));
+
+    const results = await db
+      .select()
+      .from(connectionRequests)
+      .where(whereConds.length === 1 ? whereConds[0] : and(...whereConds))
+      .orderBy(desc(connectionRequests.createdAt))
+      .limit(20);
+
+    return NextResponse.json({ success: true, data: results });
+  } catch (error: any) {
+    console.error('[Connection Request] GET error:', error);
+    return NextResponse.json({ error: 'Failed to fetch requests', details: error.message }, { status: 500 });
   }
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Poppins } from "next/font/google";
 import "./globals.css";
-import ThemeProvider from "@/components/ThemeProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Providers } from "@/components/providers/SessionProvider";
 import ToastProvider from "@/components/providers/ToastProvider";
 
@@ -36,32 +36,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var theme = localStorage.getItem('theme');
-                  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
-                } catch (e) {
-                  // Fallback to dark theme if localStorage is not available
-                  document.documentElement.classList.add('dark');
-                }
-              })();
-            `,
-          }}
-        />
-      </head>
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} ${poppins.variable} antialiased`}
       >
         <Providers>
-          <ThemeProvider>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
             {children}
             <ToastProvider />
           </ThemeProvider>

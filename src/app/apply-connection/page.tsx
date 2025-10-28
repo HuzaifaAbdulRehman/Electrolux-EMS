@@ -24,6 +24,7 @@ export default function ApplyConnection() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [applicationNumber, setApplicationNumber] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const [formData, setFormData] = useState({
     applicantName: '',
@@ -105,6 +106,21 @@ export default function ApplyConnection() {
           <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl p-6 mb-6">
             <p className="text-sm opacity-90 mb-2">Your Application Number</p>
             <p className="text-3xl font-bold tracking-wide">{applicationNumber}</p>
+            <div className="mt-3 flex items-center space-x-3">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(applicationNumber);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="px-4 py-2 bg-white/15 hover:bg-white/25 rounded-lg text-white text-sm font-semibold transition-colors"
+              >
+                Copy Application Number
+              </button>
+              {copied && (
+                <span className="text-xs text-white/90">Copied!</span>
+              )}
+            </div>
             <p className="text-sm opacity-90 mt-2">Please save this number for future reference</p>
           </div>
 
@@ -135,18 +151,30 @@ export default function ApplyConnection() {
               <div className="w-6 h-6 rounded-full bg-yellow-400 text-white flex items-center justify-center text-sm flex-shrink-0">4</div>
               <div>
                 <p className="text-gray-900 dark:text-white font-medium">Account Activation</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">You'll receive your account credentials via email</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Check application status to get your login credentials once approved</p>
               </div>
             </div>
+          </div>
+
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+            <p className="text-sm text-blue-800 dark:text-blue-300">
+              <strong>Track Your Application:</strong> Use your application number to check the status anytime. Once approved, you'll see your account credentials on the tracking page.
+            </p>
           </div>
 
           <div className="space-y-3">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               We'll send updates to <span className="font-semibold text-gray-900 dark:text-white">{formData.email}</span>
             </p>
-            <Link href="/login">
-              <button className="w-full px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all">
-                Go to Login
+            <Link href={`/track-application`}>
+              <button className="w-full px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center space-x-2">
+                <FileText className="w-5 h-5" />
+                <span>Track Application Status</span>
+              </button>
+            </Link>
+            <Link href="/">
+              <button className="w-full px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-all">
+                Back to Home
               </button>
             </Link>
           </div>
@@ -253,7 +281,7 @@ export default function ApplyConnection() {
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full pl-11 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="+92 3XX XXXXXXX"
+                    placeholder="03001234567 (11 digits)"
                   />
                 </div>
               </div>
@@ -267,7 +295,7 @@ export default function ApplyConnection() {
                   value={formData.alternatePhone}
                   onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="Optional"
+                  placeholder="Optional (11 digits)"
                 />
               </div>
             </div>

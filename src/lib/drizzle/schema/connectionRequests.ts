@@ -28,6 +28,9 @@ export const connectionRequests = mysqlTable('connection_requests', {
   approvalDate: date('approval_date'),
   installationDate: date('installation_date'),
   applicationDate: date('application_date').notNull(),
+  // Account credentials - set when application is approved
+  accountNumber: varchar('account_number', { length: 50 }), // Generated when approved
+  temporaryPassword: varchar('temporary_password', { length: 255 }), // Shown to customer via track page
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow(),
 }, (table) => {

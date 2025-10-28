@@ -90,6 +90,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Ensure email is not already registered
+    const existing = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (existing.length > 0) {
+      return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
+    }
+
     // Generate a cryptographically secure password for employee
     const crypto = await import('crypto');
     const randomPassword = crypto.randomBytes(8).toString('base64').replace(/[/+=]/g, '') +
@@ -97,14 +108,23 @@ export async function POST(request: NextRequest) {
     const bcrypt = await import('bcryptjs');
     const hashedPassword = await bcrypt.hash(randomPassword, 12);
 
-    const [newUser] = await db.insert(users).values({
-      email,
-      password: hashedPassword,
-      userType: 'employee',
-      name: employeeName,
-      phone,
-      isActive: 1,
-    });
+    let newUser;
+    try {
+      [newUser] = await db.insert(users).values({
+        email,
+        password: hashedPassword,
+        userType: 'employee',
+        name: employeeName,
+        phone,
+        isActive: 1,
+      });
+    } catch (e: any) {
+      const msg = String(e?.message || '');
+      if (msg.includes('Duplicate') || msg.includes('ER_DUP_ENTRY')) {
+        return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
+      }
+      throw e;
+    }
 
     // Create employee record
     const [newEmployee] = await db.insert(employees).values({
@@ -124,6 +144,9 @@ export async function POST(request: NextRequest) {
       message: 'Employee created successfully',
       data: {
         employeeId: newEmployee.insertId,
+        email,
+        name: employeeName,
+        temporaryPassword: randomPassword,
       },
     }, { status: 201 });
   } catch (error) {

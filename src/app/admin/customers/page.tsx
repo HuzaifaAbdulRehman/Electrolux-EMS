@@ -63,15 +63,22 @@ export default function AdminCustomers() {
     hasPrev: false
   });
   const [newCustomer, setNewCustomer] = useState({
-    fullName: '',
+    applicantName: '',
+    fatherName: '',
     email: '',
     phone: '',
-    address: '',
+    alternatePhone: '',
+    idType: 'national_id' as 'passport' | 'drivers_license' | 'national_id' | 'voter_id' | 'aadhaar',
+    idNumber: '',
+    propertyType: 'Residential' as 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural',
+    connectionType: 'single-phase',
+    loadRequired: '5',
+    propertyAddress: '',
     city: '',
     state: '',
     pincode: '',
-    connectionType: 'Residential',
-    zone: 'Zone A'
+    landmark: '',
+    purposeOfConnection: 'domestic' as 'domestic' | 'business' | 'industrial' | 'agricultural'
   });
 
   // Fetch ALL customers for statistics ONCE on mount
@@ -153,22 +160,29 @@ export default function AdminCustomers() {
         // Show success modal with password
         setCreatedCustomer({
           ...result.data,
-          fullName: newCustomer.fullName,
+          fullName: newCustomer.applicantName,
           email: newCustomer.email,
           phone: newCustomer.phone
         });
 
         // Reset form
         setNewCustomer({
-          fullName: '',
+          applicantName: '',
+          fatherName: '',
           email: '',
           phone: '',
-          address: '',
+          alternatePhone: '',
+          idType: 'national_id' as 'passport' | 'drivers_license' | 'national_id' | 'voter_id' | 'aadhaar',
+          idNumber: '',
+          propertyType: 'Residential' as 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural',
+          connectionType: 'single-phase',
+          loadRequired: '5',
+          propertyAddress: '',
           city: '',
           state: '',
           pincode: '',
-          connectionType: 'Residential',
-          zone: 'Zone A'
+          landmark: '',
+          purposeOfConnection: 'domestic' as 'domestic' | 'business' | 'industrial' | 'agricultural'
         });
       } else {
         const error = await response.json();
@@ -732,12 +746,15 @@ export default function AdminCustomers() {
           </div>
         )}
 
-        {/* Add Customer Modal */}
+        {/* Add Customer Modal - Matches Online Registration Form */}
         {showAddCustomer && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add New Customer</h2>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Add New Customer (Offline Registration)</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">For walk-in customers - meter will be auto-assigned</p>
+                </div>
                 <button
                   onClick={() => setShowAddCustomer(false)}
                   className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
@@ -747,104 +764,242 @@ export default function AdminCustomers() {
               </div>
 
               <form onSubmit={handleAddCustomer} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={newCustomer.fullName}
-                    onChange={(e) => setNewCustomer({...newCustomer, fullName: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                {/* Personal Information */}
+                <div className="border-b border-gray-200 dark:border-white/10 pb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Personal Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Applicant Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomer.applicantName}
+                        onChange={(e) => setNewCustomer({...newCustomer, applicantName: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Full name as per ID"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={newCustomer.email}
-                    onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Father's Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomer.fatherName}
+                        onChange={(e) => setNewCustomer({...newCustomer, fatherName: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Father's full name"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
-                  <input
-                    type="tel"
-                    required
-                    value={newCustomer.phone}
-                    onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email *</label>
+                      <input
+                        type="email"
+                        required
+                        value={newCustomer.email}
+                        onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="customer@example.com"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Address</label>
-                  <textarea
-                    required
-                    value={newCustomer.address}
-                    onChange={(e) => setNewCustomer({...newCustomer, address: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={2}
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone *</label>
+                      <input
+                        type="tel"
+                        required
+                        value={newCustomer.phone}
+                        onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Primary contact number"
+                      />
+                    </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">City</label>
-                    <input
-                      type="text"
-                      required
-                      value={newCustomer.city}
-                      onChange={(e) => setNewCustomer({...newCustomer, city: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Alternate Phone</label>
+                      <input
+                        type="tel"
+                        value={newCustomer.alternatePhone}
+                        onChange={(e) => setNewCustomer({...newCustomer, alternatePhone: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Secondary contact (optional)"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ID Type *</label>
+                      <select
+                        required
+                        value={newCustomer.idType}
+                        onChange={(e) => setNewCustomer({...newCustomer, idType: e.target.value as any})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="national_id">National ID</option>
+                        <option value="passport">Passport</option>
+                        <option value="drivers_license">Driver's License</option>
+                        <option value="voter_id">Voter ID</option>
+                        <option value="aadhaar">Aadhaar Card</option>
+                      </select>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ID Number *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomer.idNumber}
+                        onChange={(e) => setNewCustomer({...newCustomer, idNumber: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter ID number"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">State</label>
-                    <input
-                      type="text"
-                      required
-                      value={newCustomer.state}
-                      onChange={(e) => setNewCustomer({...newCustomer, state: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                </div>
+
+                {/* Property & Connection Details */}
+                <div className="border-b border-gray-200 dark:border-white/10 pb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Property & Connection Details</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Property Type *</label>
+                      <select
+                        required
+                        value={newCustomer.propertyType}
+                        onChange={(e) => {
+                          const propertyType = e.target.value as any;
+                          // Auto-set purpose based on property type
+                          const purposeMap: Record<string, string> = {
+                            'Residential': 'domestic',
+                            'Commercial': 'business',
+                            'Industrial': 'industrial',
+                            'Agricultural': 'agricultural'
+                          };
+                          setNewCustomer({
+                            ...newCustomer,
+                            propertyType,
+                            purposeOfConnection: purposeMap[propertyType] as any
+                          });
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="Residential">Residential</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Industrial">Industrial</option>
+                        <option value="Agricultural">Agricultural</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Connection Type *</label>
+                      <select
+                        required
+                        value={newCustomer.connectionType}
+                        onChange={(e) => setNewCustomer({...newCustomer, connectionType: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="single-phase">Single Phase</option>
+                        <option value="three-phase">Three Phase</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Load Required (kW) *</label>
+                      <input
+                        type="number"
+                        required
+                        min="1"
+                        value={newCustomer.loadRequired}
+                        onChange={(e) => setNewCustomer({...newCustomer, loadRequired: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., 5"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Purpose of Connection</label>
+                      <input
+                        type="text"
+                        disabled
+                        value={newCustomer.purposeOfConnection}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+                        placeholder="Auto-set based on property type"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pincode</label>
-                  <input
-                    type="text"
-                    required
-                    value={newCustomer.pincode}
-                    onChange={(e) => setNewCustomer({...newCustomer, pincode: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                {/* Address Information */}
+                <div className="pb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Address Information</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Property Address *</label>
+                      <textarea
+                        required
+                        value={newCustomer.propertyAddress}
+                        onChange={(e) => setNewCustomer({...newCustomer, propertyAddress: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        rows={2}
+                        placeholder="House/Plot number, Street name, Area"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">City *</label>
+                        <input
+                          type="text"
+                          required
+                          value={newCustomer.city}
+                          onChange={(e) => setNewCustomer({...newCustomer, city: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="City"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">State *</label>
+                        <input
+                          type="text"
+                          required
+                          value={newCustomer.state}
+                          onChange={(e) => setNewCustomer({...newCustomer, state: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="State"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pincode *</label>
+                        <input
+                          type="text"
+                          required
+                          pattern="[0-9]{6}"
+                          value={newCustomer.pincode}
+                          onChange={(e) => setNewCustomer({...newCustomer, pincode: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="6-digit pincode"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Landmark</label>
+                      <input
+                        type="text"
+                        value={newCustomer.landmark}
+                        onChange={(e) => setNewCustomer({...newCustomer, landmark: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Nearby landmark (optional)"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Connection Type</label>
-                  <select
-                    required
-                    value={newCustomer.connectionType}
-                    onChange={(e) => setNewCustomer({...newCustomer, connectionType: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="Residential" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Residential</option>
-                    <option value="Commercial" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Commercial</option>
-                    <option value="Industrial" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Industrial</option>
-                    <option value="Agricultural" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Agricultural</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center space-x-3 pt-4">
+                <div className="flex items-center space-x-3 pt-4 border-t border-gray-200 dark:border-white/10">
                   <button
                     type="button"
                     onClick={() => setShowAddCustomer(false)}
-                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/10 rounded-lg hover:bg-gray-200 dark:bg-white/20 transition-colors"
+                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/10 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
                   >
                     Cancel
                   </button>
@@ -861,7 +1016,7 @@ export default function AdminCustomers() {
                     ) : (
                       <>
                         <Save className="w-4 h-4" />
-                        <span>Create Customer</span>
+                        <span>Create Customer & Auto-Assign Meter</span>
                       </>
                     )}
                   </button>

@@ -43,10 +43,27 @@ export default function AdminConnectionRequests() {
     estimatedCharges: '',
     zone: 'Zone A'
   });
+  const [employeeSearch, setEmployeeSearch] = useState('');
 
   useEffect(() => {
     fetchRequests();
   }, [filterStatus]);
+
+  // Ensure employees are present: if API returned empty, fetch directly from employees API as fallback
+  useEffect(() => {
+    const ensureEmployees = async () => {
+      if (employees.length === 0) {
+        try {
+          const resp = await fetch('/api/employees');
+          const json = await resp.json();
+          if (resp.ok && json?.success && Array.isArray(json.data) && json.data.length > 0) {
+            setEmployees(json.data);
+          }
+        } catch {}
+      }
+    };
+    ensureEmployees();
+  }, [employees.length]);
 
   const fetchRequests = async () => {
     try {
@@ -466,19 +483,48 @@ export default function AdminConnectionRequests() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Assign Employee <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    value={approvalData.employeeId}
-                    onChange={(e) => setApprovalData({ ...approvalData, employeeId: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    required
-                  >
-                    <option value="">Select Employee</option>
-                    {employees.map((emp) => (
-                      <option key={emp.id} value={emp.id}>
-                        {emp.fullName} - {emp.department}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="mb-2">
+                    <input
+                      type="text"
+                      value={employeeSearch}
+                      onChange={(e) => setEmployeeSearch(e.target.value)}
+                      placeholder="Search employees by name, email or department..."
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div className="max-h-56 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700">
+                    {employees
+                      .filter((emp) => {
+                        const q = employeeSearch.toLowerCase();
+                        return (
+                          (emp.fullName || emp.employeeName || '').toLowerCase().includes(q) ||
+                          (emp.email || '').toLowerCase().includes(q) ||
+                          (emp.department || '').toLowerCase().includes(q)
+                        );
+                      })
+                      .map((emp) => (
+                        <button
+                          key={emp.id}
+                          type="button"
+                          onClick={() => setApprovalData({ ...approvalData, employeeId: String(emp.id) })}
+                          className={`w-full text-left px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-600/50 ${approvalData.employeeId === String(emp.id) ? 'bg-gray-100 dark:bg-gray-700' : ''}`}
+                        >
+                          <div>
+                            <p className="text-gray-900 dark:text-white font-medium">{emp.fullName || emp.employeeName}</p>
+                            <p className="text-xs text-gray-500">{emp.department} • {emp.email}</p>
+                          </div>
+                          <span className={`text-xs px-2 py-1 rounded ${Number(emp.workLoad || 0) > 3 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'}`}>
+                            Load: {emp.workLoad ?? 0}
+                          </span>
+                        </button>
+                      ))}
+                    {employees.length === 0 && (
+                      <div className="px-4 py-6 text-center text-sm text-gray-500">No employees found</div>
+                    )}
+                  </div>
+                  {approvalData.employeeId === '' && (
+                    <p className="mt-2 text-xs text-gray-500">Select an employee to approve and assign.</p>
+                  )}
                 </div>
 
                 <div>
@@ -586,6 +632,15 @@ export default function AdminConnectionRequests() {
                   className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all"
                 >
                   Copy All Details
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(accountCredentials.temporaryPassword);
+                    toast.success('Password copied');
+                  }}
+                  className="px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                >
+                  Copy Password
                 </button>
                 <button
                   onClick={() => {

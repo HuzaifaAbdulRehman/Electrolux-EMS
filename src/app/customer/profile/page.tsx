@@ -495,6 +495,7 @@ export default function CustomerProfile() {
                         value={profileData.phone}
                         onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
+                        placeholder="03001234567 (11 digits)"
                       />
                     ) : (
                       <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">

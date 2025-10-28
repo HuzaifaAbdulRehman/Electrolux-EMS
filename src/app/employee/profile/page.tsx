@@ -6,23 +6,12 @@ import {
   User,
   Mail,
   Phone,
-  MapPin,
-  Calendar,
   Edit,
   Save,
-  Camera,
-  Shield,
-  Award,
   TrendingUp,
   Clock,
   CheckCircle,
-  Star,
-  Target,
-  Activity,
-  Briefcase,
-  Hash,
-  CreditCard,
-  FileText
+  Activity
 } from 'lucide-react';
 
 export default function EmployeeProfile() {
@@ -36,9 +25,6 @@ export default function EmployeeProfile() {
     fullName: '',
     email: '',
     phone: '',
-    address: '',
-    emergencyContact: '',
-    dateOfBirth: '',
     department: '',
     position: ''
   });
@@ -65,9 +51,6 @@ export default function EmployeeProfile() {
           fullName: result.data.fullName,
           email: result.data.email,
           phone: result.data.phone,
-          address: '',
-          emergencyContact: '',
-          dateOfBirth: '',
           department: result.data.department,
           position: result.data.designation
         });
@@ -102,25 +85,6 @@ export default function EmployeeProfile() {
     inProgressTasks: 0,
     pendingTasks: 0
   };
-
-  // Add placeholder fields for UI
-  const displayStats = {
-    ...workStats,
-    customerRating: '4.8',
-    onTimeCompletion: '95%'
-  };
-
-  // Achievements based on real data
-  const achievements = [];
-  if (workStats.totalTasks >= 100) {
-    achievements.push({ icon: Target, title: `${workStats.totalTasks} Tasks Milestone`, date: 'Achievement', color: 'from-green-500 to-emerald-500' });
-  }
-  if (parseFloat(workStats.successRate) >= 90) {
-    achievements.push({ icon: Star, title: `${workStats.successRate} Success Rate`, date: 'High Performance', color: 'from-blue-500 to-cyan-500' });
-  }
-  if (workStats.completedThisMonth >= 20) {
-    achievements.push({ icon: Award, title: 'Productive Month', date: `${workStats.completedThisMonth} tasks completed`, color: 'from-yellow-400 to-orange-500' });
-  }
 
   const handleSave = async () => {
     try {
@@ -169,13 +133,8 @@ export default function EmployeeProfile() {
         <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center space-x-6">
-              <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                  <User className="w-12 h-12 text-white" />
-                </div>
-                <button className="absolute bottom-0 right-0 w-8 h-8 bg-gray-100 dark:bg-gray-100 dark:bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30 hover:bg-white/30 transition-all">
-                  <Camera className="w-4 h-4 text-white" />
-                </button>
+              <div className="w-24 h-24 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+                <User className="w-12 h-12 text-white" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{profileData.fullName}</h1>
@@ -230,7 +189,7 @@ export default function EmployeeProfile() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Total Tasks</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{displayStats.totalTasks}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{workStats.totalTasks}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-white" />
@@ -241,7 +200,7 @@ export default function EmployeeProfile() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">Completed</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{displayStats.completedThisMonth}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{workStats.completedThisMonth}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
                 <CheckCircle className="w-5 h-5 text-white" />
@@ -252,7 +211,7 @@ export default function EmployeeProfile() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">In Progress</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{displayStats.inProgressTasks}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{workStats.inProgressTasks}</p>
               </div>
               <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                 <Clock className="w-5 h-5 text-white" />
@@ -263,7 +222,7 @@ export default function EmployeeProfile() {
 
         {/* Tabs */}
         <div className="flex space-x-1 bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-1">
-          {['personal', 'work', 'performance', 'achievements'].map((tab) => (
+          {['personal', 'work'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -279,9 +238,8 @@ export default function EmployeeProfile() {
         </div>
 
         {/* Tab Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            {activeTab === 'personal' && (
+        <div>
+          {activeTab === 'personal' && (
               <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Personal Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -318,45 +276,12 @@ export default function EmployeeProfile() {
                         value={profileData.phone}
                         onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400"
+                        placeholder="03001234567 (11 digits)"
                       />
                     ) : (
                       <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                         <span className="text-gray-900 dark:text-white">{profileData.phone}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Emergency Contact</label>
-                    {isEditing ? (
-                      <input
-                        type="tel"
-                        value={profileData.emergencyContact}
-                        onChange={(e) => setProfileData({ ...profileData, emergencyContact: e.target.value })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400"
-                      />
-                    ) : (
-                      <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
-                        <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                        <span className="text-gray-900 dark:text-white">{profileData.emergencyContact}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Address</label>
-                    {isEditing ? (
-                      <textarea
-                        value={profileData.address}
-                        onChange={(e) => setProfileData({ ...profileData, address: e.target.value })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400"
-                        rows={2}
-                      />
-                    ) : (
-                      <div className="flex items-start space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
-                        <MapPin className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5" />
-                        <span className="text-gray-900 dark:text-white">{profileData.address}</span>
                       </div>
                     )}
                   </div>
@@ -427,95 +352,6 @@ export default function EmployeeProfile() {
                 </div>
               </div>
             )}
-
-            {activeTab === 'performance' && (
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Performance History</h2>
-                <div className="space-y-4">
-                  <p className="text-gray-600 dark:text-gray-400">Performance history will be available soon.</p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'achievements' && (
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Achievements & Recognition</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {achievements.map((achievement, index) => (
-                    <div key={index} className="p-4 bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-12 h-12 bg-gradient-to-r ${achievement.color} rounded-lg flex items-center justify-center`}>
-                          <achievement.icon className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <h3 className="text-white font-semibold">{achievement.title}</h3>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm">{achievement.date}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Work Statistics */}
-            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Work Statistics</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">This Month</span>
-                  <span className="text-white font-semibold">{workStats.completedThisMonth} tasks</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Daily Average</span>
-                  <span className="text-white font-semibold">{workStats.avgDaily}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Success Rate</span>
-                  <span className="text-green-400 font-semibold">{workStats.successRate}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Overtime Hours</span>
-                  <span className="text-white font-semibold">{workStats.overtimeHours} hrs</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Leaves Taken</span>
-                  <span className="text-white font-semibold">{workStats.leavesTaken} days</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
-                  <span className="flex items-center space-x-3">
-                    <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    <span className="text-gray-900 dark:text-white">Request Leave</span>
-                  </span>
-                  <span className="text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
-                </button>
-                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
-                  <span className="flex items-center space-x-3">
-                    <FileText className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    <span className="text-gray-900 dark:text-white">View Payslip</span>
-                  </span>
-                  <span className="text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
-                </button>
-                <button className="w-full p-3 bg-white dark:bg-white/5 rounded-lg text-left hover:bg-gray-50 dark:bg-gray-50 dark:bg-white/10 transition-all flex items-center justify-between group">
-                  <span className="flex items-center space-x-3">
-                    <Shield className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    <span className="text-gray-900 dark:text-white">Training Modules</span>
-                  </span>
-                  <span className="text-gray-600 dark:text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </DashboardLayout>

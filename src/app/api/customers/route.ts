@@ -209,15 +209,19 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
+    // Support both old field names (direct admin entry) and new field names (from new form)
+    // Map new field names to database field names
+    const applicantName = body.applicantName || body.fullName;
+    const propertyAddress = body.propertyAddress || body.address;
+    const propertyType = body.propertyType || body.connectionType;
+
     // Validate required fields
-    const required = ['fullName', 'email', 'phone', 'address', 'city', 'state', 'pincode', 'connectionType'];
-    for (const field of required) {
-      if (!body[field]) {
-        return NextResponse.json(
-          { error: `${field} is required` },
-          { status: 400 }
-        );
-      }
+    if (!applicantName || !body.email || !body.phone || !propertyAddress ||
+        !body.city || !body.state || !body.pincode || !propertyType) {
+      return NextResponse.json(
+        { error: 'Missing required fields. Please fill all required fields marked with *' },
+        { status: 400 }
+      );
     }
 
     // Generate a cryptographically secure password
@@ -231,7 +235,7 @@ export async function POST(request: NextRequest) {
       email: body.email,
       password: hashedPassword,
       userType: 'customer',
-      name: body.fullName,
+      name: applicantName,
       phone: body.phone,
       isActive: 1,
     });
@@ -257,19 +261,21 @@ export async function POST(request: NextRequest) {
     console.log('[CREATE CUSTOMER - ADMIN DIRECT] Status: active (offline customer registration)');
 
     // Create customer record (offline, complete details)
+    // Note: Additional fields like fatherName, idType, idNumber, etc. are not stored in customers table
+    // They are only stored in connectionRequests table for online applications
     const [newCustomer] = await db.insert(customers).values({
       userId: newUser.insertId,
       accountNumber,
       meterNumber: meterNumber,
-      fullName: body.fullName,
+      fullName: applicantName,
       email: body.email,
       phone: body.phone,
-      address: body.address,
+      address: propertyAddress,
       city: body.city,
       state: body.state,
       pincode: body.pincode,
       zone: body.zone || null,
-      connectionType: body.connectionType,
+      connectionType: propertyType,
       status: customerStatus,
       connectionDate: body.connectionDate || new Date().toISOString().split('T')[0],
     } as any);

@@ -23,11 +23,12 @@ export default function OutageSchedule() {
   const { data: session } = useSession();
 
   const router = useRouter();
-  const [selectedArea, setSelectedArea] = useState('all');
+  const [selectedArea, setSelectedArea] = useState('my');
   const [searchQuery, setSearchQuery] = useState('');
   const [customerZone, setCustomerZone] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [outages, setOutages] = useState<any[]>([]);
+  const [zoneCounts, setZoneCounts] = useState<Record<string, number>>({});
   const [stats, setStats] = useState({
     scheduled: 0,
     completed: 0,
@@ -40,6 +41,30 @@ export default function OutageSchedule() {
     fetchOutages();
     fetchCustomerProfile();
   }, []);
+
+  // After outages load, fetch live customer counts per zone for accuracy
+  useEffect(() => {
+    const fetchZoneCounts = async () => {
+      const uniqueZones = Array.from(new Set((outages || []).map(o => o.zone).filter(Boolean)));
+      if (uniqueZones.length === 0) return;
+      try {
+        const entries = await Promise.all(uniqueZones.map(async (zone) => {
+          try {
+            const resp = await fetch(`/api/customers?countOnly=true&zone=${encodeURIComponent(zone)}`);
+            const json = await resp.json();
+            if (resp.ok && json?.success) {
+              return [zone, Number(json.count) || 0] as const;
+            }
+          } catch {}
+          return [zone, 0] as const;
+        }));
+        const map: Record<string, number> = {};
+        for (const [z, c] of entries) map[z] = c;
+        setZoneCounts(map);
+      } catch {}
+    };
+    fetchZoneCounts();
+  }, [outages]);
 
   const fetchOutages = async () => {
     try {
@@ -78,7 +103,7 @@ export default function OutageSchedule() {
   const calculateStats = (outageData: any[]) => {
     const scheduled = outageData.filter(o => o.status === 'scheduled').length;
     const completed = outageData.filter(o => o.status === 'restored').length;
-    const affectedUsers = outageData.reduce((sum, o) => sum + (o.affectedCustomerCount || 0), 0);
+    const affectedUsers = outageData.reduce((sum, o) => sum + (zoneCounts[o.zone] ?? o.affectedCustomerCount ?? 0), 0);
     
     // Calculate average duration for completed outages
     const completedOutages = outageData.filter(o => o.status === 'restored' && o.actualStartTime && o.actualEndTime);
@@ -108,7 +133,7 @@ export default function OutageSchedule() {
   const filteredOutages = outages.filter(outage => {
     const matchesSearch = outage.areaName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          outage.zone.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesArea = selectedArea === 'all' || outage.zone === selectedArea;
+    const matchesArea = selectedArea === 'all' || (selectedArea === 'my' ? outage.zone === customerZone : outage.zone === selectedArea);
     return matchesSearch && matchesArea;
   });
 
@@ -275,7 +300,7 @@ export default function OutageSchedule() {
                   </span>
                   <span className="text-gray-600 dark:text-gray-400">•</span>
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Affected: <strong className="text-orange-400">{upcomingCustomerOutage.affectedCustomerCount.toLocaleString()} customers</strong>
+                    Affected: <strong className="text-orange-400">{(zoneCounts[upcomingCustomerOutage.zone] ?? upcomingCustomerOutage.affectedCustomerCount ?? 0).toLocaleString()} customers</strong>
                   </span>
                 </div>
               </div>
@@ -301,6 +326,7 @@ export default function OutageSchedule() {
               onChange={(e) => setSelectedArea(e.target.value)}
               className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 text-sm"
             >
+              <option value="my" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">My Zone Only</option>
               <option value="all" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">All Zones</option>
               {availableZones.map(zone => (
                 <option key={zone} value={zone} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
@@ -378,7 +404,7 @@ export default function OutageSchedule() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="text-white text-sm">{outage.affectedCustomerCount.toLocaleString()} users</span>
+                          <span className="text-white text-sm">{(zoneCounts[outage.zone] ?? outage.affectedCustomerCount ?? 0).toLocaleString()} users</span>
                         </td>
                       </tr>
                     );

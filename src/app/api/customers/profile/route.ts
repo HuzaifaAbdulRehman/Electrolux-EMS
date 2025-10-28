@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
         id: customers.id,
         accountNumber: customers.accountNumber,
         meterNumber: customers.meterNumber,
+        zone: customers.zone,
         fullName: customers.fullName,
         email: customers.email,
         phone: customers.phone,

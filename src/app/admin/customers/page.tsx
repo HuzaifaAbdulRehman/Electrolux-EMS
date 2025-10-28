@@ -76,10 +76,25 @@ export default function AdminCustomers() {
     propertyAddress: '',
     city: '',
     state: '',
+    zone: '',
     pincode: '',
     landmark: '',
     purposeOfConnection: 'domestic' as 'domestic' | 'business' | 'industrial' | 'agricultural'
   });
+
+  // Formatting helpers (display hyphens, store only digits)
+  const onlyDigits = (v: string) => v.replace(/\D+/g, '');
+  const formatPKPhone = (digits: string) => {
+    const d = onlyDigits(digits).slice(0, 11);
+    if (d.length <= 4) return d;
+    return `${d.slice(0, 4)}-${d.slice(4)}`;
+  };
+  const formatCNIC = (digits: string) => {
+    const d = onlyDigits(digits).slice(0, 13);
+    if (d.length <= 5) return d;
+    if (d.length <= 12) return `${d.slice(0, 5)}-${d.slice(5)}`;
+    return `${d.slice(0, 5)}-${d.slice(5, 12)}-${d.slice(12)}`;
+  };
 
   // Fetch ALL customers for statistics ONCE on mount
   useEffect(() => {
@@ -180,6 +195,7 @@ export default function AdminCustomers() {
           propertyAddress: '',
           city: '',
           state: '',
+          zone: '',
           pincode: '',
           landmark: '',
           purposeOfConnection: 'domestic' as 'domestic' | 'business' | 'industrial' | 'agricultural'
@@ -794,36 +810,44 @@ export default function AdminCustomers() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email *</label>
-                  <input
-                    type="email"
-                    required
-                    value={newCustomer.email}
-                    onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      <input
+                        type="email"
+                        required
+                        value={newCustomer.email}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="customer@example.com"
-                  />
-                </div>
+                      />
+                    </div>
 
-                <div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone *</label>
-                  <input
-                    type="tel"
-                    required
-                    value={newCustomer.phone}
-                    onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Primary contact number"
-                  />
-                </div>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        required
+                        value={formatPKPhone(newCustomer.phone)}
+                        onChange={(e) => {
+                          const raw = onlyDigits(e.target.value).slice(0, 11);
+                          setNewCustomer({ ...newCustomer, phone: raw });
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., 0300-1234567"
+                      />
+                    </div>
 
-                <div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Alternate Phone</label>
                       <input
                         type="tel"
-                        value={newCustomer.alternatePhone}
-                        onChange={(e) => setNewCustomer({...newCustomer, alternatePhone: e.target.value})}
+                        inputMode="numeric"
+                        value={formatPKPhone(newCustomer.alternatePhone)}
+                        onChange={(e) => {
+                          const raw = onlyDigits(e.target.value).slice(0, 11);
+                          setNewCustomer({ ...newCustomer, alternatePhone: raw });
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Secondary contact (optional)"
+                        placeholder="e.g., 0300-1234567 (optional)"
                       />
                     </div>
 
@@ -833,7 +857,7 @@ export default function AdminCustomers() {
                         required
                         value={newCustomer.idType}
                         onChange={(e) => setNewCustomer({...newCustomer, idType: e.target.value as any})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-white [&>option]:text-gray-900 dark:[&>option]:bg-gray-800 dark:[&>option]:text-white"
                       >
                         <option value="national_id">National ID</option>
                         <option value="passport">Passport</option>
@@ -847,12 +871,23 @@ export default function AdminCustomers() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ID Number *</label>
                       <input
                         type="text"
+                        inputMode={newCustomer.idType === 'national_id' ? 'numeric' : 'text'}
                         required
-                        value={newCustomer.idNumber}
-                        onChange={(e) => setNewCustomer({...newCustomer, idNumber: e.target.value})}
+                        value={newCustomer.idType === 'national_id' ? formatCNIC(newCustomer.idNumber) : newCustomer.idNumber}
+                        onChange={(e) => {
+                          if (newCustomer.idType === 'national_id') {
+                            const raw = onlyDigits(e.target.value).slice(0, 13);
+                            setNewCustomer({ ...newCustomer, idNumber: raw });
+                          } else {
+                            setNewCustomer({ ...newCustomer, idNumber: e.target.value });
+                          }
+                        }}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter ID number"
+                        placeholder={newCustomer.idType === 'national_id' ? '42101-1234567-1 (13 digits)' : 'Enter ID number'}
                       />
+                      {newCustomer.idType === 'national_id' && (
+                        <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">CNIC must be 13 digits (formatted 5-7-1).</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -881,7 +916,7 @@ export default function AdminCustomers() {
                             purposeOfConnection: purposeMap[propertyType] as any
                           });
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-white [&>option]:text-gray-900 dark:[&>option]:bg-gray-800 dark:[&>option]:text-white"
                       >
                         <option value="Residential">Residential</option>
                         <option value="Commercial">Commercial</option>
@@ -896,7 +931,7 @@ export default function AdminCustomers() {
                         required
                         value={newCustomer.connectionType}
                         onChange={(e) => setNewCustomer({...newCustomer, connectionType: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-white [&>option]:text-gray-900 dark:[&>option]:bg-gray-800 dark:[&>option]:text-white"
                       >
                         <option value="single-phase">Single Phase</option>
                         <option value="three-phase">Three Phase</option>
@@ -945,7 +980,7 @@ export default function AdminCustomers() {
                   />
                 </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">City *</label>
                     <input
@@ -968,7 +1003,23 @@ export default function AdminCustomers() {
                           placeholder="State"
                     />
                   </div>
-                <div>
+                  <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Zone *</label>
+                        <select
+                          required
+                          value={newCustomer.zone}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, zone: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-white [&>option]:text-gray-900 dark:[&>option]:bg-gray-800 dark:[&>option]:text-white"
+                        >
+                          <option value="">Select Zone</option>
+                          <option value="Zone A">Zone A</option>
+                          <option value="Zone B">Zone B</option>
+                          <option value="Zone C">Zone C</option>
+                          <option value="Zone D">Zone D</option>
+                        </select>
+                      </div>
+
+                  <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pincode *</label>
                   <input
                     type="text"

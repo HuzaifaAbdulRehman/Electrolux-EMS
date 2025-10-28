@@ -215,11 +215,11 @@ export async function POST(request: NextRequest) {
     const propertyAddress = body.propertyAddress || body.address;
     const propertyType = body.propertyType || body.connectionType;
 
-    // Validate required fields
+    // Validate required fields (zone required for consistency)
     if (!applicantName || !body.email || !body.phone || !propertyAddress ||
-        !body.city || !body.state || !body.pincode || !propertyType) {
+        !body.city || !body.state || !body.pincode || !propertyType || !body.zone) {
       return NextResponse.json(
-        { error: 'Missing required fields. Please fill all required fields marked with *' },
+        { error: 'Missing required fields. Zone is required.' },
         { status: 400 }
       );
     }
@@ -274,7 +274,7 @@ export async function POST(request: NextRequest) {
       city: body.city,
       state: body.state,
       pincode: body.pincode,
-      zone: body.zone || null,
+      zone: body.zone,
       connectionType: propertyType,
       status: customerStatus,
       connectionDate: body.connectionDate || new Date().toISOString().split('T')[0],

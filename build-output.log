@@ -10,20 +10,14 @@ Compiler edge-server unexpectedly exited with code: null and signal: SIGTERM
  ✓ Compiled successfully
    Linting and checking validity of types ...
    Collecting page data ...
-PageNotFoundError: Cannot find module for page: /admin/data-import
+unhandledRejection Error [PageNotFoundError]: Cannot find module for page: /_document
     at getPagePath (d:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:94:15)
     at requirePage (d:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\require.js:99:22)
-    at d:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js:74:84
+    at d:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js:70:65
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async loadComponentsImpl (d:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js:74:26)
-    at async d:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js:1115:32
-    at async Span.traceAsyncFn (d:\Programming\Projects\electrolux_ems\node_modules\next\dist\trace\trace.js:151:20) {
+    at async Promise.all (index 0)
+    at async loadComponentsImpl (d:\Programming\Projects\electrolux_ems\node_modules\next\dist\server\load-components.js:69:33)
+    at async Object.getDefinedNamedExports (d:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js:1279:24) {
+  type: 'PageNotFoundError',
   code: 'ENOENT'
-}
-
-> Build error occurred
-Error: Failed to collect page data for /admin/data-import
-    at d:\Programming\Projects\electrolux_ems\node_modules\next\dist\build\utils.js:1258:15
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
-  type: 'Error'
 }

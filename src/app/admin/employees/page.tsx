@@ -30,12 +30,19 @@ export default function EmployeeManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditEmployee, setShowEditEmployee] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showViewDetails, setShowViewDetails] = useState(false);
+  const [employeeToEdit, setEmployeeToEdit] = useState<any>(null);
+  const [employeeToDelete, setEmployeeToDelete] = useState<any>(null);
+  const [employeeToView, setEmployeeToView] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [employees, setEmployees] = useState<any[]>([]);
   const [allEmployees, setAllEmployees] = useState<any[]>([]); // For statistics
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
   const [newEmployee, setNewEmployee] = useState({
     employeeName: '',
     email: '',
@@ -44,6 +51,7 @@ export default function EmployeeManagement() {
     department: '',
     assignedZone: ''
   });
+  const [createdEmployeeCreds, setCreatedEmployeeCreds] = useState<any>(null);
   const itemsPerPage = 10;
 
   // Fetch ALL employees for statistics ONCE on mount
@@ -105,8 +113,11 @@ export default function EmployeeManagement() {
       });
 
       if (response.ok) {
+        const result = await response.json();
         await fetchEmployees(); // Refresh the list
+        await fetchAllEmployees(); // Refresh statistics
         setShowAddModal(false);
+        setCreatedEmployeeCreds(result.data);
         setNewEmployee({
           employeeName: '',
           email: '',
@@ -122,6 +133,67 @@ export default function EmployeeManagement() {
     } catch (err) {
       setError('Network error while creating employee');
       console.error('Error creating employee:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!employeeToEdit) return;
+
+    try {
+      setSaving(true);
+      const response = await fetch(`/api/employees/${employeeToEdit.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(employeeToEdit)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        await fetchEmployees(); // Refresh the list
+        await fetchAllEmployees(); // Refresh statistics
+        setShowEditEmployee(false);
+        setEmployeeToEdit(null);
+        setSuccess('Employee updated successfully!');
+        setTimeout(() => setSuccess(null), 3000);
+      } else {
+        setError(result.error || 'Failed to update employee');
+      }
+    } catch (err) {
+      setError('Network error while updating employee');
+      console.error('Error updating employee:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteEmployee = async () => {
+    if (!employeeToDelete) return;
+
+    try {
+      setSaving(true);
+      const response = await fetch(`/api/employees/${employeeToDelete.id}`, {
+        method: 'DELETE'
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        await fetchEmployees(); // Refresh the list
+        await fetchAllEmployees(); // Refresh statistics
+        setShowDeleteConfirm(false);
+        setEmployeeToDelete(null);
+        setSuccess('Employee deactivated successfully!');
+        setTimeout(() => setSuccess(null), 3000);
+      } else {
+        setError(result.error || 'Failed to delete employee');
+      }
+    } catch (err) {
+      setError('Network error while deleting employee');
+      console.error('Error deleting employee:', err);
     } finally {
       setSaving(false);
     }
@@ -220,6 +292,64 @@ export default function EmployeeManagement() {
             <span className="text-red-700 dark:text-red-300">{error}</span>
           </div>
         )}
+
+      {/* Employee Credentials Modal */}
+      {createdEmployeeCreds && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md">
+            <div className="text-center mb-6">
+              <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Employee Created!</h2>
+              <p className="text-gray-600 dark:text-gray-400">Provide these credentials to the employee</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Name</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{createdEmployeeCreds.name}</p>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Email (Username)</p>
+                <p className="font-mono text-gray-900 dark:text-white">{createdEmployeeCreds.email}</p>
+              </div>
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-1">Temporary Password</p>
+                <p className="font-mono text-xl font-bold text-yellow-900 dark:text-yellow-100">{createdEmployeeCreds.temporaryPassword}</p>
+                <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">Employee should change this after first login</p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center space-x-3">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(createdEmployeeCreds.temporaryPassword);
+                  setSuccess('Password copied');
+                  setTimeout(() => setSuccess(null), 2000);
+                }}
+                className="px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+              >
+                Copy Password
+              </button>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`Email: ${createdEmployeeCreds.email}\nPassword: ${createdEmployeeCreds.temporaryPassword}`);
+                  setSuccess('Credentials copied');
+                  setTimeout(() => setSuccess(null), 2000);
+                }}
+                className="flex-1 px-4 py-3 bg-blue-500 text_white rounded-lg hover:bg-blue-600 transition-all"
+              >
+                Copy All Details
+              </button>
+              <button
+                onClick={() => setCreatedEmployeeCreds(null)}
+                className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -382,18 +512,30 @@ export default function EmployeeManagement() {
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
                             <button
+                              onClick={() => {
+                                setEmployeeToView(employee);
+                                setShowViewDetails(true);
+                              }}
                               className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10 rounded-lg transition-all"
                               title="View Details"
                             >
                           <Eye className="w-4 h-4" />
                         </button>
                             <button
+                              onClick={() => {
+                                setEmployeeToEdit(employee);
+                                setShowEditEmployee(true);
+                              }}
                               className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10 rounded-lg transition-all"
                               title="Edit Employee"
                             >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
+                          onClick={() => {
+                            setEmployeeToDelete(employee);
+                            setShowDeleteConfirm(true);
+                          }}
                           className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
                           title="Delete Employee"
                         >
@@ -555,6 +697,274 @@ export default function EmployeeManagement() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* View Employee Details Modal */}
+        {showViewDetails && employeeToView && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md border border-gray-200 dark:border-white/10">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Employee Details</h2>
+                <button
+                  onClick={() => { setShowViewDetails(false); setEmployeeToView(null); }}
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Name</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">{employeeToView.employeeName}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Email</p>
+                    <p className="text-gray-900 dark:text-white break-words">{employeeToView.email}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Phone</p>
+                    <p className="text-gray-900 dark:text-white">{employeeToView.phone}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Department</p>
+                    <p className="text-gray-900 dark:text-white">{employeeToView.department || '—'}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Designation</p>
+                    <p className="text-gray-900 dark:text-white">{employeeToView.designation || '—'}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Assigned Zone</p>
+                    <p className="text-gray-900 dark:text-white">{employeeToView.assignedZone || '—'}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
+                    <p className="text-gray-900 dark:text-white capitalize">{(employeeToView.status || 'active').replace('-', ' ')}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Work Orders</p>
+                    <p className="text-gray-900 dark:text-white">{employeeToView.workOrdersCount || 0}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Readings</p>
+                    <p className="text-gray-900 dark:text-white">{employeeToView.readingsCount || 0}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 flex justify-end">
+                <button
+                  onClick={() => { setShowViewDetails(false); setEmployeeToView(null); }}
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success Alert */}
+        {success && (
+          <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2">
+            <CheckCircle className="w-5 h-5" />
+            <span>{success}</span>
+          </div>
+        )}
+
+        {/* Edit Employee Modal */}
+        {showEditEmployee && employeeToEdit && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit Employee</h2>
+                <button
+                  onClick={() => {
+                    setShowEditEmployee(false);
+                    setEmployeeToEdit(null);
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditEmployee} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employee Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={employeeToEdit.employeeName}
+                      onChange={(e) => setEmployeeToEdit({...employeeToEdit, employeeName: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={employeeToEdit.email}
+                      onChange={(e) => setEmployeeToEdit({...employeeToEdit, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      required
+                      value={employeeToEdit.phone}
+                      onChange={(e) => setEmployeeToEdit({...employeeToEdit, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Designation</label>
+                    <input
+                      type="text"
+                      required
+                      value={employeeToEdit.designation}
+                      onChange={(e) => setEmployeeToEdit({...employeeToEdit, designation: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Department</label>
+                    <input
+                      type="text"
+                      required
+                      value={employeeToEdit.department}
+                      onChange={(e) => setEmployeeToEdit({...employeeToEdit, department: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Assigned Zone</label>
+                    <input
+                      type="text"
+                      value={employeeToEdit.assignedZone || ''}
+                      onChange={(e) => setEmployeeToEdit({...employeeToEdit, assignedZone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="Optional"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+                    <select
+                      required
+                      value={employeeToEdit.status}
+                      onChange={(e) => setEmployeeToEdit({...employeeToEdit, status: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    >
+                      <option value="active">Active</option>
+                      <option value="on-leave">On Leave</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditEmployee(false);
+                      setEmployeeToEdit(null);
+                    }}
+                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/10 rounded-lg hover:bg-gray-200 dark:bg-white/20 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-pink-500/50 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Updating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>Update Employee</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && employeeToDelete && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md border-2 border-red-500 dark:border-red-400">
+              <div className="flex flex-col items-center mb-6">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                  <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center">Delete Employee?</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
+                  This will deactivate the employee account. They won't be able to login, but all work history will be preserved.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-6">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employee Details:</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">{employeeToDelete.employeeName}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{employeeToDelete.email}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{employeeToDelete.designation} - {employeeToDelete.department}</p>
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setEmployeeToDelete(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteEmployee}
+                  disabled={saving}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-lg hover:shadow-red-500/50 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete Employee</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}

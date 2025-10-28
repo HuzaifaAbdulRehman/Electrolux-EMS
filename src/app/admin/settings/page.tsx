@@ -1,94 +1,55 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
   Settings,
-  Shield,
-  Database,
-  Globe,
-  Users,
+  Building,
   CreditCard,
-  Bell,
-  Mail,
-  Lock,
-  Key,
-  Server,
-  Cloud,
-  Save,
-  ChevronRight,
-  AlertTriangle,
-  CheckCircle,
-  Info,
   Zap,
-  DollarSign,
-  Calendar,
-  Clock,
-  Languages,
+  Users,
   FileText,
-  Download,
-  Upload,
-  RefreshCw,
-  Trash2,
-  Eye,
-  EyeOff
+  Bell,
+  ChevronRight,
+  Loader2,
+  Save,
+  CheckCircle,
+  AlertTriangle,
+  TrendingUp,
+  Shield,
+  UserCog,
+  BarChart3,
+  CloudOff,
+  Monitor,
+  Moon,
+  Sun,
+  Palette
 } from 'lucide-react';
 
-const DEFAULT_SETTINGS = {
-  general: {
-    companyName: 'Electrolux Distribution Co.',
-    timezone: 'UTC-5',
-    currency: 'USD',
-    language: 'English',
-    dateFormat: 'MM/DD/YYYY',
-    fiscalYearStart: 'January',
-    autoLogout: '60',
-    maintenanceMode: false
-  },
-  billing: {
-    billingCycle: 'monthly',
+export default function AdminSettingsHub() {
+  const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [savingTheme, setSavingTheme] = useState(false);
+  const [themeSuccess, setThemeSuccess] = useState(false);
+
+  const [companyInfo, setCompanyInfo] = useState({
+    companyName: 'Electrolux EMS',
+    supportEmail: 'support@electrolux.com',
+    supportPhone: '0300-1234567'
+  });
+
+  const [billingConfig, setBillingConfig] = useState({
     paymentDueDays: '15',
     lateFeePercentage: '2',
-    gracePeriod: '5',
-    autoGenerateBills: true,
-    enableAutoPay: true,
-    taxRate: '15',
-    minimumPayment: '10'
-  },
-  security: {
-    passwordMinLength: '8',
-    passwordComplexity: true,
-    twoFactorAuth: 'optional',
-    sessionTimeout: '30',
-    maxLoginAttempts: '5',
-    ipWhitelist: false,
-    apiRateLimit: '100',
-    dataEncryption: true,
-    auditLogging: true,
-    backupFrequency: 'daily'
-  },
-  system: {
-    apiKey: '••••••••••••••••••••••••••••••••',
-    databaseBackup: 'daily',
-    logRetention: '90',
-    cacheEnabled: true,
-    cdnEnabled: true,
-    debugMode: false,
-    performanceMonitoring: true,
-    errorTracking: true,
-    analyticsEnabled: true
-  }
-};
+    taxRate: '15'
+  });
 
-export default function AdminSettings() {
-  const [activeSection, setActiveSection] = useState('general');
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Load settings from database on mount
   useEffect(() => {
     fetchSettings();
   }, []);
@@ -99,668 +60,393 @@ export default function AdminSettings() {
       const response = await fetch('/api/admin/settings');
       const result = await response.json();
 
-      if (response.ok && result.success) {
-        // Convert snake_case keys from database to camelCase for frontend
-        const formattedSettings = {
-          general: {
-            companyName: result.data.general.company_name || DEFAULT_SETTINGS.general.companyName,
-            timezone: result.data.general.timezone || DEFAULT_SETTINGS.general.timezone,
-            currency: result.data.general.currency || DEFAULT_SETTINGS.general.currency,
-            language: result.data.general.language || DEFAULT_SETTINGS.general.language,
-            dateFormat: result.data.general.date_format || DEFAULT_SETTINGS.general.dateFormat,
-            fiscalYearStart: result.data.general.fiscal_year_start || DEFAULT_SETTINGS.general.fiscalYearStart,
-            autoLogout: result.data.general.auto_logout || DEFAULT_SETTINGS.general.autoLogout,
-            maintenanceMode: result.data.general.maintenance_mode || DEFAULT_SETTINGS.general.maintenanceMode,
-          },
-          billing: {
-            billingCycle: result.data.billing.billing_cycle || DEFAULT_SETTINGS.billing.billingCycle,
-            paymentDueDays: result.data.billing.payment_due_days || DEFAULT_SETTINGS.billing.paymentDueDays,
-            lateFeePercentage: result.data.billing.late_fee_percentage || DEFAULT_SETTINGS.billing.lateFeePercentage,
-            gracePeriod: result.data.billing.grace_period || DEFAULT_SETTINGS.billing.gracePeriod,
-            autoGenerateBills: result.data.billing.auto_generate_bills || DEFAULT_SETTINGS.billing.autoGenerateBills,
-            enableAutoPay: result.data.billing.enable_auto_pay || DEFAULT_SETTINGS.billing.enableAutoPay,
-            taxRate: result.data.billing.tax_rate || DEFAULT_SETTINGS.billing.taxRate,
-            minimumPayment: result.data.billing.minimum_payment || DEFAULT_SETTINGS.billing.minimumPayment,
-          },
-          security: {
-            passwordMinLength: result.data.security.password_min_length || DEFAULT_SETTINGS.security.passwordMinLength,
-            passwordComplexity: result.data.security.password_complexity || DEFAULT_SETTINGS.security.passwordComplexity,
-            twoFactorAuth: result.data.security.two_factor_auth || DEFAULT_SETTINGS.security.twoFactorAuth,
-            sessionTimeout: result.data.security.session_timeout || DEFAULT_SETTINGS.security.sessionTimeout,
-            maxLoginAttempts: result.data.security.max_login_attempts || DEFAULT_SETTINGS.security.maxLoginAttempts,
-            ipWhitelist: result.data.security.ip_whitelist || DEFAULT_SETTINGS.security.ipWhitelist,
-            apiRateLimit: result.data.security.api_rate_limit || DEFAULT_SETTINGS.security.apiRateLimit,
-            dataEncryption: result.data.security.data_encryption || DEFAULT_SETTINGS.security.dataEncryption,
-            auditLogging: result.data.security.audit_logging || DEFAULT_SETTINGS.security.auditLogging,
-            backupFrequency: result.data.security.backup_frequency || DEFAULT_SETTINGS.security.backupFrequency,
-          },
-          system: {
-            apiKey: DEFAULT_SETTINGS.system.apiKey,
-            databaseBackup: result.data.system.database_backup || DEFAULT_SETTINGS.system.databaseBackup,
-            logRetention: result.data.system.log_retention || DEFAULT_SETTINGS.system.logRetention,
-            cacheEnabled: result.data.system.cache_enabled || DEFAULT_SETTINGS.system.cacheEnabled,
-            cdnEnabled: result.data.system.cdn_enabled || DEFAULT_SETTINGS.system.cdnEnabled,
-            debugMode: result.data.system.debug_mode || DEFAULT_SETTINGS.system.debugMode,
-            performanceMonitoring: result.data.system.performance_monitoring || DEFAULT_SETTINGS.system.performanceMonitoring,
-            errorTracking: result.data.system.error_tracking || DEFAULT_SETTINGS.system.errorTracking,
-            analyticsEnabled: result.data.system.analytics_enabled || DEFAULT_SETTINGS.system.analyticsEnabled,
-          },
-        };
-        setSettings(formattedSettings);
-      } else {
-        if (response.status === 500 || !result.success) {
-          await initializeSettings();
+      if (response.ok && result.success && result.data) {
+        if (result.data.general) {
+          setCompanyInfo(prev => ({
+            ...prev,
+            companyName: result.data.general.company_name || prev.companyName
+          }));
+        }
+        if (result.data.billing) {
+          setBillingConfig({
+            paymentDueDays: result.data.billing.payment_due_days || billingConfig.paymentDueDays,
+            lateFeePercentage: result.data.billing.late_fee_percentage || billingConfig.lateFeePercentage,
+            taxRate: result.data.billing.tax_rate || billingConfig.taxRate
+          });
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching settings:', err);
-      await initializeSettings();
     } finally {
       setLoading(false);
     }
   };
 
-  const initializeSettings = async () => {
-    try {
-      const response = await fetch('/api/admin/settings', {
-        method: 'POST',
-      });
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        await fetchSettings();
-      }
-    } catch (err: any) {
-      console.error('Error initializing settings:', err);
-      setError('Failed to initialize settings. Using defaults.');
-    }
-  };
-
-  const sections = [
-    { id: 'general', name: 'General Settings', icon: Settings },
-    { id: 'billing', name: 'Billing Configuration', icon: CreditCard },
-    { id: 'security', name: 'Security', icon: Shield },
-    { id: 'system', name: 'System', icon: Server }
-  ];
-
-  const handleSaveSettings = async () => {
-    setSaveStatus('saving');
+  const handleSaveBilling = async () => {
+    setSaving(true);
+    setError(null);
+    setSuccess(false);
 
     try {
+      const settings = {
+        billing: billingConfig
+      };
+
       const response = await fetch('/api/admin/settings', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ settings }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings })
       });
 
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setSaveStatus('saved');
-        setError(null);
-        setTimeout(() => setSaveStatus('idle'), 2000);
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
       } else {
         throw new Error(result.error || 'Failed to save settings');
       }
     } catch (err: any) {
-      console.error('Error saving settings:', err);
-      setError(err.message || 'Failed to save settings');
-      setSaveStatus('idle');
+      setError(err.message);
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleToggle = (section: string, setting: string) => {
-    setSettings({
-      ...settings,
-      [section]: {
-        ...settings[section as keyof typeof settings],
-        [setting]: !settings[section as keyof typeof settings][setting as keyof typeof settings[keyof typeof settings]]
-      }
-    });
-  };
+  // Management sections that link to specific pages
+  const managementSections = [
+    {
+      title: 'Tariff Management',
+      description: 'Configure electricity tariff rates for different customer types',
+      icon: Zap,
+      color: 'from-yellow-500 to-orange-500',
+      link: '/admin/tariffs',
+      enabled: true
+    },
+    {
+      title: 'Employee Management',
+      description: 'Manage employees, assignments, and work schedules',
+      icon: UserCog,
+      color: 'from-green-500 to-emerald-500',
+      link: '/admin/employees',
+      enabled: true
+    },
+    {
+      title: 'Customer Management',
+      description: 'View and manage customer accounts and meter connections',
+      icon: Users,
+      color: 'from-blue-500 to-cyan-500',
+      link: '/admin/customers',
+      enabled: true
+    },
+    {
+      title: 'Connection Requests',
+      description: 'Review and approve new meter connection applications',
+      icon: FileText,
+      color: 'from-purple-500 to-pink-500',
+      link: '/admin/connection-requests',
+      enabled: true
+    },
+    {
+      title: 'Outage Management',
+      description: 'Schedule and manage power outage notifications',
+      icon: CloudOff,
+      color: 'from-orange-500 to-red-500',
+      link: '/admin/outages',
+      enabled: true
+    },
+    {
+      title: 'Notifications Center',
+      description: 'Manage system notifications and alerts',
+      icon: Bell,
+      color: 'from-indigo-500 to-purple-500',
+      link: '/admin/notifications',
+      enabled: true
+    },
+    {
+      title: 'Analytics & Reports',
+      description: 'View system analytics and generate reports',
+      icon: BarChart3,
+      color: 'from-teal-500 to-green-500',
+      link: '/admin/analytics',
+      enabled: true
+    }
+  ];
 
   if (loading) {
     return (
-      <DashboardLayout userType="admin" userName="Admin User">
+      <DashboardLayout userType="admin" userName="Admin">
         <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <RefreshCw className="w-12 h-12 text-red-500 animate-spin mx-auto mb-4" />
-            <p className="text-gray-600 dark:text-gray-400">Loading settings...</p>
-          </div>
+          <Loader2 className="w-12 h-12 text-red-500 animate-spin" />
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout userType="admin" userName="Admin User">
+    <DashboardLayout userType="admin" userName="Admin">
       <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">System Settings</h1>
-              <p className="text-gray-600 dark:text-gray-400">Configure global system settings and preferences</p>
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl">
+              <Settings className="w-8 h-8 text-white" />
             </div>
-            <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-              {error && (
-                <div className="flex items-center space-x-2 px-3 py-2 bg-red-500/20 rounded-lg border border-red-500/50">
-                  <AlertTriangle className="w-5 h-5 text-red-400" />
-                  <span className="text-red-400">{error}</span>
-                </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">System Settings & Management</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-1">Central hub for all system configuration and management</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Company Information (Read-Only) */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+          <div className="flex items-center space-x-3 mb-6">
+            <Building className="w-6 h-6 text-red-500" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Company Information</h2>
+            <span className="px-2 py-1 bg-gray-500/20 text-gray-400 text-xs rounded-full">Read Only</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Company Name</p>
+              <p className="text-gray-900 dark:text-white font-semibold">{companyInfo.companyName}</p>
+            </div>
+            <div className="p-4 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Support Email</p>
+              <p className="text-gray-900 dark:text-white font-semibold">{companyInfo.supportEmail}</p>
+            </div>
+            <div className="p-4 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-lg">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Support Phone</p>
+              <p className="text-gray-900 dark:text-white font-semibold">{companyInfo.supportPhone}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Billing Configuration (Editable) */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <CreditCard className="w-6 h-6 text-red-500" />
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Billing Configuration</h2>
+            </div>
+            <button
+              onClick={handleSaveBilling}
+              disabled={saving}
+              className={`px-6 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg transition-all flex items-center space-x-2 font-semibold ${
+                saving ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-lg hover:shadow-pink-500/50'
+              }`}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Save Changes</span>
+                </>
               )}
-              {saveStatus === 'saved' && (
-                <div className="flex items-center space-x-2 px-3 py-2 bg-green-500/20 rounded-lg border border-green-500/50">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span className="text-green-400">Settings Saved</span>
-                </div>
-              )}
+            </button>
+          </div>
+
+          {success && (
+            <div className="mb-4 flex items-center space-x-2 px-4 py-3 bg-green-500/20 rounded-lg border border-green-500/50">
+              <CheckCircle className="w-5 h-5 text-green-400" />
+              <span className="text-green-400 font-semibold">Billing settings saved successfully!</span>
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-4 flex items-center space-x-2 px-4 py-3 bg-red-500/20 rounded-lg border border-red-500/50">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <span className="text-red-400 font-semibold">{error}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block font-medium">Payment Due Days</label>
+              <input
+                type="number"
+                value={billingConfig.paymentDueDays}
+                onChange={(e) => setBillingConfig({ ...billingConfig, paymentDueDays: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
+                min="1"
+                max="90"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Days after bill generation</p>
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block font-medium">Late Fee (%)</label>
+              <input
+                type="number"
+                value={billingConfig.lateFeePercentage}
+                onChange={(e) => setBillingConfig({ ...billingConfig, lateFeePercentage: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
+                min="0"
+                max="100"
+                step="0.1"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Percentage of bill amount</p>
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block font-medium">Tax Rate (%)</label>
+              <input
+                type="number"
+                value={billingConfig.taxRate}
+                onChange={(e) => setBillingConfig({ ...billingConfig, taxRate: e.target.value })}
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
+                min="0"
+                max="100"
+                step="0.1"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Applied to all bills</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Display Preferences */}
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+          <div className="flex items-center space-x-3 mb-6">
+            <Palette className="w-6 h-6 text-red-500" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Display Preferences</h2>
+          </div>
+
+          {themeSuccess && (
+            <div className="mb-4 flex items-center space-x-2 px-4 py-3 bg-green-500/20 rounded-lg border border-green-500/50">
+              <CheckCircle className="w-5 h-5 text-green-400" />
+              <span className="text-green-400 font-semibold">Theme preference saved successfully!</span>
+            </div>
+          )}
+
+          <div>
+            <label className="text-sm text-gray-700 dark:text-gray-300 mb-3 block font-medium">Theme Mode</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Light Theme */}
               <button
-                onClick={fetchSettings}
-                disabled={loading || saveStatus === 'saving'}
-                className={`px-4 py-3 bg-gray-600 dark:bg-gray-700 text-white rounded-lg transition-all flex items-center space-x-2 font-semibold ${
-                  loading || saveStatus === 'saving' ? 'opacity-70 cursor-not-allowed' : 'hover:bg-gray-700 dark:hover:bg-gray-600 hover:shadow-lg'
+                onClick={() => {
+                  setTheme('light');
+                  setSavingTheme(true);
+                  setThemeSuccess(true);
+                  setTimeout(() => {
+                    setSavingTheme(false);
+                    setThemeSuccess(false);
+                  }, 2000);
+                }}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  theme === 'light'
+                    ? 'border-red-500 bg-red-500/10'
+                    : 'border-gray-300 dark:border-white/20 hover:border-red-400'
                 }`}
-                title="Reload settings from database"
               >
-                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">Reload</span>
+                <div className="flex flex-col items-center space-y-2">
+                  <div className={`p-3 rounded-lg ${theme === 'light' ? 'bg-red-500/20' : 'bg-gray-100 dark:bg-white/5'}`}>
+                    <Sun className={`w-6 h-6 ${theme === 'light' ? 'text-red-500' : 'text-gray-600 dark:text-gray-400'}`} />
+                  </div>
+                  <span className={`font-semibold ${theme === 'light' ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'}`}>
+                    Light
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    Light color scheme
+                  </span>
+                </div>
               </button>
+
+              {/* Dark Theme */}
               <button
-                onClick={handleSaveSettings}
-                disabled={saveStatus === 'saving'}
-                className={`px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg transition-all flex items-center space-x-2 font-semibold ${
-                  saveStatus === 'saving' ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-lg hover:shadow-pink-500/50'
+                onClick={() => {
+                  setTheme('dark');
+                  setSavingTheme(true);
+                  setThemeSuccess(true);
+                  setTimeout(() => {
+                    setSavingTheme(false);
+                    setThemeSuccess(false);
+                  }, 2000);
+                }}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  theme === 'dark'
+                    ? 'border-red-500 bg-red-500/10'
+                    : 'border-gray-300 dark:border-white/20 hover:border-red-400'
                 }`}
               >
-                {saveStatus === 'saving' ? (
-                  <>
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5" />
-                    <span>Save Changes</span>
-                  </>
-                )}
+                <div className="flex flex-col items-center space-y-2">
+                  <div className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-red-500/20' : 'bg-gray-100 dark:bg-white/5'}`}>
+                    <Moon className={`w-6 h-6 ${theme === 'dark' ? 'text-red-500' : 'text-gray-600 dark:text-gray-400'}`} />
+                  </div>
+                  <span className={`font-semibold ${theme === 'dark' ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'}`}>
+                    Dark
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    Dark color scheme
+                  </span>
+                </div>
+              </button>
+
+              {/* System Theme */}
+              <button
+                onClick={() => {
+                  setTheme('system');
+                  setSavingTheme(true);
+                  setThemeSuccess(true);
+                  setTimeout(() => {
+                    setSavingTheme(false);
+                    setThemeSuccess(false);
+                  }, 2000);
+                }}
+                className={`p-4 rounded-xl border-2 transition-all ${
+                  theme === 'system'
+                    ? 'border-red-500 bg-red-500/10'
+                    : 'border-gray-300 dark:border-white/20 hover:border-red-400'
+                }`}
+              >
+                <div className="flex flex-col items-center space-y-2">
+                  <div className={`p-3 rounded-lg ${theme === 'system' ? 'bg-red-500/20' : 'bg-gray-100 dark:bg-white/5'}`}>
+                    <Monitor className={`w-6 h-6 ${theme === 'system' ? 'text-red-500' : 'text-gray-600 dark:text-gray-400'}`} />
+                  </div>
+                  <span className={`font-semibold ${theme === 'system' ? 'text-red-500' : 'text-gray-700 dark:text-gray-300'}`}>
+                    System
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    Follow system preference
+                  </span>
+                </div>
               </button>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar Navigation */}
-          <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Configuration</h2>
-              <nav className="space-y-2">
-                {sections.map((section) => (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={`w-full px-4 py-3 rounded-lg text-left transition-all flex items-center justify-between group ${
-                      activeSection === section.id
-                        ? 'bg-gradient-to-r from-red-500/20 to-pink-500/20 text-white border border-red-500/30'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-100 dark:hover:bg-white/10'
-                    }`}
-                  >
-                    <span className="flex items-center space-x-3">
-                      <section.icon className="w-5 h-5" />
-                      <span>{section.name}</span>
-                    </span>
-                    <ChevronRight className={`w-4 h-4 transition-transform ${
-                      activeSection === section.id ? 'rotate-90' : 'group-hover:translate-x-1'
-                    }`} />
-                  </button>
-                ))}
-              </nav>
-
-              {/* System Status */}
-              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/10">
-                <h3 className="text-white font-semibold mb-3">System Status</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-400 text-sm">Version</span>
-                    <span className="text-gray-900 dark:text-white text-sm">v2.4.1</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-400 text-sm">Status</span>
-                    <span className="text-green-400 text-sm">Online</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-600 dark:text-gray-400 text-sm">Last Backup</span>
-                    <span className="text-gray-900 dark:text-white text-sm">2 hours ago</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Management Hub - Navigation Cards */}
+        <div>
+          <div className="flex items-center space-x-3 mb-4">
+            <Shield className="w-6 h-6 text-red-500" />
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Management Hub</h2>
           </div>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">Quick access to all system management features</p>
 
-          {/* Settings Content */}
-          <div className="lg:col-span-3">
-            {activeSection === 'general' && (
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">General Settings</h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Company Name</label>
-                    <input
-                      type="text"
-                      value={settings.general.companyName}
-                      onChange={(e) => setSettings({
-                        ...settings,
-                        general: { ...settings.general, companyName: e.target.value }
-                      })}
-                      className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
-                    />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {managementSections.map((section, index) => (
+              <button
+                key={index}
+                onClick={() => router.push(section.link)}
+                disabled={!section.enabled}
+                className={`group p-6 bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 hover:shadow-xl transition-all text-left ${
+                  section.enabled ? 'hover:scale-105 cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`p-3 bg-gradient-to-br ${section.color} rounded-xl`}>
+                    <section.icon className="w-6 h-6 text-white" />
                   </div>
-
-                  <div>
-                    <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Timezone</label>
-                    <select
-                      value={settings.general.timezone}
-                      onChange={(e) => setSettings({
-                        ...settings,
-                        general: { ...settings.general, timezone: e.target.value }
-                      })}
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
-                    >
-                      <option value="UTC-5" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">UTC-5 (Eastern)</option>
-                      <option value="UTC-6" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">UTC-6 (Central)</option>
-                      <option value="UTC-7" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">UTC-7 (Mountain)</option>
-                      <option value="UTC-8" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">UTC-8 (Pacific)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Currency</label>
-                    <select
-                      value={settings.general.currency}
-                      onChange={(e) => setSettings({
-                        ...settings,
-                        general: { ...settings.general, currency: e.target.value }
-                      })}
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
-                    >
-                      <option value="USD" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">USD ($)</option>
-                      <option value="EUR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">EUR (€)</option>
-                      <option value="GBP" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">GBP (£)</option>
-                      <option value="INR" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">INR (₹)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Language</label>
-                    <select
-                      value={settings.general.language}
-                      onChange={(e) => setSettings({
-                        ...settings,
-                        general: { ...settings.general, language: e.target.value }
-                      })}
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
-                    >
-                      <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">English</option>
-                      <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Spanish</option>
-                      <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">French</option>
-                      <option className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">German</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Date Format</label>
-                    <select
-                      value={settings.general.dateFormat}
-                      onChange={(e) => setSettings({
-                        ...settings,
-                        general: { ...settings.general, dateFormat: e.target.value }
-                      })}
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
-                    >
-                      <option value="MM/DD/YYYY" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">MM/DD/YYYY</option>
-                      <option value="DD/MM/YYYY" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">DD/MM/YYYY</option>
-                      <option value="YYYY-MM-DD" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">YYYY-MM-DD</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Fiscal Year Start</label>
-                    <select
-                      value={settings.general.fiscalYearStart}
-                      onChange={(e) => setSettings({
-                        ...settings,
-                        general: { ...settings.general, fiscalYearStart: e.target.value }
-                      })}
-                      className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
-                    >
-                      <option value="January" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">January</option>
-                      <option value="April" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">April</option>
-                      <option value="July" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">July</option>
-                      <option value="October" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">October</option>
-                    </select>
-                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
                 </div>
-
-                <div className="mt-6 p-4 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <AlertTriangle className="w-5 h-5 text-yellow-400" />
-                      <div>
-                        <p className="text-white font-semibold">Maintenance Mode</p>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm">Temporarily disable user access for system updates</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleToggle('general', 'maintenanceMode')}
-                      className={`w-12 h-6 rounded-full transition-colors ${
-                        settings.general.maintenanceMode
-                          ? 'bg-gradient-to-r from-red-500 to-rose-500'
-                          : 'bg-white/20'
-                      }`}
-                    >
-                      <div className={`w-5 h-5 bg-white rounded-full transform transition-transform ${
-                        settings.general.maintenanceMode ? 'translate-x-6' : 'translate-x-0.5'
-                      }`} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeSection === 'billing' && (
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Billing Configuration</h2>
-
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Billing Cycle</label>
-                      <select
-                        value={settings.billing.billingCycle}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          billing: { ...settings.billing, billingCycle: e.target.value }
-                        })}
-                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
-                      >
-                        <option value="monthly" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Monthly</option>
-                        <option value="bimonthly" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Bi-Monthly</option>
-                        <option value="quarterly" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Quarterly</option>
-                        <option value="annually" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Annually</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Payment Due Days</label>
-                      <input
-                        type="number"
-                        value={settings.billing.paymentDueDays}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          billing: { ...settings.billing, paymentDueDays: e.target.value }
-                        })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Late Fee (%)</label>
-                      <input
-                        type="number"
-                        value={settings.billing.lateFeePercentage}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          billing: { ...settings.billing, lateFeePercentage: e.target.value }
-                        })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Grace Period (Days)</label>
-                      <input
-                        type="number"
-                        value={settings.billing.gracePeriod}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          billing: { ...settings.billing, gracePeriod: e.target.value }
-                        })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Tax Rate (%)</label>
-                      <input
-                        type="number"
-                        value={settings.billing.taxRate}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          billing: { ...settings.billing, taxRate: e.target.value }
-                        })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Minimum Payment ($)</label>
-                      <input
-                        type="number"
-                        value={settings.billing.minimumPayment}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          billing: { ...settings.billing, minimumPayment: e.target.value }
-                        })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <label className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
-                      <div>
-                        <span className="text-gray-900 dark:text-white">Auto-Generate Bills</span>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm">Automatically create bills at cycle end</p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={settings.billing.autoGenerateBills}
-                        onChange={() => handleToggle('billing', 'autoGenerateBills')}
-                        className="w-5 h-5 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded text-red-400"
-                      />
-                    </label>
-
-                    <label className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
-                      <div>
-                        <span className="text-gray-900 dark:text-white">Enable Auto-Pay</span>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm">Allow customers to set up automatic payments</p>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={settings.billing.enableAutoPay}
-                        onChange={() => handleToggle('billing', 'enableAutoPay')}
-                        className="w-5 h-5 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded text-red-400"
-                      />
-                    </label>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeSection === 'security' && (
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Security Settings</h2>
-
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Password Min Length</label>
-                      <input
-                        type="number"
-                        value={settings.security.passwordMinLength}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          security: { ...settings.security, passwordMinLength: e.target.value }
-                        })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Two-Factor Authentication</label>
-                      <select
-                        value={settings.security.twoFactorAuth}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          security: { ...settings.security, twoFactorAuth: e.target.value }
-                        })}
-                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
-                      >
-                        <option value="disabled" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Disabled</option>
-                        <option value="optional" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Optional</option>
-                        <option value="required" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Required</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Session Timeout (minutes)</label>
-                      <input
-                        type="number"
-                        value={settings.security.sessionTimeout}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          security: { ...settings.security, sessionTimeout: e.target.value }
-                        })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Max Login Attempts</label>
-                      <input
-                        type="number"
-                        value={settings.security.maxLoginAttempts}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          security: { ...settings.security, maxLoginAttempts: e.target.value }
-                        })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">API Rate Limit (per hour)</label>
-                      <input
-                        type="number"
-                        value={settings.security.apiRateLimit}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          security: { ...settings.security, apiRateLimit: e.target.value }
-                        })}
-                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">Backup Frequency</label>
-                      <select
-                        value={settings.security.backupFrequency}
-                        onChange={(e) => setSettings({
-                          ...settings,
-                          security: { ...settings.security, backupFrequency: e.target.value }
-                        })}
-                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400 font-medium"
-                      >
-                        <option value="hourly" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Hourly</option>
-                        <option value="daily" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Daily</option>
-                        <option value="weekly" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Weekly</option>
-                        <option value="monthly" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white py-2">Monthly</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {[
-                      { key: 'passwordComplexity', label: 'Password Complexity', desc: 'Require uppercase, lowercase, numbers, and symbols' },
-                      { key: 'ipWhitelist', label: 'IP Whitelist', desc: 'Restrict access to specific IP addresses' },
-                      { key: 'dataEncryption', label: 'Data Encryption', desc: 'Encrypt sensitive data at rest' },
-                      { key: 'auditLogging', label: 'Audit Logging', desc: 'Log all system activities and changes' }
-                    ].map((item) => (
-                      <label key={item.key} className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
-                        <div>
-                          <span className="text-gray-900 dark:text-white">{item.label}</span>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm">{item.desc}</p>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(settings.security[item.key as keyof typeof settings.security])}
-                          onChange={() => handleToggle('security', item.key)}
-                          className="w-5 h-5 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded text-red-400"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeSection === 'system' && (
-              <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">System Configuration</h2>
-
-                <div className="space-y-6">
-                  <div className="p-4 bg-white dark:bg-white/5 rounded-lg">
-                    <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block">API Key</label>
-                    <div className="relative">
-                      <input
-                        type={showApiKey ? 'text' : 'password'}
-                        value={settings.system.apiKey}
-                        readOnly
-                        className="w-full pr-24 px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white"
-                      />
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-2">
-                        <button
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-900 dark:hover:text-white transition-colors"
-                        >
-                          {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                        <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-900 dark:hover:text-white transition-colors">
-                          <RefreshCw className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {[
-                      { key: 'cacheEnabled', label: 'Cache Enabled', desc: 'Enable caching for better performance' },
-                      { key: 'cdnEnabled', label: 'CDN Enabled', desc: 'Use content delivery network' },
-                      { key: 'debugMode', label: 'Debug Mode', desc: 'Enable detailed error logging' },
-                      { key: 'performanceMonitoring', label: 'Performance Monitoring', desc: 'Track system performance metrics' },
-                      { key: 'errorTracking', label: 'Error Tracking', desc: 'Log and track application errors' },
-                      { key: 'analyticsEnabled', label: 'Analytics', desc: 'Enable usage analytics' }
-                    ].map((item) => (
-                      <label key={item.key} className="flex items-center justify-between p-4 bg-white dark:bg-white/5 rounded-lg">
-                        <div>
-                          <span className="text-gray-900 dark:text-white">{item.label}</span>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm">{item.desc}</p>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(settings.system[item.key as keyof typeof settings.system])}
-                          onChange={() => handleToggle('system', item.key)}
-                          className="w-5 h-5 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded text-red-400"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{section.title}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{section.description}</p>
+              </button>
+            ))}
           </div>
         </div>
       </div>

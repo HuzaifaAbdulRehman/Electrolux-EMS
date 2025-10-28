@@ -115,14 +115,22 @@ export async function POST(request: NextRequest) {
 
     const userId = parseInt(session.user.id);
     
-    // Calculate affected customer count if not provided
-    let customerCount = affectedCustomerCount || 0;
-    if (!affectedCustomerCount) {
+    // Calculate affected customer count if not provided or invalid
+    let providedCount: number | null = null;
+    if (typeof affectedCustomerCount !== 'undefined' && affectedCustomerCount !== null) {
+      const parsed = Number(affectedCustomerCount);
+      providedCount = Number.isFinite(parsed) ? parsed : null;
+    }
+
+    let customerCount = 0;
+    if (providedCount === null || providedCount <= 0) {
       const [countResult] = await db
         .select({ count: sql<number>`COUNT(*)` })
         .from(customers)
         .where(eq(customers.zone, zone));
       customerCount = countResult.count;
+    } else {
+      customerCount = providedCount;
     }
 
     const insertResult = await db.insert(outages).values({

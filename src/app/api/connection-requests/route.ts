@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check if email already belongs to an existing customer
+    // DBMS: Check if email already belongs to an existing customer (one person = one meter rule)
     const [existingCustomer] = await db
       .select()
       .from(customers)
@@ -49,11 +49,25 @@ export async function POST(request: NextRequest) {
     if (existingCustomer) {
       return NextResponse.json({
         error: 'Email already registered',
-        details: `This email is already registered as a customer with account number ${existingCustomer.accountNumber}. Please login to your account.`
+        details: `This email is already registered. If you have an account, please login. If you forgot your password, use the forgot password option. One person can only have one meter connection.`
       }, { status: 400 });
     }
 
-    // Check if email already has a pending/approved application
+    // DBMS: Check if phone already belongs to an existing customer (prevent duplicate accounts)
+    const [existingCustomerByPhone] = await db
+      .select()
+      .from(customers)
+      .where(eq(customers.phone, phone))
+      .limit(1);
+
+    if (existingCustomerByPhone) {
+      return NextResponse.json({
+        error: 'Phone number already registered',
+        details: `This phone number is already registered with another account. One person can only have one meter connection.`
+      }, { status: 400 });
+    }
+
+    // DBMS: Check if email already has a pending/approved application
     const [existingRequest] = await db
       .select()
       .from(connectionRequests)
@@ -70,7 +84,28 @@ export async function POST(request: NextRequest) {
     if (existingRequest) {
       return NextResponse.json({
         error: 'Application already exists',
-        details: `You already have a ${existingRequest.status} application with number ${existingRequest.applicationNumber}`
+        details: `You already have a ${existingRequest.status} application with number ${existingRequest.applicationNumber}. Please wait for admin review.`
+      }, { status: 400 });
+    }
+
+    // DBMS: Check if phone already has a pending/approved application
+    const [existingRequestByPhone] = await db
+      .select()
+      .from(connectionRequests)
+      .where(and(
+        eq(connectionRequests.phone, phone),
+        or(
+          eq(connectionRequests.status, 'pending'),
+          eq(connectionRequests.status, 'under_review'),
+          eq(connectionRequests.status, 'approved')
+        )
+      ))
+      .limit(1);
+
+    if (existingRequestByPhone) {
+      return NextResponse.json({
+        error: 'Phone number already has pending application',
+        details: `This phone number already has a ${existingRequestByPhone.status} application with number ${existingRequestByPhone.applicationNumber}.`
       }, { status: 400 });
     }
 

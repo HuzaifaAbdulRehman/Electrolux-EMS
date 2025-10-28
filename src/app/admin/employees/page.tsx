@@ -381,13 +381,22 @@ export default function EmployeeManagement() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-2">
-                            <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10 rounded-lg transition-all">
+                            <button
+                              className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10 rounded-lg transition-all"
+                              title="View Details"
+                            >
                           <Eye className="w-4 h-4" />
                         </button>
-                            <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10 rounded-lg transition-all">
+                            <button
+                              className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10 rounded-lg transition-all"
+                              title="Edit Employee"
+                            >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all">
+                        <button
+                          className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                          title="Delete Employee"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>

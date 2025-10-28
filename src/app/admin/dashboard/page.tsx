@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
+import ToastTest from '@/components/ToastTest';
 import {
   DollarSign,
   Users,
@@ -822,6 +823,13 @@ export default function AdminDashboard() {
             <p className="text-gray-600 dark:text-gray-400 text-sm">Manage customer complaints</p>
           </button>
         </div>
+
+        {/* Toast Test Section - Only show in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-8">
+            <ToastTest />
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

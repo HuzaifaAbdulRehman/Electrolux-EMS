@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { useToast } from '@/hooks/useToast';
 import {
   Zap,
   Search,
@@ -23,6 +24,7 @@ import {
 
 export default function AdminConnectionRequests() {
   const { data: session } = useSession();
+  const toast = useToast();
   const [requests, setRequests] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,9 @@ export default function AdminConnectionRequests() {
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [accountCredentials, setAccountCredentials] = useState<any>(null);
 
   const [approvalData, setApprovalData] = useState({
     employeeId: '',
@@ -71,7 +75,7 @@ export default function AdminConnectionRequests() {
 
   const handleApprove = async () => {
     if (!selectedRequest || !approvalData.employeeId) {
-      alert('Please select an employee');
+      toast.error('Please select an employee');
       return;
     }
 
@@ -95,13 +99,13 @@ export default function AdminConnectionRequests() {
         throw new Error(result.error || 'Failed to approve request');
       }
 
-      alert('Application approved successfully!');
+      toast.success('Application approved successfully!');
       setShowApproveModal(false);
       setSelectedRequest(null);
       fetchRequests();
     } catch (err: any) {
       console.error('Error approving request:', err);
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setIsProcessing(false);
     }
@@ -128,11 +132,46 @@ export default function AdminConnectionRequests() {
         throw new Error(result.error || 'Failed to reject request');
       }
 
-      alert('Application rejected');
+      toast.success('Application rejected');
       fetchRequests();
     } catch (err: any) {
       console.error('Error rejecting request:', err);
-      alert(err.message);
+      toast.error(err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCreateAccount = async (requestId: number) => {
+    if (!confirm('Create customer account for this application? A meter number will be auto-generated and login credentials will be created.')) return;
+
+    setIsProcessing(true);
+    try {
+      const response = await fetch('/api/admin/connection-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId,
+          action: 'create_customer',
+          zone: 'Zone A' // You can make this selectable if needed
+        })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create account');
+      }
+
+      // Show credentials modal
+      setAccountCredentials(result.data);
+      setShowAccountModal(true);
+
+      toast.success('Customer account created successfully!');
+      fetchRequests();
+    } catch (err: any) {
+      console.error('Error creating account:', err);
+      toast.error(err.message);
     } finally {
       setIsProcessing(false);
     }
@@ -331,6 +370,17 @@ export default function AdminConnectionRequests() {
                         </button>
                       </>
                     )}
+
+                    {request.status === 'approved' && (
+                      <button
+                        onClick={() => handleCreateAccount(request.id)}
+                        disabled={isProcessing}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50 flex items-center space-x-2"
+                      >
+                        <User className="w-4 h-4" />
+                        <span>Create Customer Account</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -479,6 +529,72 @@ export default function AdminConnectionRequests() {
                   className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all disabled:opacity-50"
                 >
                   Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Account Credentials Modal */}
+        {showAccountModal && accountCredentials && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-lg w-full">
+              <div className="text-center mb-6">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                  Customer Account Created!
+                </h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Please provide these credentials to the customer
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Customer Name</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">{accountCredentials.name}</p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Email (Username)</p>
+                  <p className="font-mono text-gray-900 dark:text-white">{accountCredentials.email}</p>
+                </div>
+
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-1">Temporary Password</p>
+                  <p className="font-mono text-xl font-bold text-yellow-900 dark:text-yellow-100">{accountCredentials.temporaryPassword}</p>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">Customer should change this on first login</p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Account Number</p>
+                  <p className="font-mono text-gray-900 dark:text-white">{accountCredentials.accountNumber}</p>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Meter Number</p>
+                  <p className="font-mono text-gray-900 dark:text-white">{accountCredentials.meterNumber}</p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center space-x-3">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`Email: ${accountCredentials.email}\nPassword: ${accountCredentials.temporaryPassword}\nAccount: ${accountCredentials.accountNumber}\nMeter: ${accountCredentials.meterNumber}`);
+                    toast.success('Credentials copied to clipboard!');
+                  }}
+                  className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all"
+                >
+                  Copy All Details
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAccountModal(false);
+                    setAccountCredentials(null);
+                  }}
+                  className="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+                >
+                  Close
                 </button>
               </div>
             </div>

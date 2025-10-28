@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { useToast } from '@/hooks/useToast';
 import { safeNumber, formatCurrency, safeDate, formatUnits } from '@/lib/utils/dataHandlers';
 import {
   User,
@@ -34,6 +35,7 @@ import {
 
 export default function CustomerProfile() {
   const { data: session } = useSession();
+  const toast = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
   const [loading, setLoading] = useState(true);

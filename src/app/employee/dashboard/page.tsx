@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { useToast } from '@/hooks/useToast';
 import {
   Gauge,
   Users,
@@ -23,6 +24,7 @@ import {
 export default function EmployeeDashboard() {
   const router = useRouter();
   const { data: session } = useSession();
+  const toast = useToast();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);

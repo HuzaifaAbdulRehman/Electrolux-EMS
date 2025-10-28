@@ -58,7 +58,12 @@
       "Bash(timeout 10 bash:*)",
       "Bash(npx next build:*)",
       "Bash(cut:*)",
-      "Bash(tee:*)"
+      "Bash(tee:*)",
+      "Bash(if exist \"d:\\Programming\\Projects\\electrolux_ems\\src\\app\\api\\auth\\change-password\\route.ts\" echo \"File exists\" else echo \"File does not exist\")",
+      "Bash(mkdir:*)",
+      "Bash(rm:*)",
+      "Bash(touch:*)",
+      "Bash(do echo \"=== Branch: $branch ===\")"
     ],
     "deny": [],
     "ask": []

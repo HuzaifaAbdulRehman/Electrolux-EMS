@@ -5,6 +5,7 @@ import { db } from '@/lib/drizzle/db';
 import { customers, meterReadings, bills, tariffs, notifications } from '@/lib/drizzle/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
 
+
 // POST /api/bills/generate-bulk - Generate bills for all eligible customers
 export async function POST(request: NextRequest) {
   try {
@@ -27,6 +28,7 @@ export async function POST(request: NextRequest) {
     const stats = {
       totalProcessed: 0,
       billsGenerated: 0,
+      automaticReadings: 0,
       skipped: {
         noReading: 0,
         alreadyExists: 0,
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
             }
 
             // Get latest meter reading for this month
-            const [reading] = await db
+            let [reading] = await db
               .select()
               .from(meterReadings)
               .where(
@@ -119,9 +121,165 @@ export async function POST(request: NextRequest) {
               .orderBy(desc(meterReadings.readingDate))
               .limit(1);
 
+            // SCENARIO 3: No reading found - Generate automatic reading
             if (!reading) {
-              stats.skipped.noReading++;
-              continue;
+              console.log(`[Bulk Generation] No reading for customer ${customer.accountNumber} - generating automatic reading`);
+
+              try {
+                // Get last month's reading to calculate new reading
+                const previousMonthDate = new Date(billingMonth);
+                previousMonthDate.setMonth(previousMonthDate.getMonth() - 1);
+                const prevMonthStart = previousMonthDate.toISOString().split('T')[0];
+                const prevMonthEnd = new Date(previousMonthDate);
+                prevMonthEnd.setMonth(prevMonthEnd.getMonth() + 1);
+                const prevMonthEndStr = prevMonthEnd.toISOString().split('T')[0];
+
+                const [lastMonthReading] = await db
+                  .select()
+                  .from(meterReadings)
+                  .where(
+                    and(
+                      eq(meterReadings.customerId, customer.id),
+                      sql`${meterReadings.readingDate} >= ${prevMonthStart}`,
+                      sql`${meterReadings.readingDate} < ${prevMonthEndStr}`
+                    )
+                  )
+                  .orderBy(desc(meterReadings.readingDate))
+                  .limit(1);
+
+                if (!lastMonthReading) {
+                  stats.skipped.noReading++;
+                  console.log(`[Bulk Generation] No previous reading found for ${customer.accountNumber} - skipping`);
+                  continue;
+                }
+
+                // Calculate average consumption from historical data
+                let averageConsumption = 0;
+
+                // Strategy 1: If has ≥6 months history, use last 6 months average
+                const historicalReadings = await db
+                  .select()
+                  .from(meterReadings)
+                  .where(eq(meterReadings.customerId, customer.id))
+                  .orderBy(desc(meterReadings.readingDate))
+                  .limit(6);
+
+                if (historicalReadings.length >= 6) {
+                  const totalConsumption = historicalReadings.reduce((sum, r) =>
+                    sum + parseFloat(r.unitsConsumed || '0'), 0
+                  );
+                  averageConsumption = totalConsumption / historicalReadings.length;
+                  console.log(`[Bulk Generation] Using 6-month average: ${averageConsumption.toFixed(2)} kWh`);
+                } else if (historicalReadings.length > 0) {
+                  // Strategy 2: Use available history average
+                  const totalConsumption = historicalReadings.reduce((sum, r) =>
+                    sum + parseFloat(r.unitsConsumed || '0'), 0
+                  );
+                  averageConsumption = totalConsumption / historicalReadings.length;
+                  console.log(`[Bulk Generation] Using ${historicalReadings.length}-month average: ${averageConsumption.toFixed(2)} kWh`);
+                } else {
+                  // Strategy 3: Use category average (fallback)
+                  const categoryPeers = await db
+                    .select({ unitsConsumed: meterReadings.unitsConsumed })
+                    .from(meterReadings)
+                    .leftJoin(customers, eq(meterReadings.customerId, customers.id))
+                    .where(
+                      and(
+                        eq(customers.connectionType, customer.connectionType || 'Residential'),
+                        sql`${meterReadings.readingDate} >= DATE_SUB(${billingMonth}, INTERVAL 6 MONTH)`
+                      )
+                    )
+                    .limit(100);
+
+                  if (categoryPeers.length > 0) {
+                    const totalConsumption = categoryPeers.reduce((sum, r) =>
+                      sum + parseFloat(r.unitsConsumed || '0'), 0
+                    );
+                    averageConsumption = totalConsumption / categoryPeers.length;
+                    console.log(`[Bulk Generation] Using category average: ${averageConsumption.toFixed(2)} kWh`);
+                  } else {
+                    // Strategy 4: Use zone average (final fallback)
+                    const zonePeers = await db
+                      .select({ unitsConsumed: meterReadings.unitsConsumed })
+                      .from(meterReadings)
+                      .leftJoin(customers, eq(meterReadings.customerId, customers.id))
+                      .where(
+                        and(
+                          eq(customers.zone, customer.zone || 'Zone A'),
+                          sql`${meterReadings.readingDate} >= DATE_SUB(${billingMonth}, INTERVAL 6 MONTH)`
+                        )
+                      )
+                      .limit(100);
+
+                    if (zonePeers.length > 0) {
+                      const totalConsumption = zonePeers.reduce((sum, r) =>
+                        sum + parseFloat(r.unitsConsumed || '0'), 0
+                      );
+                      averageConsumption = totalConsumption / zonePeers.length;
+                      console.log(`[Bulk Generation] Using zone average: ${averageConsumption.toFixed(2)} kWh`);
+                    } else {
+                      // Absolute fallback: Use default based on connection type
+                      const defaults: { [key: string]: number } = {
+                        'Residential': 200,
+                        'Commercial': 800,
+                        'Industrial': 8000,
+                        'Agricultural': 600
+                      };
+                      averageConsumption = defaults[customer.connectionType || 'Residential'] || 200;
+                      console.log(`[Bulk Generation] Using default consumption: ${averageConsumption} kWh`);
+                    }
+                  }
+                }
+
+                // Apply ±15% random variance for realism
+                const variance = 0.85 + (Math.random() * 0.30); // Random between 0.85 and 1.15
+                const newConsumption = Math.round(averageConsumption * variance);
+
+                // Calculate new reading
+                const previousReading = parseFloat(lastMonthReading.currentReading);
+                const newReading = previousReading + newConsumption;
+
+                // Insert automatic meter reading
+                const readingDate = new Date(billingMonth);
+                readingDate.setDate(15); // Mid-month reading
+                const readingDateStr = readingDate.toISOString().split('T')[0];
+
+                const [insertedReading] = await db.insert(meterReadings).values({
+                  customerId: customer.id,
+                  meterNumber: customer.meterNumber,
+                  currentReading: newReading.toString(),
+                  previousReading: previousReading.toString(),
+                  unitsConsumed: newConsumption.toString(),
+                  readingDate: readingDateStr,
+                  readingTime: readingDate,
+                  meterCondition: 'good',
+                  accessibility: 'accessible',
+                  employeeId: 1, // Admin/System generated
+                  photoPath: null,
+                  notes: 'Auto-generated by bulk bill generation system',
+                } as any);
+
+                console.log(`[Bulk Generation] Created automatic reading for ${customer.accountNumber}: ${newConsumption} kWh (variance: ${(variance * 100).toFixed(1)}%)`);
+                stats.automaticReadings++;
+
+                // Fetch the newly created reading
+                [reading] = await db
+                  .select()
+                  .from(meterReadings)
+                  .where(eq(meterReadings.id, insertedReading.insertId))
+                  .limit(1);
+
+              } catch (autoReadingError: any) {
+                console.error(`[Bulk Generation] Error generating automatic reading for ${customer.accountNumber}:`, autoReadingError);
+                stats.skipped.noReading++;
+                stats.failed.push({
+                  customerId: customer.id,
+                  accountNumber: customer.accountNumber,
+                  fullName: customer.fullName,
+                  error: `Failed to generate automatic reading: ${autoReadingError.message}`
+                });
+                continue;
+              }
             }
 
             // Check for zero consumption
@@ -240,11 +398,12 @@ export async function POST(request: NextRequest) {
         summary: {
           totalProcessed: stats.totalProcessed,
           billsGenerated: stats.billsGenerated,
+          automaticReadingsGenerated: stats.automaticReadings,
           billingMonth,
           skipped: stats.skipped,
           failedCount: stats.failed.length,
           duration: `${(duration / 1000).toFixed(2)}s`,
-          averageTimePerBill: `${(duration / stats.billsGenerated).toFixed(2)}ms`
+          averageTimePerBill: stats.billsGenerated > 0 ? `${(duration / stats.billsGenerated).toFixed(2)}ms` : 'N/A'
         },
         generatedBills: stats.generatedBills.slice(0, 20), // First 20 bills
         failed: stats.failed.slice(0, 10) // First 10 failures

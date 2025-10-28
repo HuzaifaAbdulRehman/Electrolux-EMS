@@ -35,16 +35,12 @@ export default function ApplyConnection() {
     idNumber: '',
     propertyType: 'Residential' as 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural',
     connectionType: 'single-phase',
-    loadRequired: '',
     propertyAddress: '',
     city: '',
     state: '',
     pincode: '',
     landmark: '',
-    preferredDate: '',
-    purposeOfConnection: 'domestic' as 'domestic' | 'business' | 'industrial' | 'agricultural',
-    existingConnection: false,
-    existingAccountNumber: ''
+    preferredDate: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,10 +49,26 @@ export default function ApplyConnection() {
     setError(null);
 
     try {
+      // Auto-set purpose based on property type
+      const purposeMap: Record<string, string> = {
+        'Residential': 'domestic',
+        'Commercial': 'business',
+        'Industrial': 'industrial',
+        'Agricultural': 'agricultural'
+      };
+
+      const submitData = {
+        ...formData,
+        purposeOfConnection: purposeMap[formData.propertyType],
+        loadRequired: '5', // Default 5kW for single phase
+        existingConnection: false,
+        existingAccountNumber: ''
+      };
+
       const response = await fetch('/api/connection-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submitData)
       });
 
       const result = await response.json();
@@ -308,6 +320,11 @@ export default function ApplyConnection() {
               <Zap className="w-5 h-5 mr-2 text-yellow-400" />
               Connection Details
             </h2>
+            <div className="mb-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                <strong>Note:</strong> All connections are Single-Phase. One customer can have only one meter connection.
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -327,53 +344,6 @@ export default function ApplyConnection() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Connection Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  required
-                  value={formData.connectionType}
-                  onChange={(e) => setFormData({ ...formData, connectionType: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="single-phase">Single Phase</option>
-                  <option value="three-phase">Three Phase</option>
-                  <option value="industrial">Industrial</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Load Required (kW)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.loadRequired}
-                  onChange={(e) => setFormData({ ...formData, loadRequired: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="e.g., 5.5"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Purpose <span className="text-red-500">*</span>
-                </label>
-                <select
-                  required
-                  value={formData.purposeOfConnection}
-                  onChange={(e) => setFormData({ ...formData, purposeOfConnection: e.target.value as any })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="domestic">Domestic</option>
-                  <option value="business">Business</option>
-                  <option value="industrial">Industrial</option>
-                  <option value="agricultural">Agricultural</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Preferred Connection Date
                 </label>

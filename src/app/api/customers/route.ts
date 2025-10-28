@@ -22,6 +22,8 @@ export async function GET(request: NextRequest) {
     // Get query parameters for filtering and pagination
     const searchParams = request.nextUrl.searchParams;
     const customerId = searchParams.get('customerId') || searchParams.get('id');
+    const countOnly = searchParams.get('countOnly');
+    const zone = searchParams.get('zone');
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || '';
     const connectionType = searchParams.get('connectionType') || '';
@@ -64,6 +66,25 @@ export async function GET(request: NextRequest) {
         success: true,
         data: customer,
       });
+    }
+
+    // Fast path: countOnly with optional zone filter
+    if (countOnly === 'true') {
+      const conditions: any[] = [];
+      if (zone) conditions.push(eq(customers.zone, zone));
+
+      let countQuery = db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(customers)
+        .$dynamic();
+
+      if (conditions.length > 0) {
+        countQuery = countQuery.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
+      }
+
+      const [result] = await countQuery as any;
+
+      return NextResponse.json({ success: true, data: { count: Number(result.count) } });
     }
 
     // Build query
@@ -222,28 +243,20 @@ export async function POST(request: NextRequest) {
     const randomSuffix = crypto.randomBytes(2).toString('hex').toUpperCase();
     const accountNumber = `ELX-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}-${randomSuffix}`;
 
-    // Determine customer status
-    // For 5th semester project: pending_installation means meter not yet assigned
-    const customerStatus = body.status || (body.meterNumber ? 'active' : 'pending_installation');
+    // Path policy:
+    // - Admin-created (offline): fully detailed, meter auto-generated, status active
+    // - Online self-registration (separate route): minimal fields, status pending_installation until meter install
 
-    // Meter number will be assigned AFTER installation by employee
-    // For now, only assign if explicitly provided (existing meter) or if status is active
-    let meterNumber = null;
-    if (body.meterNumber) {
-      // Admin manually providing meter number (existing meter)
-      meterNumber = body.meterNumber;
-    } else if (customerStatus === 'active') {
-      // For backward compatibility: auto-generate if marked as active
-      // DBMS Project: Use AUTO_INCREMENT customer.id for uniqueness
-      // We'll update after INSERT to use actual customer ID
-      meterNumber = 'TEMP'; // Temporary, will be updated below
-    }
+    const customerStatus = 'active';
 
-    console.log('[CREATE CUSTOMER] Account number:', accountNumber);
-    console.log('[CREATE CUSTOMER] Initial meter number:', meterNumber);
-    console.log('[CREATE CUSTOMER] Status:', customerStatus);
+    // Temporarily set meter; will finalize after we know the new customer ID
+    let meterNumber = 'TEMP';
 
-    // Create customer record
+    console.log('[CREATE CUSTOMER - ADMIN DIRECT] Account number:', accountNumber);
+    console.log('[CREATE CUSTOMER - ADMIN DIRECT] Meter will be auto-generated');
+    console.log('[CREATE CUSTOMER - ADMIN DIRECT] Status: active (offline customer registration)');
+
+    // Create customer record (offline, complete details)
     const [newCustomer] = await db.insert(customers).values({
       userId: newUser.insertId,
       accountNumber,
@@ -255,7 +268,7 @@ export async function POST(request: NextRequest) {
       city: body.city,
       state: body.state,
       pincode: body.pincode,
-      zone: body.zone || null, // Load shedding zone
+      zone: body.zone || null,
       connectionType: body.connectionType,
       status: customerStatus,
       connectionDate: body.connectionDate || new Date().toISOString().split('T')[0],
@@ -266,8 +279,7 @@ export async function POST(request: NextRequest) {
 
     // If meter number was set to TEMP, update with actual customer ID
     if (meterNumber === 'TEMP') {
-      // DBMS Project: Meter number format MTR-{CustomerID}-{Year}
-      // This ensures uniqueness using AUTO_INCREMENT ID
+      // Meter number format: MTR-{CustomerID}-{Year}
       const actualMeterNumber = `MTR-${String(customerId).padStart(6, '0')}-${new Date().getFullYear()}`;
 
       await db.update(customers)
@@ -280,9 +292,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: customerStatus === 'pending_installation'
-        ? 'Customer created successfully. Meter number will be assigned after installation.'
-        : 'Customer created successfully',
+      message: 'Customer created successfully with meter assigned',
       data: {
         id: customerId,
         accountNumber,

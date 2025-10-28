@@ -58,20 +58,30 @@ export async function GET(request: NextRequest) {
         id: connectionRequests.id,
         applicationNumber: connectionRequests.applicationNumber,
         applicantName: connectionRequests.applicantName,
+        fatherName: connectionRequests.fatherName,
         email: connectionRequests.email,
         phone: connectionRequests.phone,
+        alternatePhone: connectionRequests.alternatePhone,
+        idType: connectionRequests.idType,
+        idNumber: connectionRequests.idNumber,
+        propertyType: connectionRequests.propertyType,
         propertyAddress: connectionRequests.propertyAddress,
         city: connectionRequests.city,
         state: connectionRequests.state,
+        pincode: connectionRequests.pincode,
+        landmark: connectionRequests.landmark,
         connectionType: connectionRequests.connectionType,
         loadRequired: connectionRequests.loadRequired,
+        purposeOfConnection: connectionRequests.purposeOfConnection,
         status: connectionRequests.status,
         applicationDate: connectionRequests.applicationDate,
         preferredDate: connectionRequests.preferredDate,
         estimatedCharges: connectionRequests.estimatedCharges,
         inspectionDate: connectionRequests.inspectionDate,
         approvalDate: connectionRequests.approvalDate,
-        installationDate: connectionRequests.installationDate
+        installationDate: connectionRequests.installationDate,
+        createdAt: connectionRequests.createdAt,
+        updatedAt: connectionRequests.updatedAt
       })
       .from(connectionRequests)
       .where(whereClause)
@@ -229,8 +239,9 @@ export async function PATCH(request: NextRequest) {
 
       case 'create_customer':
         // DBMS Project: Create customer account from connection request
-        // Import users table
+        // Import required modules
         const { users } = await import('@/lib/drizzle/schema');
+        const { generateMeterNumber } = await import('@/lib/utils/meterNumberGenerator');
         const crypto = await import('crypto');
         const bcrypt = await import('bcryptjs');
 
@@ -257,11 +268,15 @@ export async function PATCH(request: NextRequest) {
         const randomSuffix = crypto.randomBytes(2).toString('hex').toUpperCase();
         const accountNumber = `ELX-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}-${randomSuffix}`;
 
-        // Create customer with pending_installation status
+        // Generate meter number based on city
+        const meterNumber = await generateMeterNumber(connectionRequest.city);
+        console.log('[Connection Request] Generated meter number:', meterNumber);
+
+        // Create customer with active status (meter assigned)
         const [newCustomer] = await db.insert(customers).values({
           userId: newUser.insertId,
           accountNumber,
-          meterNumber: null, // Will be assigned after installation
+          meterNumber: meterNumber,
           fullName: connectionRequest.applicantName,
           email: connectionRequest.email,
           phone: connectionRequest.phone,
@@ -269,9 +284,9 @@ export async function PATCH(request: NextRequest) {
           city: connectionRequest.city,
           state: connectionRequest.state || 'Punjab',
           pincode: connectionRequest.pincode || '00000',
-          zone: zone || null,
+          zone: zone || 'Zone A',
           connectionType: connectionRequest.propertyType,
-          status: 'pending_installation',
+          status: 'active', // Active since meter is assigned
           connectionDate: new Date().toISOString().split('T')[0],
         } as any);
 
@@ -280,25 +295,33 @@ export async function PATCH(request: NextRequest) {
 
         // Update connection request status
         updateData = {
-          status: 'approved',
+          status: 'connected', // Changed to connected since account is active
           approvalDate: new Date().toISOString().split('T')[0],
+          installationDate: new Date().toISOString().split('T')[0],
         };
 
-        // Find and update work order with customer ID
+        // Find and update work order with customer ID and mark as completed
         await db.update(workOrders)
-          .set({ customerId: customerId } as any)
+          .set({
+            customerId: customerId,
+            status: 'completed',
+            completionDate: new Date().toISOString().split('T')[0]
+          } as any)
           .where(and(
             eq(workOrders.workType, 'new_connection'),
             sql`${workOrders.description} LIKE ${`%${connectionRequest.applicationNumber}%`}`
           ));
 
-        console.log('[Connection Request] Work order updated with customer ID');
+        console.log('[Connection Request] Work order completed');
 
         // Store customer data in response
         customerData = {
           customerId,
           accountNumber,
-          temporaryPassword: randomPassword
+          meterNumber,
+          temporaryPassword: randomPassword,
+          email: connectionRequest.email,
+          name: connectionRequest.applicantName
         };
         break;
 

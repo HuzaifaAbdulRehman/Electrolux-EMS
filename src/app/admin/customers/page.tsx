@@ -3,12 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
+import { useToast } from '@/hooks/useToast';
 import {
   Users,
   Search,
   Filter,
   Download,
   Eye,
+  Edit2,
+  Trash2,
   Plus,
   Mail,
   Phone,
@@ -35,11 +38,16 @@ import {
 
 export default function AdminCustomers() {
   const router = useRouter();
+  const toast = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterConnectionType, setFilterConnectionType] = useState('all');
   const [selectedCustomer, setSelectedCustomer] = useState<number | null>(null);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [showEditCustomer, setShowEditCustomer] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [customerToEdit, setCustomerToEdit] = useState<any>(null);
+  const [customerToDelete, setCustomerToDelete] = useState<any>(null);
   const [customers, setCustomers] = useState<any[]>([]);
   const [allCustomers, setAllCustomers] = useState<any[]>([]); // For statistics
   const [loading, setLoading] = useState(true);
@@ -62,7 +70,8 @@ export default function AdminCustomers() {
     city: '',
     state: '',
     pincode: '',
-    connectionType: 'Residential'
+    connectionType: 'Residential',
+    zone: 'Zone A'
   });
 
   // Fetch ALL customers for statistics ONCE on mount
@@ -138,6 +147,9 @@ export default function AdminCustomers() {
         await fetchCustomers(); // Refresh the list
         setShowAddCustomer(false);
 
+        // Show success toast
+        toast.success('Customer created successfully!');
+
         // Show success modal with password
         setCreatedCustomer({
           ...result.data,
@@ -155,15 +167,79 @@ export default function AdminCustomers() {
           city: '',
           state: '',
           pincode: '',
-          connectionType: 'Residential'
+          connectionType: 'Residential',
+          zone: 'Zone A'
         });
       } else {
         const error = await response.json();
-        setError(error.error || 'Failed to create customer');
+        const errorMessage = error.error || 'Failed to create customer';
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err) {
-      setError('Network error while creating customer');
+      const errorMessage = 'Network error while creating customer';
+      setError(errorMessage);
+      toast.error(errorMessage);
       console.error('Error creating customer:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerToEdit) return;
+
+    try {
+      setSaving(true);
+      const response = await fetch(`/api/customers/${customerToEdit.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(customerToEdit)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        await fetchCustomers(); // Refresh the list
+        await fetchAllCustomers(); // Refresh statistics
+        setShowEditCustomer(false);
+        setCustomerToEdit(null);
+        toast.success('Customer updated successfully!');
+      } else {
+        toast.error(result.error || 'Failed to update customer');
+      }
+    } catch (err) {
+      toast.error('Network error while updating customer');
+      console.error('Error updating customer:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteCustomer = async () => {
+    if (!customerToDelete) return;
+
+    try {
+      setSaving(true);
+      const response = await fetch(`/api/customers/${customerToDelete.id}`, {
+        method: 'DELETE'
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        await fetchCustomers(); // Refresh the list
+        await fetchAllCustomers(); // Refresh statistics
+        setShowDeleteConfirm(false);
+        setCustomerToDelete(null);
+        toast.success('Customer deactivated successfully!');
+      } else {
+        toast.error(result.error || 'Failed to delete customer');
+      }
+    } catch (err) {
+      toast.error('Network error while deleting customer');
+      console.error('Error deleting customer:', err);
     } finally {
       setSaving(false);
     }
@@ -172,9 +248,9 @@ export default function AdminCustomers() {
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      // You could add a toast notification here
-      console.log(`${label} copied to clipboard`);
+      toast.success(`${label} copied to clipboard`);
     } catch (err) {
+      toast.error('Failed to copy to clipboard');
       console.error('Failed to copy:', err);
     }
   };
@@ -474,9 +550,29 @@ export default function AdminCustomers() {
                             <button
                               onClick={() => setSelectedCustomer(customer.id)}
                               className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10 rounded-lg transition-all"
-                              title="View customer details"
+                              title="View Details"
                             >
                               <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setCustomerToEdit(customer);
+                                setShowEditCustomer(true);
+                              }}
+                              className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white hover:bg-gray-50 dark:bg-white/10 rounded-lg transition-all"
+                              title="Edit Customer"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setCustomerToDelete(customer);
+                                setShowDeleteConfirm(true);
+                              }}
+                              className="p-2 text-gray-600 dark:text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                              title="Delete Customer"
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
@@ -881,6 +977,233 @@ export default function AdminCustomers() {
                 >
                   <CheckCircle className="w-4 h-4" />
                   <span>Done</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Customer Modal */}
+        {showEditCustomer && customerToEdit && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit Customer</h2>
+                <button
+                  onClick={() => {
+                    setShowEditCustomer(false);
+                    setCustomerToEdit(null);
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditCustomer} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={customerToEdit.fullName}
+                      onChange={(e) => setCustomerToEdit({...customerToEdit, fullName: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={customerToEdit.email}
+                      onChange={(e) => setCustomerToEdit({...customerToEdit, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
+                    <input
+                      type="tel"
+                      required
+                      value={customerToEdit.phone}
+                      onChange={(e) => setCustomerToEdit({...customerToEdit, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Meter Number</label>
+                    <input
+                      type="text"
+                      value={customerToEdit.meterNumber || ''}
+                      onChange={(e) => setCustomerToEdit({...customerToEdit, meterNumber: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Auto-assigned if empty"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Address</label>
+                  <textarea
+                    required
+                    value={customerToEdit.address}
+                    onChange={(e) => setCustomerToEdit({...customerToEdit, address: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={2}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">City</label>
+                    <input
+                      type="text"
+                      required
+                      value={customerToEdit.city}
+                      onChange={(e) => setCustomerToEdit({...customerToEdit, city: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">State</label>
+                    <input
+                      type="text"
+                      required
+                      value={customerToEdit.state}
+                      onChange={(e) => setCustomerToEdit({...customerToEdit, state: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pincode</label>
+                    <input
+                      type="text"
+                      required
+                      value={customerToEdit.pincode}
+                      onChange={(e) => setCustomerToEdit({...customerToEdit, pincode: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Connection Type</label>
+                    <select
+                      required
+                      value={customerToEdit.connectionType}
+                      onChange={(e) => setCustomerToEdit({...customerToEdit, connectionType: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Residential">Residential</option>
+                      <option value="Commercial">Commercial</option>
+                      <option value="Industrial">Industrial</option>
+                      <option value="Agricultural">Agricultural</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</label>
+                    <select
+                      required
+                      value={customerToEdit.status}
+                      onChange={(e) => setCustomerToEdit({...customerToEdit, status: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="active">Active</option>
+                      <option value="pending_installation">Pending Installation</option>
+                      <option value="suspended">Suspended</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditCustomer(false);
+                      setCustomerToEdit(null);
+                    }}
+                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/10 rounded-lg hover:bg-gray-200 dark:bg-white/20 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Updating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>Update Customer</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && customerToDelete && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md border-2 border-red-500 dark:border-red-400">
+              <div className="flex flex-col items-center mb-6">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                  <AlertCircle className="w-10 h-10 text-red-600 dark:text-red-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center">Delete Customer?</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
+                  This will deactivate the customer account. They won't be able to login, but all data will be preserved.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-6">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Customer Details:</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">{customerToDelete.fullName}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{customerToDelete.email}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Account: {customerToDelete.accountNumber}</p>
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setCustomerToDelete(null);
+                  }}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteCustomer}
+                  disabled={saving}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-lg hover:shadow-red-500/50 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete Customer</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

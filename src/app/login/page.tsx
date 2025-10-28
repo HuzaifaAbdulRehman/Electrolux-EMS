@@ -248,7 +248,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            © 2024 ElectroLux EMS. All rights reserved.
+            © 2025 ElectroLux EMS. All rights reserved.
           </p>
         </div>
       </div>

@@ -49,6 +49,17 @@ export default function AdminConnectionRequests() {
     fetchRequests();
   }, [filterStatus]);
 
+  // Periodic refresh and on-focus refresh to reflect employee progress quickly
+  useEffect(() => {
+    const i = setInterval(() => fetchRequests(), 10000);
+    const onFocus = () => fetchRequests();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearInterval(i);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, []);
+
   // Ensure employees are present: if API returned empty, fetch directly from employees API as fallback
   useEffect(() => {
     const ensureEmployees = async () => {
@@ -64,6 +75,18 @@ export default function AdminConnectionRequests() {
     };
     ensureEmployees();
   }, [employees.length]);
+
+  // Reset approval state when opening modal for a specific request
+  useEffect(() => {
+    if (showApproveModal && selectedRequest) {
+      setApprovalData({
+        employeeId: '',
+        estimatedCharges: selectedRequest.estimatedCharges ? String(selectedRequest.estimatedCharges) : '',
+        zone: selectedRequest.zone || 'Zone A'
+      });
+      setEmployeeSearch('');
+    }
+  }, [showApproveModal, selectedRequest]);
 
   const fetchRequests = async () => {
     try {
@@ -91,7 +114,13 @@ export default function AdminConnectionRequests() {
   };
 
   const handleApprove = async () => {
-    if (!selectedRequest || !approvalData.employeeId) {
+    if (!selectedRequest) return;
+    // Charges required for approval to avoid accidental empty approvals
+    if (!approvalData.estimatedCharges || Number(approvalData.estimatedCharges) <= 0) {
+      toast.error('Please enter Estimated Charges (Rs) before approval');
+      return;
+    }
+    if (!approvalData.employeeId) {
       toast.error('Please select an employee');
       return;
     }
@@ -105,7 +134,7 @@ export default function AdminConnectionRequests() {
           requestId: selectedRequest.id,
           action: 'approve',
           employeeId: parseInt(approvalData.employeeId),
-          estimatedCharges: approvalData.estimatedCharges || null,
+          estimatedCharges: approvalData.estimatedCharges,
           zone: approvalData.zone
         })
       });
@@ -389,14 +418,26 @@ export default function AdminConnectionRequests() {
                     )}
 
                     {request.status === 'approved' && (
-                      <button
-                        onClick={() => handleCreateAccount(request.id)}
-                        disabled={isProcessing}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50 flex items-center space-x-2"
-                      >
-                        <User className="w-4 h-4" />
-                        <span>Create Customer Account</span>
-                      </button>
+                      request.startedCount && request.startedCount > 0 ? (
+                        <button
+                          onClick={() => handleCreateAccount(request.id)}
+                          disabled={isProcessing}
+                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50 flex items-center space-x-2"
+                        >
+                          <User className="w-4 h-4" />
+                          <span>Create Customer Account</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled
+                          title="Waiting for employee to start installation"
+                          className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg cursor-not-allowed flex items-center space-x-2"
+                        >
+                          <Clock className="w-4 h-4" />
+                          <span>Waiting for employee</span>
+                        </button>
+                      )
                     )}
                   </div>
                 </div>
@@ -513,9 +554,11 @@ export default function AdminConnectionRequests() {
                             <p className="text-gray-900 dark:text-white font-medium">{emp.fullName || emp.employeeName}</p>
                             <p className="text-xs text-gray-500">{emp.department} • {emp.email}</p>
                           </div>
-                          <span className={`text-xs px-2 py-1 rounded ${Number(emp.workLoad || 0) > 3 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'}`}>
-                            Load: {emp.workLoad ?? 0}
-                          </span>
+                          {Number(emp.workLoad || 0) > 0 && (
+                            <span className={`text-xs px-2 py-1 rounded ${Number(emp.workLoad || 0) > 3 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'}`}>
+                              Load: {emp.workLoad}
+                            </span>
+                          )}
                         </button>
                       ))}
                     {employees.length === 0 && (
@@ -545,10 +588,12 @@ export default function AdminConnectionRequests() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Estimated Charges (Rs)
+                    Estimated Charges (Rs) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
+                    required
+                    min={1}
                     value={approvalData.estimatedCharges}
                     onChange={(e) => setApprovalData({ ...approvalData, estimatedCharges: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"

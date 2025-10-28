@@ -133,10 +133,6 @@ export default function CustomerDashboard() {
     router.push('/customer/payment');
   };
 
-  // Filter out connection charges (bills with 0 units) for display
-  const currentBillWithConsumption = currentBill && safeNumber(currentBill.unitsConsumed, 0) > 0 ? currentBill : null;
-  const billsWithConsumption = recentBills.filter((bill: any) => safeNumber(bill.unitsConsumed, 0) > 0);
-
   // Calculate summary cards from real data
   const lastPayment = recentPayments[0];
 
@@ -151,8 +147,8 @@ export default function CustomerDashboard() {
     },
     {
       title: 'Current Bill',
-      value: currentBillWithConsumption ? formatCurrency(currentBillWithConsumption.totalAmount, 'Rs.') : formatCurrency(0, 'Rs.'),
-      change: currentBillWithConsumption?.dueDate ? `Due: ${safeDate(currentBillWithConsumption.dueDate)}` : 'No bill',
+      value: currentBill ? formatCurrency(currentBill.totalAmount, 'Rs.') : formatCurrency(0, 'Rs.'),
+      change: currentBill?.dueDate ? `Due: ${safeDate(currentBill.dueDate)}` : 'No bill',
       trend: 'neutral',
       icon: FileText,
       color: 'from-yellow-400 to-orange-500'
@@ -258,7 +254,8 @@ export default function CustomerDashboard() {
     }]
   };
 
-  // Bill Comparison Chart Data (NEW) - Uses filtered bills (no connection charges)
+  // Bill Comparison Chart Data (NEW) - Filter out connection charges (0 units)
+  const billsWithConsumption = recentBills.filter((bill: any) => safeNumber(bill.unitsConsumed, 0) > 0);
   const billComparisonData = {
     labels: billsWithConsumption.map((bill: any) => {
       const date = new Date(bill.billingMonth);
@@ -274,15 +271,15 @@ export default function CustomerDashboard() {
     }]
   };
 
-  // Cost Breakdown Chart Data (NEW) - Uses filtered current bill (no connection charges)
+  // Cost Breakdown Chart Data (NEW) - From current bill
   const costBreakdownData = {
     labels: ['Energy Charges', 'Fixed Charges', 'Electricity Duty', 'GST'],
     datasets: [{
-      data: currentBillWithConsumption ? [
-        safeNumber(currentBillWithConsumption.baseAmount, 0),
-        safeNumber(currentBillWithConsumption.fixedCharges, 0),
-        safeNumber(currentBillWithConsumption.electricityDuty, 0),
-        safeNumber(currentBillWithConsumption.gstAmount, 0)
+      data: currentBill ? [
+        safeNumber(currentBill.baseAmount, 0),
+        safeNumber(currentBill.fixedCharges, 0),
+        safeNumber(currentBill.electricityDuty, 0),
+        safeNumber(currentBill.gstAmount, 0)
       ] : [0, 0, 0, 0],
       backgroundColor: [
         'rgba(59, 130, 246, 0.8)',  // Blue
@@ -376,6 +373,12 @@ export default function CustomerDashboard() {
   // Check if customer is new (active but no actual consumption - only connection charges bill with 0 units)
   const totalConsumption = consumptionHistory.reduce((sum: number, item: any) => sum + safeNumber(item.unitsConsumed, 0), 0);
   const isNewCustomer = dashboardData?.customer?.status === 'active' && totalConsumption === 0;
+
+  // Debug logging
+  console.log('[Customer Dashboard] Status:', dashboardData?.customer?.status);
+  console.log('[Customer Dashboard] Total Consumption:', totalConsumption);
+  console.log('[Customer Dashboard] Is New Customer:', isNewCustomer);
+  console.log('[Customer Dashboard] Consumption History:', consumptionHistory);
 
   return (
     <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
@@ -597,7 +600,7 @@ export default function CustomerDashboard() {
               <Zap className="w-6 h-6 text-yellow-400" />
             </div>
             <div className="h-64">
-              {currentBillWithConsumption ? (
+              {currentBill && safeNumber(currentBill.totalAmount, 0) > 0 ? (
                 <Doughnut data={costBreakdownData} options={doughnutOptions} />
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-center px-4">

@@ -15,7 +15,7 @@ import {
   AlertCircle,
   Play,
   Search,
-  Plus,
+  RefreshCw,
   Zap,
   FileText,
   Phone,
@@ -246,7 +246,7 @@ export default function WorkOrders() {
                 </>
               ) : (
                 <>
-                  <Plus className="w-5 h-5" />
+                  <RefreshCw className="w-5 h-5" />
                   <span>Refresh Orders</span>
                 </>
               )}

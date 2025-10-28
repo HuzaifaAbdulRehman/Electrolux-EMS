@@ -50,83 +50,94 @@ export async function GET(request: NextRequest) {
     let totalResult = { count: 0 as number };
     try {
       [totalResult] = await db
-        .select({ count: sql<number>`COUNT(*)` })
-        .from(connectionRequests)
-        .where(whereClause);
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(connectionRequests)
+      .where(whereClause);
     } catch {}
 
     // Get connection requests with pagination (DBMS: Complex JOIN) - safe fallback
     let requestsData: any[] = [];
     try {
       requestsData = await db
-        .select({
-          id: connectionRequests.id,
-          applicationNumber: connectionRequests.applicationNumber,
-          applicantName: connectionRequests.applicantName,
-          fatherName: connectionRequests.fatherName,
-          email: connectionRequests.email,
-          phone: connectionRequests.phone,
-          alternatePhone: connectionRequests.alternatePhone,
-          idType: connectionRequests.idType,
-          idNumber: connectionRequests.idNumber,
-          propertyType: connectionRequests.propertyType,
-          propertyAddress: connectionRequests.propertyAddress,
-          city: connectionRequests.city,
-          state: connectionRequests.state,
-          pincode: connectionRequests.pincode,
-          landmark: connectionRequests.landmark,
-          connectionType: connectionRequests.connectionType,
-          loadRequired: connectionRequests.loadRequired,
-          purposeOfConnection: connectionRequests.purposeOfConnection,
-          status: connectionRequests.status,
-          applicationDate: connectionRequests.applicationDate,
-          preferredDate: connectionRequests.preferredDate,
-          estimatedCharges: connectionRequests.estimatedCharges,
-          inspectionDate: connectionRequests.inspectionDate,
-          approvalDate: connectionRequests.approvalDate,
-          installationDate: connectionRequests.installationDate,
-          createdAt: connectionRequests.createdAt,
-          updatedAt: connectionRequests.updatedAt
-        })
-        .from(connectionRequests)
-        .where(whereClause)
-        .orderBy(desc(connectionRequests.applicationDate))
-        .limit(limit)
-        .offset(offset);
+      .select({
+        id: connectionRequests.id,
+        applicationNumber: connectionRequests.applicationNumber,
+        applicantName: connectionRequests.applicantName,
+        fatherName: connectionRequests.fatherName,
+        email: connectionRequests.email,
+        phone: connectionRequests.phone,
+        alternatePhone: connectionRequests.alternatePhone,
+        idType: connectionRequests.idType,
+        idNumber: connectionRequests.idNumber,
+        propertyType: connectionRequests.propertyType,
+        propertyAddress: connectionRequests.propertyAddress,
+        city: connectionRequests.city,
+        state: connectionRequests.state,
+        pincode: connectionRequests.pincode,
+        landmark: connectionRequests.landmark,
+        connectionType: connectionRequests.connectionType,
+        loadRequired: connectionRequests.loadRequired,
+        purposeOfConnection: connectionRequests.purposeOfConnection,
+        status: connectionRequests.status,
+        applicationDate: connectionRequests.applicationDate,
+        preferredDate: connectionRequests.preferredDate,
+        estimatedCharges: connectionRequests.estimatedCharges,
+        inspectionDate: connectionRequests.inspectionDate,
+        approvalDate: connectionRequests.approvalDate,
+        installationDate: connectionRequests.installationDate,
+        createdAt: connectionRequests.createdAt,
+        updatedAt: connectionRequests.updatedAt
+          ,
+          // Work order started (employee responded) count
+          startedCount: sql<number>`(
+            SELECT COUNT(*) FROM ${workOrders}
+            WHERE ${workOrders.workType} = 'new_connection'
+              AND (
+                ${workOrders.description} LIKE CONCAT('%', ${connectionRequests.applicationNumber}, '%')
+                OR ${workOrders.title} LIKE CONCAT('%', ${connectionRequests.applicationNumber}, '%')
+              )
+              AND (${workOrders.status} = 'in_progress' OR ${workOrders.status} = 'completed')
+          )`
+      })
+      .from(connectionRequests)
+      .where(whereClause)
+      .orderBy(desc(connectionRequests.applicationDate))
+      .limit(limit)
+      .offset(offset);
     } catch {}
 
     // Get status counts (DBMS: GROUP BY with COUNT) - safe fallback
     let statusCounts: Array<{ status: string | null; count: number }> = [];
     try {
       statusCounts = await db
-        .select({
-          status: connectionRequests.status,
-          count: sql<number>`COUNT(*)`
-        })
-        .from(connectionRequests)
-        .groupBy(connectionRequests.status);
+      .select({
+        status: connectionRequests.status,
+        count: sql<number>`COUNT(*)`
+      })
+      .from(connectionRequests)
+      .groupBy(connectionRequests.status);
     } catch {}
 
     // Get available employees for assignment - safe fallback
     let availableEmployees: any[] = [];
     try {
       availableEmployees = await db
-        .select({
-          id: employees.id,
-          fullName: employees.employeeName,
-          email: employees.email,
-          phone: employees.phone,
-          department: employees.department,
-          workLoad: sql<number>`COALESCE(COUNT(${workOrders.id}), 0)`
-        })
-        .from(employees)
-        .leftJoin(workOrders, and(
-          eq(workOrders.employeeId, employees.id),
-          eq(workOrders.status, 'in_progress')
-        ))
-        .where(eq(employees.status, 'active'))
-        .groupBy(employees.id, employees.employeeName, employees.email, employees.phone, employees.department)
-        .orderBy(sql`workLoad ASC`);
+      .select({
+        id: employees.id,
+        fullName: employees.employeeName,
+        email: employees.email,
+        phone: employees.phone,
+        department: employees.department,
+        workLoad: sql<number>`COALESCE(COUNT(${workOrders.id}), 0)`
+      })
+      .from(employees)
+      .leftJoin(workOrders, and(
+        eq(workOrders.employeeId, employees.id),
+          (sql`(${workOrders.status} = 'assigned' OR ${workOrders.status} = 'in_progress')` as any)
+      ))
+      .where(eq(employees.status, 'active'))
+      .groupBy(employees.id, employees.employeeName, employees.email, employees.phone, employees.department)
+      .orderBy(sql`workLoad ASC`);
     } catch {}
 
     const total = totalResult.count;
@@ -243,17 +254,17 @@ export async function PATCH(request: NextRequest) {
 
         // Create work order only if employeeId provided
         if (employeeId) {
-          workOrderData = {
-            employeeId: employeeId,
-            customerId: null, // Will be set when customer is created
-            workType: 'new_connection',
-            title: `New Connection Installation - ${connectionRequest.applicationNumber}`,
-            description: `Install new ${connectionRequest.connectionType} connection for ${connectionRequest.applicantName}`,
-            priority: 'high',
-            status: 'assigned',
-            assignedDate: new Date().toISOString().split('T')[0],
-            dueDate: connectionRequest.preferredDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-          };
+        workOrderData = {
+          employeeId: employeeId,
+          customerId: null, // Will be set when customer is created
+          workType: 'new_connection',
+          title: `New Connection Installation - ${connectionRequest.applicationNumber}`,
+          description: `Install new ${connectionRequest.connectionType} connection for ${connectionRequest.applicantName}`,
+          priority: 'high',
+          status: 'assigned',
+          assignedDate: new Date().toISOString().split('T')[0],
+          dueDate: connectionRequest.preferredDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        };
           // Notify assigned employee about new work order
           try {
             const [emp] = await db
@@ -323,6 +334,26 @@ export async function PATCH(request: NextRequest) {
         const { generateMeterNumber } = await import('@/lib/utils/meterNumberGenerator');
         const cryptoLib = await import('crypto');
         const bcrypt = await import('bcryptjs');
+
+        // Require an assigned work order before activating the account
+        try {
+          const [woCount] = await db
+            .select({ count: sql<number>`COUNT(*)` })
+            .from(workOrders)
+            .where(and(
+              eq(workOrders.workType, 'new_connection'),
+              (sql`(${workOrders.description} LIKE ${`%${connectionRequest.applicationNumber}%`} OR ${workOrders.title} LIKE ${`%${connectionRequest.applicationNumber}%`})` as any),
+              (sql`(${workOrders.status} = 'in_progress' OR ${workOrders.status} = 'completed')` as any)
+            ));
+          if (!woCount || woCount.count === 0) {
+            return NextResponse.json({
+              error: 'Employee must start (or complete) the installation work order before account creation'
+            }, { status: 400 });
+          }
+        } catch (e) {
+          console.error('[Connection Request] Work order pre-check failed:', e);
+          return NextResponse.json({ error: 'Unable to verify work order assignment' }, { status: 500 });
+        }
 
         // Use stored password from approval, or generate new one if not exists
         let storedPassword = connectionRequest.temporaryPassword;

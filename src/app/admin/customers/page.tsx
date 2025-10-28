@@ -768,19 +768,19 @@ export default function AdminCustomers() {
                 <div className="border-b border-gray-200 dark:border-white/10 pb-4">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Personal Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Applicant Name *</label>
-                      <input
-                        type="text"
-                        required
+                  <input
+                    type="text"
+                    required
                         value={newCustomer.applicantName}
                         onChange={(e) => setNewCustomer({...newCustomer, applicantName: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Full name as per ID"
-                      />
-                    </div>
+                  />
+                </div>
 
-                    <div>
+                <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Father's Name *</label>
                       <input
                         type="text"
@@ -794,29 +794,29 @@ export default function AdminCustomers() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email *</label>
-                      <input
-                        type="email"
-                        required
-                        value={newCustomer.email}
-                        onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <input
+                    type="email"
+                    required
+                    value={newCustomer.email}
+                    onChange={(e) => setNewCustomer({...newCustomer, email: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="customer@example.com"
-                      />
-                    </div>
+                  />
+                </div>
 
-                    <div>
+                <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone *</label>
-                      <input
-                        type="tel"
-                        required
-                        value={newCustomer.phone}
-                        onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <input
+                    type="tel"
+                    required
+                    value={newCustomer.phone}
+                    onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Primary contact number"
-                      />
-                    </div>
+                  />
+                </div>
 
-                    <div>
+                <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Alternate Phone</label>
                       <input
                         type="tel"
@@ -935,54 +935,54 @@ export default function AdminCustomers() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Property Address *</label>
-                      <textarea
-                        required
+                  <textarea
+                    required
                         value={newCustomer.propertyAddress}
                         onChange={(e) => setNewCustomer({...newCustomer, propertyAddress: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={2}
                         placeholder="House/Plot number, Street name, Area"
-                      />
-                    </div>
+                  />
+                </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
+                  <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">City *</label>
-                        <input
-                          type="text"
-                          required
-                          value={newCustomer.city}
-                          onChange={(e) => setNewCustomer({...newCustomer, city: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    <input
+                      type="text"
+                      required
+                      value={newCustomer.city}
+                      onChange={(e) => setNewCustomer({...newCustomer, city: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="City"
-                        />
-                      </div>
-                      <div>
+                    />
+                  </div>
+                  <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">State *</label>
-                        <input
-                          type="text"
-                          required
-                          value={newCustomer.state}
-                          onChange={(e) => setNewCustomer({...newCustomer, state: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    <input
+                      type="text"
+                      required
+                      value={newCustomer.state}
+                      onChange={(e) => setNewCustomer({...newCustomer, state: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="State"
-                        />
-                      </div>
-                      <div>
+                    />
+                  </div>
+                <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pincode *</label>
-                        <input
-                          type="text"
-                          required
+                  <input
+                    type="text"
+                    required
                           pattern="[0-9]{6}"
-                          value={newCustomer.pincode}
-                          onChange={(e) => setNewCustomer({...newCustomer, pincode: e.target.value})}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={newCustomer.pincode}
+                    onChange={(e) => setNewCustomer({...newCustomer, pincode: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="6-digit pincode"
-                        />
+                  />
                       </div>
-                    </div>
+                </div>
 
-                    <div>
+                <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Landmark</label>
                       <input
                         type="text"

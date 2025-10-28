@@ -7,17 +7,13 @@ import DashboardLayout from '@/components/DashboardLayout';
 import {
   Settings,
   Building,
-  CreditCard,
   Zap,
   Users,
   FileText,
   Bell,
   ChevronRight,
   Loader2,
-  Save,
   CheckCircle,
-  AlertTriangle,
-  TrendingUp,
   Shield,
   UserCog,
   BarChart3,
@@ -32,86 +28,19 @@ export default function AdminSettingsHub() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [savingTheme, setSavingTheme] = useState(false);
   const [themeSuccess, setThemeSuccess] = useState(false);
 
   const [companyInfo, setCompanyInfo] = useState({
     companyName: 'Electrolux EMS',
-    supportEmail: 'support@electrolux.com',
-    supportPhone: '0300-1234567'
-  });
-
-  const [billingConfig, setBillingConfig] = useState({
-    paymentDueDays: '15',
-    lateFeePercentage: '2',
-    taxRate: '15'
+    adminEmail: 'admin@electrolux.com',
+    adminPhone: '0300-1234567'
   });
 
   useEffect(() => {
-    fetchSettings();
+    // Simulate loading
+    const timer = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(timer);
   }, []);
-
-  const fetchSettings = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/admin/settings');
-      const result = await response.json();
-
-      if (response.ok && result.success && result.data) {
-        if (result.data.general) {
-          setCompanyInfo(prev => ({
-            ...prev,
-            companyName: result.data.general.company_name || prev.companyName
-          }));
-        }
-        if (result.data.billing) {
-          setBillingConfig({
-            paymentDueDays: result.data.billing.payment_due_days || billingConfig.paymentDueDays,
-            lateFeePercentage: result.data.billing.late_fee_percentage || billingConfig.lateFeePercentage,
-            taxRate: result.data.billing.tax_rate || billingConfig.taxRate
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching settings:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveBilling = async () => {
-    setSaving(true);
-    setError(null);
-    setSuccess(false);
-
-    try {
-      const settings = {
-        billing: billingConfig
-      };
-
-      const response = await fetch('/api/admin/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings })
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
-      } else {
-        throw new Error(result.error || 'Failed to save settings');
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   // Management sections that link to specific pages
   const managementSections = [
@@ -213,98 +142,12 @@ export default function AdminSettingsHub() {
               <p className="text-gray-900 dark:text-white font-semibold">{companyInfo.companyName}</p>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Support Email</p>
-              <p className="text-gray-900 dark:text-white font-semibold">{companyInfo.supportEmail}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Admin Email</p>
+              <p className="text-gray-900 dark:text-white font-semibold">{companyInfo.adminEmail}</p>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Support Phone</p>
-              <p className="text-gray-900 dark:text-white font-semibold">{companyInfo.supportPhone}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Billing Configuration (Editable) */}
-        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <CreditCard className="w-6 h-6 text-red-500" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Billing Configuration</h2>
-            </div>
-            <button
-              onClick={handleSaveBilling}
-              disabled={saving}
-              className={`px-6 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg transition-all flex items-center space-x-2 font-semibold ${
-                saving ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-lg hover:shadow-pink-500/50'
-              }`}
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Saving...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4" />
-                  <span>Save Changes</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          {success && (
-            <div className="mb-4 flex items-center space-x-2 px-4 py-3 bg-green-500/20 rounded-lg border border-green-500/50">
-              <CheckCircle className="w-5 h-5 text-green-400" />
-              <span className="text-green-400 font-semibold">Billing settings saved successfully!</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="mb-4 flex items-center space-x-2 px-4 py-3 bg-red-500/20 rounded-lg border border-red-500/50">
-              <AlertTriangle className="w-5 h-5 text-red-400" />
-              <span className="text-red-400 font-semibold">{error}</span>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block font-medium">Payment Due Days</label>
-              <input
-                type="number"
-                value={billingConfig.paymentDueDays}
-                onChange={(e) => setBillingConfig({ ...billingConfig, paymentDueDays: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
-                min="1"
-                max="90"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Days after bill generation</p>
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block font-medium">Late Fee (%)</label>
-              <input
-                type="number"
-                value={billingConfig.lateFeePercentage}
-                onChange={(e) => setBillingConfig({ ...billingConfig, lateFeePercentage: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
-                min="0"
-                max="100"
-                step="0.1"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Percentage of bill amount</p>
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-700 dark:text-gray-300 mb-2 block font-medium">Tax Rate (%)</label>
-              <input
-                type="number"
-                value={billingConfig.taxRate}
-                onChange={(e) => setBillingConfig({ ...billingConfig, taxRate: e.target.value })}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-400"
-                min="0"
-                max="100"
-                step="0.1"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Applied to all bills</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Admin Phone</p>
+              <p className="text-gray-900 dark:text-white font-semibold">{companyInfo.adminPhone}</p>
             </div>
           </div>
         </div>
@@ -330,10 +173,8 @@ export default function AdminSettingsHub() {
               <button
                 onClick={() => {
                   setTheme('light');
-                  setSavingTheme(true);
                   setThemeSuccess(true);
                   setTimeout(() => {
-                    setSavingTheme(false);
                     setThemeSuccess(false);
                   }, 2000);
                 }}
@@ -360,10 +201,8 @@ export default function AdminSettingsHub() {
               <button
                 onClick={() => {
                   setTheme('dark');
-                  setSavingTheme(true);
                   setThemeSuccess(true);
                   setTimeout(() => {
-                    setSavingTheme(false);
                     setThemeSuccess(false);
                   }, 2000);
                 }}
@@ -390,10 +229,8 @@ export default function AdminSettingsHub() {
               <button
                 onClick={() => {
                   setTheme('system');
-                  setSavingTheme(true);
                   setThemeSuccess(true);
                   setTimeout(() => {
-                    setSavingTheme(false);
                     setThemeSuccess(false);
                   }, 2000);
                 }}
@@ -420,15 +257,15 @@ export default function AdminSettingsHub() {
         </div>
 
         {/* Management Hub - Navigation Cards */}
-        <div>
-          <div className="flex items-center space-x-3 mb-4">
+        <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+          <div className="flex items-center space-x-3 mb-2">
             <Shield className="w-6 h-6 text-red-500" />
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Management Hub</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Management Hub</h2>
           </div>
           <p className="text-gray-600 dark:text-gray-400 mb-6">Quick access to all system management features</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {managementSections.map((section, index) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {managementSections.slice(0, 6).map((section, index) => (
               <button
                 key={index}
                 onClick={() => router.push(section.link)}
@@ -448,6 +285,31 @@ export default function AdminSettingsHub() {
               </button>
             ))}
           </div>
+
+          {/* Last Row - Centered Single Card */}
+          {managementSections.length > 6 && (
+            <div className="flex justify-center mt-4">
+              {managementSections.slice(6).map((section, index) => (
+                <button
+                  key={index}
+                  onClick={() => router.push(section.link)}
+                  disabled={!section.enabled}
+                  className={`group p-6 bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 hover:shadow-xl transition-all text-left w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)] ${
+                    section.enabled ? 'hover:scale-105 cursor-pointer' : 'opacity-50 cursor-not-allowed'
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`p-3 bg-gradient-to-br ${section.color} rounded-xl`}>
+                      <section.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{section.title}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{section.description}</p>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

@@ -123,9 +123,10 @@ async function testQueries() {
       .select({
         category: tariffs.category,
         fixedCharge: tariffs.fixedCharge,
-        slab1Rate: tariffs.slab1Rate,
-        slab2Rate: tariffs.slab2Rate,
+        electricityDutyPercent: tariffs.electricityDutyPercent,
+        gstPercent: tariffs.gstPercent,
         effectiveDate: tariffs.effectiveDate,
+        validUntil: tariffs.validUntil,
       })
       .from(tariffs);
     console.table(tariffInfo);

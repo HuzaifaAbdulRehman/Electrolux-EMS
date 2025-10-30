@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { bills, customers, meterReadings, tariffs, notifications } from '@/lib/drizzle/schema';
-import { eq, and, desc, gte, lte, or, like, sql } from 'drizzle-orm';
+import { bills, customers, meterReadings, tariffs, tariffSlabs, notifications } from '@/lib/drizzle/schema';
+import { eq, and, desc, gte, lte, or, like, sql, asc } from 'drizzle-orm';
 
 // GET /api/bills - Get bills (filtered by user type)
 export async function GET(request: NextRequest) {
@@ -227,26 +227,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get tariff slabs for calculation
+    const slabs = await db
+      .select()
+      .from(tariffSlabs)
+      .where(eq(tariffSlabs.tariffId, tariff.id))
+      .orderBy(asc(tariffSlabs.slabOrder));
+
+    if (slabs.length === 0) {
+      return NextResponse.json(
+        { error: 'No tariff slabs found for the selected tariff' },
+        { status: 400 }
+      );
+    }
+
     // Calculate bill amount using tariff slabs
     const unitsConsumed = parseFloat(latestReading.unitsConsumed);
     let baseAmount = 0;
     let remainingUnits = unitsConsumed;
 
-    // Apply slab rates
-    const slabs = [
-      { start: tariff.slab1Start, end: tariff.slab1End, rate: parseFloat(tariff.slab1Rate) },
-      { start: tariff.slab2Start, end: tariff.slab2End, rate: parseFloat(tariff.slab2Rate) },
-      { start: tariff.slab3Start, end: tariff.slab3End, rate: parseFloat(tariff.slab3Rate) },
-      { start: tariff.slab4Start, end: tariff.slab4End, rate: parseFloat(tariff.slab4Rate) },
-      { start: tariff.slab5Start, end: tariff.slab5End || 999999, rate: parseFloat(tariff.slab5Rate) },
-    ];
-
+    // Apply slab rates from normalized tariff_slabs table
     for (const slab of slabs) {
       if (remainingUnits <= 0) break;
 
-      const slabUnits = Math.min(remainingUnits, slab.end - slab.start);
-      baseAmount += slabUnits * slab.rate;
-      remainingUnits -= slabUnits;
+      const slabStart = Number(slab.startUnits);
+      const slabEnd = slab.endUnits ? Number(slab.endUnits) : Infinity;
+      const slabRate = Number(slab.ratePerUnit);
+
+      const unitsInSlab = Math.min(remainingUnits, slabEnd - slabStart);
+      baseAmount += unitsInSlab * slabRate;
+      remainingUnits -= unitsInSlab;
     }
 
     const fixedCharges = parseFloat(tariff.fixedCharge);

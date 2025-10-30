@@ -96,3 +96,4 @@ console.log('   Server: ' + BASE_URL);
 console.log('   Make sure the server is running (npm run dev)\n');
 
 testAPIs();
+

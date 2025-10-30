@@ -1,6 +1,6 @@
 import { db } from '@/lib/drizzle/db';
-import { bills, customers, payments, users, workOrders, tariffs } from '@/lib/drizzle/schema';
-import { eq, sql, and, desc } from 'drizzle-orm';
+import { bills, customers, payments, users, workOrders, tariffs, tariffSlabs } from '@/lib/drizzle/schema';
+import { eq, sql, and, desc, asc } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
@@ -236,7 +236,7 @@ export async function generateBillTransaction(
 ) {
   try {
     return await db.transaction(async (tx) => {
-      // Step 1: Get tariff details with slabs (normalized structure)
+      // Step 1: Get tariff details
       const [tariffData] = await tx
         .select()
         .from(tariffs)
@@ -247,36 +247,39 @@ export async function generateBillTransaction(
         throw new Error('Tariff not found');
       }
 
-      // Step 2: Get tariff slabs (simplified - using direct tariff rates)
-      const slabs = [
-        { startUnits: tariffData.slab1Start, endUnits: tariffData.slab1End, ratePerUnit: tariffData.slab1Rate },
-        { startUnits: tariffData.slab2Start, endUnits: tariffData.slab2End, ratePerUnit: tariffData.slab2Rate },
-        { startUnits: tariffData.slab3Start, endUnits: tariffData.slab3End, ratePerUnit: tariffData.slab3Rate },
-        { startUnits: tariffData.slab4Start, endUnits: tariffData.slab4End, ratePerUnit: tariffData.slab4Rate },
-        { startUnits: tariffData.slab5Start, endUnits: tariffData.slab5End, ratePerUnit: tariffData.slab5Rate },
-      ];
+      // Step 2: Get tariff slabs from normalized tariff_slabs table
+      const slabs = await tx
+        .select()
+        .from(tariffSlabs)
+        .where(eq(tariffSlabs.tariffId, tariffId))
+        .orderBy(asc(tariffSlabs.slabOrder));
+
+      if (slabs.length === 0) {
+        throw new Error('No tariff slabs found for this tariff');
+      }
 
       // Step 3: Calculate bill amount using normalized slab structure
-      let totalAmount = parseFloat(tariffData.fixedCharge || '0');
+      let baseAmount = 0;
       let remainingUnits = unitsConsumed;
 
       for (const slab of slabs) {
-        const slabUnits = slab.endUnits
-          ? Math.min(remainingUnits, slab.endUnits - slab.startUnits)
-          : remainingUnits;
-
-        if (slabUnits > 0) {
-          totalAmount += slabUnits * parseFloat(slab.ratePerUnit);
-          remainingUnits -= slabUnits;
-        }
-
         if (remainingUnits <= 0) break;
+
+        const slabStart = Number(slab.startUnits);
+        const slabEnd = slab.endUnits ? Number(slab.endUnits) : Infinity;
+        const slabRate = Number(slab.ratePerUnit);
+
+        const unitsInSlab = Math.min(remainingUnits, slabEnd - slabStart);
+        baseAmount += unitsInSlab * slabRate;
+        remainingUnits -= unitsInSlab;
       }
 
-      // Step 4: Calculate tax (GST)
-      const taxRate = 0.18; // 18% GST
-      const taxAmount = totalAmount * taxRate;
-      const finalAmount = totalAmount + taxAmount;
+      // Step 4: Calculate charges and taxes
+      const fixedCharges = parseFloat(tariffData.fixedCharge || '0');
+      const electricityDuty = baseAmount * (parseFloat(tariffData.electricityDutyPercent || '0') / 100);
+      const subtotal = baseAmount + fixedCharges + electricityDuty;
+      const gstAmount = subtotal * (parseFloat(tariffData.gstPercent || '0') / 100);
+      const finalAmount = subtotal + gstAmount;
 
       // Step 5: Generate bill number
       const billNumber = `BILL-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
@@ -294,9 +297,10 @@ export async function generateBillTransaction(
         dueDate: dueDate.toISOString().split('T')[0],
         meterReadingId,
         unitsConsumed: unitsConsumed.toString(),
-        baseAmount: totalAmount.toString(),
-        taxAmount: taxAmount.toString(),
-        lateFee: '0',
+        baseAmount: baseAmount.toString(),
+        fixedCharges: fixedCharges.toString(),
+        electricityDuty: electricityDuty.toString(),
+        gstAmount: gstAmount.toString(),
         totalAmount: finalAmount.toString(),
         status: 'issued',
       } as any);

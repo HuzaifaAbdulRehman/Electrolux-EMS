@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Zap,
@@ -44,6 +44,32 @@ export default function ApplyConnection() {
     preferredDate: '',
     zone: ''
   });
+
+  const [zones, setZones] = useState<string[]>([]);
+  const [zonesLoading, setZonesLoading] = useState(false);
+  const [zonesError, setZonesError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchZones = async () => {
+      setZonesLoading(true);
+      setZonesError(null);
+      try {
+        const resp = await fetch('/api/zones');
+        const json = await resp.json();
+        if (resp.ok && json?.success && Array.isArray(json.data)) {
+          setZones(json.data);
+        } else {
+          setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D']);
+        }
+      } catch (e: any) {
+        setZonesError('Failed to load zones');
+        setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D']);
+      } finally {
+        setZonesLoading(false);
+      }
+    };
+    fetchZones();
+  }, []);
 
   // Helpers: formatting without storing hyphens in state
   const onlyDigits = (v: string) => v.replace(/\D+/g, '');
@@ -483,11 +509,10 @@ export default function ApplyConnection() {
                   onChange={(e) => setFormData({ ...formData, zone: e.target.value })}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
-                  <option value="">Select Zone</option>
-                  <option value="Zone A">Zone A</option>
-                  <option value="Zone B">Zone B</option>
-                  <option value="Zone C">Zone C</option>
-                  <option value="Zone D">Zone D</option>
+                  <option value="">{zonesLoading ? 'Loading zones...' : 'Select Zone'}</option>
+                  {zones.map((z) => (
+                    <option key={z} value={z}>{z}</option>
+                  ))}
                 </select>
               </div>
 

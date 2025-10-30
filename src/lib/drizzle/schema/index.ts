@@ -4,6 +4,7 @@ export * from './customers';
 export * from './employees';
 export * from './meterReadings';
 export * from './tariffs';
+export * from './tariffSlabs';
 export * from './bills';
 export * from './payments';
 export * from './connectionApplications';

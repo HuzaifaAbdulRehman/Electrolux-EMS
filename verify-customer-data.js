@@ -5,7 +5,7 @@ async function verifyData() {
   const connection = await mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'SteveSmith@12345',
+    password: 'REDACTED',
     database: 'electricity_ems'
   });
 
@@ -66,3 +66,4 @@ async function verifyData() {
 }
 
 verifyData();
+

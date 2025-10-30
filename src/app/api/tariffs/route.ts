@@ -2,43 +2,35 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { tariffs } from '@/lib/drizzle/schema';
+import { tariffs, tariffSlabs } from '@/lib/drizzle/schema';
 import { eq, desc } from 'drizzle-orm';
 
 // Helper function to transform database tariff to frontend format
-function transformTariffForFrontend(tariff: any) {
+async function transformTariffForFrontend(tariff: any) {
+  const slabs = await db
+    .select()
+    .from(tariffSlabs)
+    .where(eq(tariffSlabs.tariffId, tariff.id))
+    .orderBy(tariffSlabs.slabOrder);
+
   return {
     id: tariff.id,
     category: tariff.category,
     fixedCharge: parseFloat(tariff.fixedCharge || 0),
     validFrom: tariff.effectiveDate,
     validUntil: tariff.validUntil,
-
-    // Transform slabs from denormalized to array format
-    slabs: [
-      { range: `${tariff.slab1Start}-${tariff.slab1End} kWh`, rate: parseFloat(tariff.slab1Rate || 0), startUnits: tariff.slab1Start, endUnits: tariff.slab1End, ratePerUnit: parseFloat(tariff.slab1Rate || 0) },
-      { range: `${tariff.slab2Start}-${tariff.slab2End} kWh`, rate: parseFloat(tariff.slab2Rate || 0), startUnits: tariff.slab2Start, endUnits: tariff.slab2End, ratePerUnit: parseFloat(tariff.slab2Rate || 0) },
-      { range: `${tariff.slab3Start}-${tariff.slab3End} kWh`, rate: parseFloat(tariff.slab3Rate || 0), startUnits: tariff.slab3Start, endUnits: tariff.slab3End, ratePerUnit: parseFloat(tariff.slab3Rate || 0) },
-      { range: `${tariff.slab4Start}-${tariff.slab4End} kWh`, rate: parseFloat(tariff.slab4Rate || 0), startUnits: tariff.slab4Start, endUnits: tariff.slab4End, ratePerUnit: parseFloat(tariff.slab4Rate || 0) },
-      { range: `${tariff.slab5Start}+ kWh`, rate: parseFloat(tariff.slab5Rate || 0), startUnits: tariff.slab5Start, endUnits: tariff.slab5End || 999999, ratePerUnit: parseFloat(tariff.slab5Rate || 0) },
-    ],
-
-    // Transform time of use to object format
+    slabs: slabs.map((s) => ({
+      range: `${s.startUnits}-${s.endUnits ?? '+'} kWh`,
+      rate: parseFloat(String(s.ratePerUnit)),
+      startUnits: s.startUnits,
+      endUnits: s.endUnits,
+      ratePerUnit: parseFloat(String(s.ratePerUnit)),
+    })),
     timeOfUse: {
-      peak: {
-        hours: '6 PM - 10 PM',
-        rate: parseFloat(tariff.timeOfUsePeakRate || 0)
-      },
-      normal: {
-        hours: '10 AM - 6 PM',
-        rate: parseFloat(tariff.timeOfUseNormalRate || 0)
-      },
-      offPeak: {
-        hours: '10 PM - 10 AM',
-        rate: parseFloat(tariff.timeOfUseOffpeakRate || 0)
-      }
+      peak: { hours: '6 PM - 10 PM', rate: parseFloat(tariff.timeOfUsePeakRate || 0) },
+      normal: { hours: '10 AM - 6 PM', rate: parseFloat(tariff.timeOfUseNormalRate || 0) },
+      offPeak: { hours: '10 PM - 10 AM', rate: parseFloat(tariff.timeOfUseOffpeakRate || 0) }
     },
-
     electricityDutyPercent: parseFloat(tariff.electricityDutyPercent || 0),
     gstPercent: parseFloat(tariff.gstPercent || 0),
     createdAt: tariff.createdAt,
@@ -68,7 +60,7 @@ export async function GET(request: NextRequest) {
     console.log('[API TARIFFS] First tariff:', result[0]);
 
     // Transform data for frontend
-    const transformedData = result.map(transformTariffForFrontend);
+    const transformedData = await Promise.all(result.map(transformTariffForFrontend));
 
     console.log('[API TARIFFS] Transformed data:', transformedData.length, 'tariffs');
     console.log('[API TARIFFS] First transformed:', transformedData[0]);
@@ -102,35 +94,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Create new tariff
+    // Create new tariff and its normalized slabs
     const [newTariff] = await db.insert(tariffs).values({
       category,
       fixedCharge: fixedCharge.toString(),
-      slab1Start: slabs[0].start,
-      slab1End: slabs[0].end,
-      slab1Rate: slabs[0].rate.toString(),
-      slab2Start: slabs[1].start,
-      slab2End: slabs[1].end,
-      slab2Rate: slabs[1].rate.toString(),
-      slab3Start: slabs[2].start,
-      slab3End: slabs[2].end,
-      slab3Rate: slabs[2].rate.toString(),
-      slab4Start: slabs[3].start,
-      slab4End: slabs[3].end,
-      slab4Rate: slabs[3].rate.toString(),
-      slab5Start: slabs[4].start,
-      slab5End: slabs[4].end || null,
-      slab5Rate: slabs[4].rate.toString(),
       electricityDutyPercent: electricityDutyPercent.toString(),
       gstPercent: gstPercent.toString(),
       effectiveDate: new Date().toISOString().split('T')[0],
     } as any);
 
+    const tariffId = (newTariff as any).insertId;
+    const rows = slabs.map((s: any, idx: number) => ({
+      tariffId,
+      slabOrder: idx + 1,
+      startUnits: s.start,
+      endUnits: s.end ?? null,
+      ratePerUnit: s.rate.toString(),
+    }));
+    await db.insert(tariffSlabs).values(rows as any);
+
     return NextResponse.json({
       success: true,
       message: 'Tariff created successfully',
       data: {
-        tariffId: newTariff.insertId,
+        tariffId,
       },
     }, { status: 201 });
   } catch (error) {

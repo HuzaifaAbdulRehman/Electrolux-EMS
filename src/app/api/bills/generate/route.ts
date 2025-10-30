@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { bills, meterReadings, customers, billRequests, notifications, tariffs } from '@/lib/drizzle/schema';
+import { bills, meterReadings, customers, billRequests, notifications, tariffs, tariffSlabs } from '@/lib/drizzle/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { ApiResponse } from '@/types';
 
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       .where(
         and(
           eq(bills.customerId, customerId),
-          sql`DATE(${bills.billingMonth}) = ${billingMonth}` // ✅ Compare DATE only, ignore time/timezone
+          eq(bills.billingMonth, billingMonth) // Direct DATE comparison (billingMonth is DATE type)
         )
       )
       .limit(1);
@@ -172,46 +172,65 @@ export async function POST(request: NextRequest) {
       console.log('[Bill Generation] WARNING: Zero consumption detected for customer', customerId);
     }
     let baseAmount = 0;
+    // Fetch normalized slabs for the active tariff
+    const slabs = await db
+      .select()
+      .from(tariffSlabs)
+      .where(eq(tariffSlabs.tariffId, activeTariff.id))
+      .orderBy(tariffSlabs.slabOrder);
 
-    // Parse tariff values once for clarity
-    const slab1End = Number(activeTariff.slab1End);
-    const slab2End = Number(activeTariff.slab2End);
-    const slab3End = Number(activeTariff.slab3End);
-    const slab4End = Number(activeTariff.slab4End);
+    // Validate slab configuration
+    if (slabs.length === 0) {
+      throw new Error(`No tariff slabs found for tariff ID ${activeTariff.id}`);
+    }
 
-    const slab1Rate = Number(activeTariff.slab1Rate);
-    const slab2Rate = Number(activeTariff.slab2Rate);
-    const slab3Rate = Number(activeTariff.slab3Rate);
-    const slab4Rate = Number(activeTariff.slab4Rate);
-    const slab5Rate = Number(activeTariff.slab5Rate);
+    // Validate slab structure: check for overlaps and gaps
+    for (let i = 0; i < slabs.length; i++) {
+      const slab = slabs[i];
 
-    // Progressive slab-based calculation
-    // Each slab charges only for units within that specific range
-    if (unitsConsumed <= slab1End) {
-      // All units in slab 1 (e.g., 0-100 @ Rs 4.50/unit)
-      baseAmount = unitsConsumed * slab1Rate;
-    } else if (unitsConsumed <= slab2End) {
-      // Slab 1 full + partial slab 2 (e.g., 100@4.50 + 50@6.00 for 150 units)
-      baseAmount = (slab1End * slab1Rate) +
-                   ((unitsConsumed - slab1End) * slab2Rate);
-    } else if (unitsConsumed <= slab3End) {
-      // Slab 1 full + Slab 2 full + partial slab 3
-      baseAmount = (slab1End * slab1Rate) +
-                   ((slab2End - slab1End) * slab2Rate) +
-                   ((unitsConsumed - slab2End) * slab3Rate);
-    } else if (unitsConsumed <= slab4End) {
-      // Slab 1 + Slab 2 + Slab 3 + partial slab 4
-      baseAmount = (slab1End * slab1Rate) +
-                   ((slab2End - slab1End) * slab2Rate) +
-                   ((slab3End - slab2End) * slab3Rate) +
-                   ((unitsConsumed - slab3End) * slab4Rate);
-    } else {
-      // All slabs full + slab 5 for excess (500+ units)
-      baseAmount = (slab1End * slab1Rate) +
-                   ((slab2End - slab1End) * slab2Rate) +
-                   ((slab3End - slab2End) * slab3Rate) +
-                   ((slab4End - slab3End) * slab4Rate) +
-                   ((unitsConsumed - slab4End) * slab5Rate);
+      // Validate that rate is positive
+      const rate = parseFloat(String(slab.ratePerUnit));
+      if (isNaN(rate) || rate < 0) {
+        throw new Error(`Invalid rate ${slab.ratePerUnit} for slab ${i + 1}`);
+      }
+
+      // Validate slab boundaries
+      const start = slab.startUnits ?? 0;
+      const end = slab.endUnits;
+
+      if (start < 0) {
+        throw new Error(`Slab ${i + 1} has negative start: ${start}`);
+      }
+
+      if (end !== null && end < start) {
+        throw new Error(`Slab ${i + 1} has end (${end}) less than start (${start})`);
+      }
+
+      // Check for overlaps with next slab
+      if (i < slabs.length - 1) {
+        const nextSlab = slabs[i + 1];
+        const nextStart = nextSlab.startUnits ?? 0;
+
+        if (end !== null && end >= nextStart) {
+          throw new Error(`Slab ${i + 1} overlaps with slab ${i + 2}: end=${end}, nextStart=${nextStart}`);
+        }
+      }
+    }
+
+    // Calculate bill amount using validated slabs
+    let remaining = unitsConsumed;
+    for (const s of slabs) {
+      if (remaining <= 0) break;
+      const start = s.startUnits ?? 0;
+      const end = s.endUnits;
+      const rate = parseFloat(String(s.ratePerUnit));
+
+      // Calculate slab span: if end is null, it's unbounded (use all remaining units)
+      const slabSpan = end === null ? remaining : (end - start + 1);
+      const usedInSlab = Math.min(remaining, slabSpan);
+
+      baseAmount += usedInSlab * rate;
+      remaining -= usedInSlab;
     }
 
     const fixedCharges = Number(activeTariff.fixedCharge);
@@ -222,13 +241,7 @@ export async function POST(request: NextRequest) {
     console.log('[Bill Generation] Calculation:', {
       unitsConsumed,
       tariffCategory: customerCategory,
-      slabBreakdown: {
-        slab1: unitsConsumed <= slab1End ? unitsConsumed * slab1Rate : slab1End * slab1Rate,
-        slab2: unitsConsumed > slab1End && unitsConsumed <= slab2End ? (unitsConsumed - slab1End) * slab2Rate : unitsConsumed > slab2End ? (slab2End - slab1End) * slab2Rate : 0,
-        slab3: unitsConsumed > slab2End && unitsConsumed <= slab3End ? (unitsConsumed - slab2End) * slab3Rate : unitsConsumed > slab3End ? (slab3End - slab2End) * slab3Rate : 0,
-        slab4: unitsConsumed > slab3End && unitsConsumed <= slab4End ? (unitsConsumed - slab3End) * slab4Rate : unitsConsumed > slab4End ? (slab4End - slab3End) * slab4Rate : 0,
-        slab5: unitsConsumed > slab4End ? (unitsConsumed - slab4End) * slab5Rate : 0,
-      },
+      slabsUsed: slabs.map(s => ({ order: s.slabOrder, start: s.startUnits, end: s.endUnits, rate: s.ratePerUnit })),
       baseAmount,
       fixedCharges,
       electricityDuty,
@@ -277,7 +290,7 @@ export async function POST(request: NextRequest) {
 
     // Insert bill into database
     console.log('[Bills Generate POST] ✅ Inserting bill into database...');
-    const [newBill] = await db.insert(bills).values({
+    const insertResult = await db.insert(bills).values({
       customerId,
       billNumber,
       billingMonth,
@@ -295,7 +308,8 @@ export async function POST(request: NextRequest) {
       tariffId: activeTariff.id,
     } as any);
 
-    console.log('[Bills Generate POST] ✅ Bill inserted successfully - ID:', newBill.insertId);
+    const billId = (insertResult as any).insertId;
+    console.log('[Bills Generate POST] ✅ Bill inserted successfully - ID:', billId);
     console.log('[Bills Generate POST] Customer ID:', customerId);
     console.log('[Bills Generate POST] Billing Month:', billingMonth);
     console.log('[Bills Generate POST] Total Amount:', totalAmount.toFixed(2));
@@ -347,7 +361,7 @@ export async function POST(request: NextRequest) {
     const [createdBill] = await db
       .select()
       .from(bills)
-      .where(eq(bills.id, newBill.insertId))
+      .where(eq(bills.id, billId))
       .limit(1);
 
     return NextResponse.json({

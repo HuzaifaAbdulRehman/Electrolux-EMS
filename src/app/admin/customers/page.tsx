@@ -82,6 +82,25 @@ export default function AdminCustomers() {
     purposeOfConnection: 'domestic' as 'domestic' | 'business' | 'industrial' | 'agricultural'
   });
 
+  const [zones, setZones] = useState<string[]>([]);
+  const [zonesLoading, setZonesLoading] = useState(false);
+  useEffect(() => {
+    const fetchZones = async () => {
+      setZonesLoading(true);
+      try {
+        const resp = await fetch('/api/zones');
+        const json = await resp.json();
+        if (resp.ok && json?.success && Array.isArray(json.data)) setZones(json.data);
+        else setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D']);
+      } catch {
+        setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D']);
+      } finally {
+        setZonesLoading(false);
+      }
+    };
+    fetchZones();
+  }, []);
+
   // Formatting helpers (display hyphens, store only digits)
   const onlyDigits = (v: string) => v.replace(/\D+/g, '');
   const formatPKPhone = (digits: string) => {
@@ -1011,11 +1030,10 @@ export default function AdminCustomers() {
                           onChange={(e) => setNewCustomer({ ...newCustomer, zone: e.target.value })}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-white [&>option]:text-gray-900 dark:[&>option]:bg-gray-800 dark:[&>option]:text-white"
                         >
-                          <option value="">Select Zone</option>
-                          <option value="Zone A">Zone A</option>
-                          <option value="Zone B">Zone B</option>
-                          <option value="Zone C">Zone C</option>
-                          <option value="Zone D">Zone D</option>
+                          <option value="">{zonesLoading ? 'Loading zones...' : 'Select Zone'}</option>
+                          {zones.map((z) => (
+                            <option key={z} value={z}>{z}</option>
+                          ))}
                         </select>
                       </div>
 

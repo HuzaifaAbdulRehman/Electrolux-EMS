@@ -35,3 +35,4 @@ export const bills = mysqlTable('bills', {
 
 export type Bill = typeof bills.$inferSelect;
 export type NewBill = typeof bills.$inferInsert;
+

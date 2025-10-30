@@ -18,3 +18,4 @@ CREATE INDEX idx_customers_status ON customers(status);
 UPDATE customers 
 SET meter_number = CONCAT('MTR-GEN-', LPAD(id, 6, '0'))
 WHERE meter_number IS NULL;
+

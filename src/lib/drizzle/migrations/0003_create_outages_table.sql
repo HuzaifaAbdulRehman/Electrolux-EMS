@@ -24,3 +24,4 @@ CREATE TABLE IF NOT EXISTS `outages` (
   CONSTRAINT `outages_created_by_fk` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+

@@ -22,3 +22,4 @@ export const meterReadings = mysqlTable('meter_readings', {
 
 export type MeterReading = typeof meterReadings.$inferSelect;
 export type NewMeterReading = typeof meterReadings.$inferInsert;
+

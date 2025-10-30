@@ -11,3 +11,4 @@ ADD CONSTRAINT `bills_tariff_id_fk`
 -- Add comment for documentation
 ALTER TABLE `bills` 
 MODIFY COLUMN `tariff_id` int DEFAULT NULL COMMENT 'Reference to tariff version used for this bill (audit trail)';
+

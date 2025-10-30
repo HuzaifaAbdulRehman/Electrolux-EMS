@@ -11,7 +11,7 @@ export const connectionRequests = mysqlTable('connection_requests', {
   idType: mysqlEnum('id_type', ['passport', 'drivers_license', 'national_id', 'voter_id', 'aadhaar']).notNull(),
   idNumber: varchar('id_number', { length: 100 }).notNull(),
   propertyType: mysqlEnum('property_type', ['Residential', 'Commercial', 'Industrial', 'Agricultural']).notNull(),
-  connectionType: varchar('connection_type', { length: 50 }).notNull(),
+  connectionType: mysqlEnum('connection_type', ['single-phase', 'three-phase', 'industrial']).notNull(),
   loadRequired: decimal('load_required', { precision: 10, scale: 2 }),
   propertyAddress: varchar('property_address', { length: 500 }).notNull(),
   city: varchar('city', { length: 100 }).notNull(),
@@ -43,3 +43,4 @@ export const connectionRequests = mysqlTable('connection_requests', {
 // Type exports
 export type ConnectionRequest = typeof connectionRequests.$inferSelect;
 export type NewConnectionRequest = typeof connectionRequests.$inferInsert;
+

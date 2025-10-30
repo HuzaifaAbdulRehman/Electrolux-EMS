@@ -190,3 +190,4 @@ function formatTime(date: Date | null): string {
   if (diffWeeks < 4) return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`;
   return notifDate.toLocaleDateString();
 }
+

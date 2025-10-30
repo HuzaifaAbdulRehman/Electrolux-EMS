@@ -51,3 +51,4 @@ ALTER TABLE `tariff_slabs`
 CREATE INDEX IF NOT EXISTS `idx_tariff_slabs_tariff_id` ON `tariff_slabs`(`tariff_id`);
 
 
+

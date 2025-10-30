@@ -64,7 +64,8 @@
       "Bash(rm:*)",
       "Bash(touch:*)",
       "Bash(do echo \"=== Branch: $branch ===\")",
-      "Bash(xargs cat:*)"
+      "Bash(xargs cat:*)",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "ask": []

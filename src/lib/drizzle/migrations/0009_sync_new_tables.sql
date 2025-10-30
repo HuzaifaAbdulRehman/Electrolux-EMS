@@ -104,3 +104,4 @@ ALTER TABLE `bill_requests`
   ADD CONSTRAINT IF NOT EXISTS `bill_requests_created_by_users_id_fk` FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE SET NULL;
 
 
+

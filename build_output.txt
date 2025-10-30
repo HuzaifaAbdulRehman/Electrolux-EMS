@@ -112,7 +112,8 @@ Profile API error: n [Error]: Dynamic server usage: Page couldn't be rendered st
   description: "Page couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
   digest: 'DYNAMIC_SERVER_USAGE'
 }
-   Generating static pages (21/85) 
+
+   Generating static pages (21/85) 
 [API] CRITICAL ERROR: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
     at s (d:\Programming\Projects\electrolux_ems\.next\server\chunks\755.js:1:102376)
     at u (d:\Programming\Projects\electrolux_ems\.next\server\chunks\123.js:30:26072)
@@ -236,7 +237,8 @@ Error fetching bill requests: n [Error]: Dynamic server usage: Page couldn't be 
   description: "Page couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
   digest: 'DYNAMIC_SERVER_USAGE'
 }
-   Generating static pages (42/85) 
+
+   Generating static pages (42/85) 
 [Data Export] Error exporting data: n [Error]: Dynamic server usage: Page couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error
     at s (d:\Programming\Projects\electrolux_ems\.next\server\chunks\755.js:1:102376)
     at u (d:\Programming\Projects\electrolux_ems\.next\server\chunks\123.js:30:26072)
@@ -251,8 +253,10 @@ Error fetching bill requests: n [Error]: Dynamic server usage: Page couldn't be 
   description: "Page couldn't be rendered statically because it used `headers`. See more info here: https://nextjs.org/docs/messages/dynamic-server-error",
   digest: 'DYNAMIC_SERVER_USAGE'
 }
-   Generating static pages (63/85) 
- ✓ Generating static pages (85/85) 
+
+   Generating static pages (63/85) 
+
+ ✓ Generating static pages (85/85) 
    Finalizing page optimization ...
    Collecting build traces ...
 
@@ -357,4 +361,5 @@ Route (app)                              Size     First Load JS
 
 ○  (Static)   prerendered as static content
 λ  (Dynamic)  server-rendered on demand using Node.js
+
 

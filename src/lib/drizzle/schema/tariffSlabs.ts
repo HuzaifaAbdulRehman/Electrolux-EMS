@@ -15,3 +15,4 @@ export type TariffSlab = typeof tariffSlabs.$inferSelect;
 export type NewTariffSlab = typeof tariffSlabs.$inferInsert;
 
 
+

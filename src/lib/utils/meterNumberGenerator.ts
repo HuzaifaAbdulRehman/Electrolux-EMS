@@ -118,3 +118,4 @@ export function parseMeterNumber(meterNumber: string): { cityCode: string; seque
     sequence: parseInt(match[2], 10)
   };
 }
+

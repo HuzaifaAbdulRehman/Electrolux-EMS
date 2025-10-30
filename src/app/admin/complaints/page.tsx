@@ -461,3 +461,4 @@ export default function AdminComplaints() {
     </DashboardLayout>
   );
 }
+

@@ -39,3 +39,4 @@ export const config = {
     '/api/customer/:path*',
   ],
 };
+

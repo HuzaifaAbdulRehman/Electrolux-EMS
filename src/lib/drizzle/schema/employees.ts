@@ -3,6 +3,7 @@ import { users } from './users';
 
 export const employees = mysqlTable('employees', {
   id: int('id').primaryKey().autoincrement(),
+  employeeNumber: varchar('employee_number', { length: 20 }).unique(),
   userId: int('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   employeeName: varchar('employee_name', { length: 255 }).notNull(),
   email: varchar('email', { length: 255 }).notNull(),
@@ -18,3 +19,4 @@ export const employees = mysqlTable('employees', {
 
 export type Employee = typeof employees.$inferSelect;
 export type NewEmployee = typeof employees.$inferInsert;
+

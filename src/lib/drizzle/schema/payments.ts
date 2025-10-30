@@ -19,3 +19,4 @@ export const payments = mysqlTable('payments', {
 
 export type Payment = typeof payments.$inferSelect;
 export type NewPayment = typeof payments.$inferInsert;
+

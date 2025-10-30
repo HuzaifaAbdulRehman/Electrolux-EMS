@@ -12,3 +12,4 @@ export const systemSettings = mysqlTable('system_settings', {
 
 export type SystemSetting = typeof systemSettings.$inferSelect;
 export type NewSystemSetting = typeof systemSettings.$inferInsert;
+

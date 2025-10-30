@@ -24,3 +24,4 @@ export const complaints = mysqlTable('complaints', {
 
 export type Complaint = typeof complaints.$inferSelect;
 export type NewComplaint = typeof complaints.$inferInsert;
+

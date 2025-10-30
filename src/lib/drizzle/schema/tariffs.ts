@@ -23,3 +23,4 @@ export const tariffs = mysqlTable('tariffs', {
 
 export type Tariff = typeof tariffs.$inferSelect;
 export type NewTariff = typeof tariffs.$inferInsert;
+

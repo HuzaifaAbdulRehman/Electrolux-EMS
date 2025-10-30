@@ -15,3 +15,4 @@ ALTER TABLE `tariffs`
   DROP COLUMN `slab5_start`,
   DROP COLUMN `slab5_end`,
   DROP COLUMN `slab5_rate`;
+

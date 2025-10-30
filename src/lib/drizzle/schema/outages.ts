@@ -26,3 +26,4 @@ export const outages = mysqlTable('outages', {
 
 export type Outage = typeof outages.$inferSelect;
 export type NewOutage = typeof outages.$inferInsert;
+

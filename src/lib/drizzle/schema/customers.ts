@@ -28,3 +28,4 @@ export const customers = mysqlTable('customers', {
 
 export type Customer = typeof customers.$inferSelect;
 export type NewCustomer = typeof customers.$inferInsert;
+

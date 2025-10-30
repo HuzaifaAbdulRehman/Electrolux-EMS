@@ -70,3 +70,4 @@ filesToFix.forEach(filePath => {
 
 console.log('All files have been updated!');
 
+

@@ -24,3 +24,4 @@ export const pool = mysql.createPool({
 
 // Initialize Drizzle ORM with the connection pool
 export const db = drizzle(pool);
+

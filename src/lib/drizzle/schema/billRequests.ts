@@ -23,3 +23,4 @@ export const billRequests = mysqlTable('bill_requests', {
 // Type exports
 export type BillRequest = typeof billRequests.$inferSelect;
 export type NewBillRequest = typeof billRequests.$inferInsert;
+

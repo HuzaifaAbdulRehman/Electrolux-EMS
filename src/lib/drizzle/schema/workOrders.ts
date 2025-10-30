@@ -21,3 +21,4 @@ export const workOrders = mysqlTable('work_orders', {
 
 export type WorkOrder = typeof workOrders.$inferSelect;
 export type NewWorkOrder = typeof workOrders.$inferInsert;
+

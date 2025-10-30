@@ -185,3 +185,4 @@ export const getChartConfig = (isDark: boolean) => ({
 });
 
 export default themeStyles;
+

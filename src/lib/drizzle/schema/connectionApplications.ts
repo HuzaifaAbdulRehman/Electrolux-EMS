@@ -20,7 +20,7 @@ export const connectionApplications = mysqlTable('connection_applications', {
   // Connection details
   propertyType: mysqlEnum('property_type', ['residential', 'commercial', 'industrial', 'agricultural']).notNull(),
   connectionType: mysqlEnum('connection_type', ['single-phase', 'three-phase', 'industrial']).notNull(),
-  loadRequired: decimal('load_required', { precision: 10, scale: 2 }).notNull(), // kW
+  loadRequired: decimal('load_required', { precision: 10, scale: 2 }), // kW (Optional - determined during inspection)
 
   // Address
   propertyAddress: varchar('property_address', { length: 500 }).notNull(),
@@ -56,3 +56,4 @@ export const connectionApplications = mysqlTable('connection_applications', {
 
 export type ConnectionApplication = typeof connectionApplications.$inferSelect;
 export type NewConnectionApplication = typeof connectionApplications.$inferInsert;
+

@@ -62,57 +62,20 @@ export default function BillCalculator() {
         const tariffsMap: any = {};
 
         result.data.forEach((tariff: any) => {
-          const slabs = [];
-
-          // Build slabs from database fields
-          if (tariff.slab1End) {
-            slabs.push({
-              min: tariff.slab1Start,
-              max: tariff.slab1End,
-              rate: parseFloat(tariff.slab1Rate),
-              label: `${tariff.slab1Start}-${tariff.slab1End} units`
-            });
-          }
-          if (tariff.slab2End) {
-            slabs.push({
-              min: tariff.slab2Start,
-              max: tariff.slab2End,
-              rate: parseFloat(tariff.slab2Rate),
-              label: `${tariff.slab2Start}-${tariff.slab2End} units`
-            });
-          }
-          if (tariff.slab3End) {
-            slabs.push({
-              min: tariff.slab3Start,
-              max: tariff.slab3End,
-              rate: parseFloat(tariff.slab3Rate),
-              label: `${tariff.slab3Start}-${tariff.slab3End} units`
-            });
-          }
-          if (tariff.slab4End) {
-            slabs.push({
-              min: tariff.slab4Start,
-              max: tariff.slab4End,
-              rate: parseFloat(tariff.slab4Rate),
-              label: `${tariff.slab4Start}-${tariff.slab4End} units`
-            });
-          }
-          // Slab 5 can have null end (unlimited)
-          if (tariff.slab5Rate) {
-            slabs.push({
-              min: tariff.slab5Start,
-              max: tariff.slab5End ? tariff.slab5End : Infinity,
-              rate: parseFloat(tariff.slab5Rate),
-              label: tariff.slab5End ? `${tariff.slab5Start}-${tariff.slab5End} units` : `${tariff.slab5Start}+ units`
-            });
-          }
+          // Transform slabs from normalized structure
+          const slabs = tariff.slabs.map((slab: any) => ({
+            min: slab.startUnits,
+            max: slab.endUnits ?? Infinity,
+            rate: slab.ratePerUnit,
+            label: slab.range
+          }));
 
           tariffsMap[tariff.category] = {
             name: tariff.category,
             slabs,
-            fixedCharge: parseFloat(tariff.fixedCharge),
-            electricityDutyPercent: parseFloat(tariff.electricityDutyPercent || 0),
-            gstPercent: parseFloat(tariff.gstPercent || 18)
+            fixedCharge: tariff.fixedCharge,
+            electricityDutyPercent: tariff.electricityDutyPercent || 0,
+            gstPercent: tariff.gstPercent || 18
           };
         });
 

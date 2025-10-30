@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import {
@@ -23,7 +23,7 @@ import {
   Zap
 } from 'lucide-react';
 
-export default function AdminBills() {
+function AdminBillsInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const monthParam = searchParams.get('month');
@@ -900,5 +900,13 @@ export default function AdminBills() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function AdminBills() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading...</div>}>
+      <AdminBillsInner />
+    </Suspense>
   );
 }

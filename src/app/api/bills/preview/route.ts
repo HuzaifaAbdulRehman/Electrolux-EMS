@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
-import { customers, meterReadings, bills, tariffs } from '@/lib/drizzle/schema';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { customers, meterReadings, bills, tariffs, tariffSlabs } from '@/lib/drizzle/schema';
+import { eq, and, sql, desc, asc } from 'drizzle-orm';
 
 // GET /api/bills/preview - Preview bulk bill generation
 export async function GET(request: NextRequest) {
@@ -122,10 +122,21 @@ export async function GET(request: NextRequest) {
       customer => !customersWithBillsSet.has(customer.customerId)
     );
 
-    // 7. Calculate estimated revenue
+    // 7. Fetch tariff slabs for all available tariffs
+    const tariffSlabsMap = new Map<number, any[]>();
+    for (const tariff of availableTariffs) {
+      const slabs = await db
+        .select()
+        .from(tariffSlabs)
+        .where(eq(tariffSlabs.tariffId, tariff.id))
+        .orderBy(asc(tariffSlabs.slabOrder));
+      tariffSlabsMap.set(tariff.id, slabs);
+    }
+
+    // 8. Calculate estimated revenue
     let estimatedRevenue = 0;
     const tariffMap = new Map(availableTariffs.map(t => [t.category, t]));
-    
+
     for (const customer of eligibleCustomers) {
       const category = customer.connectionType || 'Residential';
       const tariff = tariffMap.get(category as 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural');
@@ -133,14 +144,22 @@ export async function GET(request: NextRequest) {
       if (tariff) {
         const units = Number(customer.unitsConsumed || '0');
         const fixedCharges = Number(tariff.fixedCharge);
+        const slabs = tariffSlabsMap.get(tariff.id) || [];
 
-        // Simple calculation for preview (first slab only)
+        // Calculate base amount using tariff slabs
         let baseAmount = 0;
-        if (units <= Number(tariff.slab1End)) {
-          baseAmount = units * Number(tariff.slab1Rate);
-        } else {
-          baseAmount = Number(tariff.slab1End) * Number(tariff.slab1Rate) +
-                      (units - Number(tariff.slab1End)) * Number(tariff.slab2Rate);
+        let remainingUnits = units;
+
+        for (const slab of slabs) {
+          if (remainingUnits <= 0) break;
+
+          const slabStart = Number(slab.startUnits);
+          const slabEnd = slab.endUnits ? Number(slab.endUnits) : Infinity;
+          const slabRate = Number(slab.ratePerUnit);
+
+          const unitsInSlab = Math.min(remainingUnits, slabEnd - slabStart);
+          baseAmount += unitsInSlab * slabRate;
+          remainingUnits -= unitsInSlab;
         }
 
         const electricityDuty = baseAmount * (Number(tariff.electricityDutyPercent ?? 0) / 100);
@@ -151,7 +170,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 8. Identify potential issues
+    // 9. Identify potential issues
     const issues = [];
     
     // Check for customers without readings

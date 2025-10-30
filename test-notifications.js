@@ -11,7 +11,7 @@ const mysql = require('mysql2/promise');
 const dbConfig = {
   host: 'localhost',
   user: 'root',
-  password: 'SteveSmith@12345',
+  password: 'REDACTED',
   database: 'electricity_ems'
 };
 
@@ -177,3 +177,4 @@ async function testNotifications() {
 
 // Run the test
 testNotifications();
+

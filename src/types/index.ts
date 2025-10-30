@@ -74,26 +74,25 @@ export interface Bill {
   tariff?: Tariff;
 }
 
+export interface TariffSlab {
+  id: number;
+  tariffId: number;
+  slabOrder: number;
+  startUnits: number;
+  endUnits: number | null;
+  ratePerUnit: number;
+  createdAt: string;
+}
+
 export interface Tariff {
   id: number;
-  name: string;
-  connectionType: 'residential' | 'commercial' | 'industrial' | 'agricultural';
-  slab1Start: number;
-  slab1End: number;
-  slab1Rate: number;
-  slab2Start: number;
-  slab2End: number;
-  slab2Rate: number;
-  slab3Start: number;
-  slab3End: number;
-  slab3Rate: number;
-  slab4Start: number;
-  slab4End: number;
-  slab4Rate: number;
-  slab5Start: number;
-  slab5End: number | null;
-  slab5Rate: number;
-  isActive: boolean;
+  category: 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural';
+  fixedCharge: number;
+  electricityDutyPercent: number;
+  gstPercent: number;
+  effectiveDate: string;
+  validUntil: string | null;
+  slabs?: TariffSlab[];
   createdAt: string;
   updatedAt: string;
 }

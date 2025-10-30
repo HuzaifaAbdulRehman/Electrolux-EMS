@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
@@ -64,7 +64,7 @@ interface BillData {
   }>;
 }
 
-export default function BillView() {
+function BillViewInner() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
   const billId = searchParams.get('id');
@@ -545,5 +545,13 @@ export default function BillView() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function BillView() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <BillViewInner />
+    </Suspense>
   );
 }

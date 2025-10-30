@@ -52,15 +52,15 @@ export async function POST(request: NextRequest) {
     const data = validationResult.data;
     console.log('[Registration API] Validation passed, processing registration...');
 
-    // Check if user already exists
-    console.log('[Registration API] Checking for existing user...');
-    const existingUser = await db
+    // Check for existing user and phone in a single query to reduce race condition window
+    console.log('[Registration API] Checking for existing user and phone...');
+    const [existingUser] = await db
       .select()
       .from(users)
       .where(eq(users.email, data.email))
       .limit(1);
 
-    if (existingUser.length > 0) {
+    if (existingUser) {
       console.log('[Registration API] User already exists:', data.email);
       return NextResponse.json(
         { error: 'User with this email already exists' },
@@ -68,15 +68,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if phone number is already in use
-    console.log('[Registration API] Checking for existing phone...');
-    const existingPhone = await db
+    const [existingPhone] = await db
       .select()
       .from(customers)
       .where(eq(customers.phone, data.phone))
       .limit(1);
 
-    if (existingPhone.length > 0) {
+    if (existingPhone) {
       console.log('[Registration API] Phone already exists:', data.phone);
       return NextResponse.json(
         { error: 'Phone number is already registered' },
@@ -236,6 +234,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Invalid request data', details: error.errors },
         { status: 400 }
+      );
+    }
+
+    // Handle MySQL duplicate key errors (race condition protection)
+    if (error.code === 'ER_DUP_ENTRY' || error.errno === 1062) {
+      console.log('[Registration API] Duplicate key error detected');
+      if (error.message?.includes('email')) {
+        return NextResponse.json(
+          { error: 'User with this email already exists' },
+          { status: 409 }
+        );
+      } else if (error.message?.includes('phone')) {
+        return NextResponse.json(
+          { error: 'Phone number is already registered' },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json(
+        { error: 'This email or phone number is already registered' },
+        { status: 409 }
       );
     }
 

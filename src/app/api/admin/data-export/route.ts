@@ -131,13 +131,10 @@ export async function GET(request: NextRequest) {
             id: tariffs.id,
             category: tariffs.category,
             fixedCharge: tariffs.fixedCharge,
-            slab1Start: tariffs.slab1Start,
-            slab1End: tariffs.slab1End,
-            slab1Rate: tariffs.slab1Rate,
-            slab2Start: tariffs.slab2Start,
-            slab2End: tariffs.slab2End,
-            slab2Rate: tariffs.slab2Rate,
+            electricityDutyPercent: tariffs.electricityDutyPercent,
+            gstPercent: tariffs.gstPercent,
             effectiveDate: tariffs.effectiveDate,
+            validUntil: tariffs.validUntil,
             createdAt: tariffs.createdAt
           })
           .from(tariffs);

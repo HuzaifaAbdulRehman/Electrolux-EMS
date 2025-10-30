@@ -188,7 +188,32 @@ export default function AdminConnectionRequests() {
     }
   };
 
+  const [zones, setZones] = React.useState<string[]>([]);
+  const [zonesLoading, setZonesLoading] = React.useState(false);
+  const [selectedZone, setSelectedZone] = React.useState<string>('');
+
+  React.useEffect(() => {
+    const fetchZones = async () => {
+      setZonesLoading(true);
+      try {
+        const resp = await fetch('/api/zones');
+        const json = await resp.json();
+        if (resp.ok && json?.success && Array.isArray(json.data)) setZones(json.data);
+        else setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D']);
+      } catch {
+        setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D']);
+      } finally {
+        setZonesLoading(false);
+      }
+    };
+    fetchZones();
+  }, []);
+
   const handleCreateAccount = async (requestId: number) => {
+    if (!selectedZone) {
+      alert('Please select a zone before creating the account.');
+      return;
+    }
     if (!confirm('Create customer account for this application? A meter number will be auto-generated and login credentials will be created.')) return;
 
     setIsProcessing(true);
@@ -196,10 +221,10 @@ export default function AdminConnectionRequests() {
       const response = await fetch('/api/admin/connection-requests', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+          body: JSON.stringify({
           requestId,
           action: 'create_customer',
-          zone: 'Zone A' // You can make this selectable if needed
+          zone: selectedZone
         })
       });
 
@@ -419,14 +444,26 @@ export default function AdminConnectionRequests() {
 
                     {request.status === 'approved' && (
                       request.startedCount && request.startedCount > 0 ? (
-                        <button
-                          onClick={() => handleCreateAccount(request.id)}
-                          disabled={isProcessing}
-                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50 flex items-center space-x-2"
-                        >
-                          <User className="w-4 h-4" />
-                          <span>Create Customer Account</span>
-                        </button>
+                        <>
+                          <select
+                            value={selectedZone}
+                            onChange={(e) => setSelectedZone(e.target.value)}
+                            className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                          >
+                            <option value="">{zonesLoading ? 'Loading zones...' : 'Select Zone'}</option>
+                            {zones.map((z) => (
+                              <option key={z} value={z}>{z}</option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => handleCreateAccount(request.id)}
+                            disabled={isProcessing}
+                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50 flex items-center space-x-2"
+                          >
+                            <User className="w-4 h-4" />
+                            <span>Create Customer Account</span>
+                          </button>
+                        </>
                       ) : (
                         <button
                           type="button"

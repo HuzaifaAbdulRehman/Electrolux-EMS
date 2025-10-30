@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { db } from './db';
-import { users, customers, employees, tariffs, meterReadings, bills, payments, workOrders, connectionApplications, notifications, billRequests, outages } from './schema';
+import { users, customers, employees, tariffs, meterReadings, bills, payments, workOrders, connectionApplications, notifications, billRequests, outages, tariffSlabs } from './schema';
 import bcrypt from 'bcryptjs';
 import { subMonths, format, addDays } from 'date-fns';
 import { eq, sql } from 'drizzle-orm';
@@ -206,17 +206,19 @@ async function seed() {
     await db.insert(customers).values(customerRecords as any);
     console.log('✅ Seeded 50 customers\n');
 
-    // 4. SEED TARIFFS (4 categories)
+    // 4. SEED TARIFFS (4 categories) - normalized with tariff_slabs
     console.log('💰 Seeding tariffs...');
-    const tariffData = [
+    const tariffSeed = [
       {
         category: 'Residential' as const,
         fixedCharge: '50.00',
-        slab1Start: 0, slab1End: 100, slab1Rate: '4.50',
-        slab2Start: 101, slab2End: 200, slab2Rate: '6.00',
-        slab3Start: 201, slab3End: 300, slab3Rate: '7.50',
-        slab4Start: 301, slab4End: 500, slab4Rate: '9.00',
-        slab5Start: 501, slab5End: null, slab5Rate: '10.50',
+        slabs: [
+          { order: 1, start: 0, end: 100, rate: '4.50' },
+          { order: 2, start: 101, end: 200, rate: '6.00' },
+          { order: 3, start: 201, end: 300, rate: '7.50' },
+          { order: 4, start: 301, end: 500, rate: '9.00' },
+          { order: 5, start: 501, end: null, rate: '10.50' },
+        ],
         timeOfUsePeakRate: '12.00',
         timeOfUseNormalRate: '7.50',
         timeOfUseOffpeakRate: '5.00',
@@ -228,11 +230,13 @@ async function seed() {
       {
         category: 'Commercial' as const,
         fixedCharge: '150.00',
-        slab1Start: 0, slab1End: 200, slab1Rate: '7.00',
-        slab2Start: 201, slab2End: 500, slab2Rate: '8.50',
-        slab3Start: 501, slab3End: 1000, slab3Rate: '10.00',
-        slab4Start: 1001, slab4End: 2000, slab4Rate: '11.50',
-        slab5Start: 2001, slab5End: null, slab5Rate: '13.00',
+        slabs: [
+          { order: 1, start: 0, end: 200, rate: '7.00' },
+          { order: 2, start: 201, end: 500, rate: '8.50' },
+          { order: 3, start: 501, end: 1000, rate: '10.00' },
+          { order: 4, start: 1001, end: 2000, rate: '11.50' },
+          { order: 5, start: 2001, end: null, rate: '13.00' },
+        ],
         timeOfUsePeakRate: '15.00',
         timeOfUseNormalRate: '10.00',
         timeOfUseOffpeakRate: '7.00',
@@ -244,11 +248,13 @@ async function seed() {
       {
         category: 'Industrial' as const,
         fixedCharge: '500.00',
-        slab1Start: 0, slab1End: 1000, slab1Rate: '6.50',
-        slab2Start: 1001, slab2End: 5000, slab2Rate: '7.50',
-        slab3Start: 5001, slab3End: 10000, slab3Rate: '8.50',
-        slab4Start: 10001, slab4End: 20000, slab4Rate: '9.50',
-        slab5Start: 20001, slab5End: null, slab5Rate: '10.50',
+        slabs: [
+          { order: 1, start: 0, end: 1000, rate: '6.50' },
+          { order: 2, start: 1001, end: 5000, rate: '7.50' },
+          { order: 3, start: 5001, end: 10000, rate: '8.50' },
+          { order: 4, start: 10001, end: 20000, rate: '9.50' },
+          { order: 5, start: 20001, end: null, rate: '10.50' },
+        ],
         timeOfUsePeakRate: '13.00',
         timeOfUseNormalRate: '8.50',
         timeOfUseOffpeakRate: '6.00',
@@ -260,11 +266,13 @@ async function seed() {
       {
         category: 'Agricultural' as const,
         fixedCharge: '30.00',
-        slab1Start: 0, slab1End: 200, slab1Rate: '3.00',
-        slab2Start: 201, slab2End: 500, slab2Rate: '4.00',
-        slab3Start: 501, slab3End: 1000, slab3Rate: '5.00',
-        slab4Start: 1001, slab4End: 2000, slab4Rate: '6.00',
-        slab5Start: 2001, slab5End: null, slab5Rate: '7.00',
+        slabs: [
+          { order: 1, start: 0, end: 200, rate: '3.00' },
+          { order: 2, start: 201, end: 500, rate: '4.00' },
+          { order: 3, start: 501, end: 1000, rate: '5.00' },
+          { order: 4, start: 1001, end: 2000, rate: '6.00' },
+          { order: 5, start: 2001, end: null, rate: '7.00' },
+        ],
         timeOfUsePeakRate: '8.00',
         timeOfUseNormalRate: '5.00',
         timeOfUseOffpeakRate: '3.50',
@@ -274,8 +282,31 @@ async function seed() {
         validUntil: null,
       },
     ];
-    await db.insert(tariffs).values(tariffData as any);
-    console.log('✅ Seeded 4 tariff categories\n');
+
+    for (const t of tariffSeed) {
+      const [insertedTariff] = await db.insert(tariffs).values({
+        category: t.category,
+        fixedCharge: t.fixedCharge,
+        timeOfUsePeakRate: t.timeOfUsePeakRate,
+        timeOfUseNormalRate: t.timeOfUseNormalRate,
+        timeOfUseOffpeakRate: t.timeOfUseOffpeakRate,
+        electricityDutyPercent: t.electricityDutyPercent,
+        gstPercent: t.gstPercent,
+        effectiveDate: t.effectiveDate,
+        validUntil: t.validUntil,
+      } as any);
+
+      const tariffId = (insertedTariff as any).insertId;
+      const slabRows = t.slabs.map(s => ({
+        tariffId,
+        slabOrder: s.order,
+        startUnits: s.start,
+        endUnits: s.end,
+        ratePerUnit: s.rate,
+      }));
+      await db.insert(tariffSlabs).values(slabRows as any);
+    }
+    console.log('✅ Seeded 4 tariff categories with normalized slabs\n');
 
     // 5. SEED METER READINGS & BILLS (6 months for 50 customers = 300 records each)
     console.log('📊 Seeding meter readings and bills (6 months)...');
@@ -292,7 +323,7 @@ async function seed() {
       const tariffCategory = customer.connectionType;
 
       // Get tariff for this customer
-      const tariff = tariffData.find(t => t.category === tariffCategory)!;
+      const tariff = tariffSeed.find((t: any) => t.category === tariffCategory)!;
 
       for (let monthOffset = 5; monthOffset >= 0; monthOffset--) {
         const readingDate = subMonths(today, monthOffset);
@@ -339,14 +370,10 @@ async function seed() {
         let baseAmount = 0;
         let remainingUnits = monthlyConsumption;
 
-        // Apply slab rates
-        const slabs = [
-          { start: tariff.slab1Start, end: tariff.slab1End, rate: parseFloat(tariff.slab1Rate) },
-          { start: tariff.slab2Start, end: tariff.slab2End, rate: parseFloat(tariff.slab2Rate) },
-          { start: tariff.slab3Start, end: tariff.slab3End, rate: parseFloat(tariff.slab3Rate) },
-          { start: tariff.slab4Start, end: tariff.slab4End, rate: parseFloat(tariff.slab4Rate) },
-          { start: tariff.slab5Start, end: tariff.slab5End || 999999, rate: parseFloat(tariff.slab5Rate) },
-        ];
+        // Apply slab rates from normalized tariff_slabs
+        const slabs = (
+          tariff.slabs as Array<{ start: number | null; end: number | null; rate: string }>
+        ).map((s) => ({ start: s.start ?? 0, end: s.end ?? 999999, rate: parseFloat(s.rate) }));
 
         for (const slab of slabs) {
           if (remainingUnits <= 0) break;

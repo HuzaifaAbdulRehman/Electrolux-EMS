@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -44,7 +44,7 @@ interface MeterReading {
   currentReading: number;
 }
 
-export default function MeterReadingForm() {
+function MeterReadingFormInner() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -1907,6 +1907,14 @@ export default function MeterReadingForm() {
       )}
 
     </DashboardLayout>
+  );
+}
+
+export default function MeterReadingForm() {
+  return (
+    <Suspense fallback={<div className="p-6">Loading...</div>}>
+      <MeterReadingFormInner />
+    </Suspense>
   );
 }
 

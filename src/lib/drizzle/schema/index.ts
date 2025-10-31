@@ -7,7 +7,7 @@ export * from './tariffs';
 export * from './tariffSlabs';
 export * from './bills';
 export * from './payments';
-export * from './connectionApplications';
+// Removed: connectionApplications - redundant with connectionRequests
 export * from './workOrders';
 export * from './complaints';
 export * from './notifications';
@@ -15,6 +15,6 @@ export * from './billRequests';
 export * from './connectionRequests';
 export * from './readingRequests';
 export * from './outages';
-export * from './systemSettings';
+// Removed: systemSettings - not used by any frontend pages (settings use localStorage)
 
 export * from './passwordResetRequests';

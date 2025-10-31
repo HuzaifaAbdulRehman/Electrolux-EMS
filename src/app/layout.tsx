@@ -40,7 +40,7 @@ export default function RootLayout({
         className={`${inter.variable} ${jetbrainsMono.variable} ${poppins.variable} antialiased`}
       >
         <Providers>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="electrolux-theme">
             {children}
             <ToastProvider />
           </ThemeProvider>

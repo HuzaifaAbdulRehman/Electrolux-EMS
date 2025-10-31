@@ -13,6 +13,7 @@ import {
   CheckCircle,
   Activity
 } from 'lucide-react';
+import { formatPKPhone, onlyDigits } from '@/lib/utils/dataHandlers';
 
 export default function EmployeeProfile() {
   const [isEditing, setIsEditing] = useState(false);
@@ -273,15 +274,19 @@ export default function EmployeeProfile() {
                     {isEditing ? (
                       <input
                         type="tel"
-                        value={profileData.phone}
-                        onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                        inputMode="numeric"
+                        value={formatPKPhone(profileData.phone)}
+                        onChange={(e) => {
+                          const raw = onlyDigits(e.target.value).slice(0, 11);
+                          setProfileData({ ...profileData, phone: raw });
+                        }}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-green-400"
-                        placeholder="03001234567 (11 digits)"
+                        placeholder="0300-1234567"
                       />
                     ) : (
                       <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                        <span className="text-gray-900 dark:text-white">{profileData.phone}</span>
+                        <span className="text-gray-900 dark:text-white">{formatPKPhone(profileData.phone)}</span>
                       </div>
                     )}
                   </div>
@@ -304,10 +309,6 @@ export default function EmployeeProfile() {
                   <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Position</p>
                     <p className="text-white font-semibold">{employeeInfo?.designation || 'N/A'}</p>
-                  </div>
-                  <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Work Zone</p>
-                    <p className="text-white font-semibold">{employeeInfo?.assignedZone || 'N/A'}</p>
                   </div>
                   <div className="p-4 bg-white dark:bg-white/5 rounded-xl">
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">Join Date</p>

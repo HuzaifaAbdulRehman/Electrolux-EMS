@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
       totalProcessed: 0,
       billsGenerated: 0,
       automaticReadings: 0,
+      firstReadings: 0, // Track brand new customers with no history
       skipped: {
         noReading: 0,
         alreadyExists: 0,
@@ -158,10 +159,56 @@ export async function POST(request: NextRequest) {
                   .orderBy(desc(meterReadings.readingDate))
                   .limit(1);
 
+                // EDGE CASE: Brand new customer with NO previous readings at all
+                let previousReading = 0;
+                let isFirstReading = false;
+
                 if (!lastMonthReading) {
-                  stats.skipped.noReading++;
-                  console.log(`[Bulk Generation] No previous reading found for ${customer.accountNumber} - skipping`);
-                  continue;
+                  // Try to find ANY previous reading (for brand new customers)
+                  const [anyPreviousReading] = await db
+                    .select()
+                    .from(meterReadings)
+                    .where(eq(meterReadings.customerId, customer.id))
+                    .orderBy(desc(meterReadings.readingDate))
+                    .limit(1);
+
+                  if (anyPreviousReading) {
+                    // Customer has SOME history (just not last month)
+                    previousReading = parseFloat(anyPreviousReading.currentReading);
+                    console.log(`[Bulk Generation] Using any available reading: ${previousReading} for ${customer.accountNumber}`);
+                  } else {
+                    // BRAND NEW CUSTOMER - No readings ever!
+                    isFirstReading = true;
+
+                    // Check if customer was just connected this month
+                    const connectionDate = new Date(customer.connectionDate || billingMonth);
+                    const billingMonthDate = new Date(billingMonth);
+
+                    if (connectionDate >= billingMonthDate) {
+                      // Connected THIS month - use minimal initial reading
+                      previousReading = 0;
+                      console.log(`[Bulk Generation] NEW customer connected this month: ${customer.accountNumber} - Starting from 0`);
+                    } else {
+                      // Connected before but no readings - use estimated initial reading
+                      // Estimate based on months since connection
+                      const monthsSinceConnection = Math.floor(
+                        (billingMonthDate.getTime() - connectionDate.getTime()) / (1000 * 60 * 60 * 24 * 30)
+                      );
+
+                      const defaults: { [key: string]: number } = {
+                        'Residential': 200,
+                        'Commercial': 800,
+                        'Industrial': 8000,
+                        'Agricultural': 600
+                      };
+                      const monthlyDefault = defaults[customer.connectionType || 'Residential'] || 200;
+                      previousReading = monthlyDefault * Math.max(1, monthsSinceConnection);
+
+                      console.log(`[Bulk Generation] NEW customer (${monthsSinceConnection} months old): ${customer.accountNumber} - Estimated previous: ${previousReading}`);
+                    }
+                  }
+                } else {
+                  previousReading = parseFloat(lastMonthReading.currentReading);
                 }
 
                 // Calculate average consumption from historical data
@@ -242,13 +289,20 @@ export async function POST(request: NextRequest) {
                   }
                 }
 
-                // Apply ±15% random variance for realism
-                const variance = 0.85 + (Math.random() * 0.30); // Random between 0.85 and 1.15
+                // Apply ±15% random variance for realism (unless it's first reading)
+                const variance = isFirstReading ? 1.0 : (0.85 + (Math.random() * 0.30)); // No variance for brand new customers
                 const newConsumption = Math.round(averageConsumption * variance);
 
-                // Calculate new reading
-                const previousReading = parseFloat(lastMonthReading.currentReading);
+                // Validate consumption is reasonable
+                if (newConsumption < 0) {
+                  console.warn(`[Bulk Generation] Negative consumption calculated for ${customer.accountNumber}, using 0`);
+                  throw new Error('Invalid consumption calculated');
+                }
+
+                // Calculate new reading (previousReading already calculated above)
                 const newReading = previousReading + newConsumption;
+
+                console.log(`[Bulk Generation] ${isFirstReading ? 'FIRST' : 'Auto'} reading for ${customer.accountNumber}: prev=${previousReading}, consumed=${newConsumption}, new=${newReading}`);
 
                 // Insert automatic meter reading
                 const readingDate = new Date(billingMonth);
@@ -267,12 +321,17 @@ export async function POST(request: NextRequest) {
                   accessibility: 'accessible',
                   employeeId: 1, // Admin/System generated
                   photoPath: null,
-                  notes: 'Auto-generated by bulk bill generation system',
+                  notes: isFirstReading
+                    ? `First reading - Auto-generated for new customer (${customer.connectionType}). Based on connection type defaults.`
+                    : `Auto-generated by bulk bill generation system using ${historicalReadings.length > 0 ? historicalReadings.length + '-month' : 'category'} average consumption.`,
                 } as any);
 
                 const readingId = (readingInsertResult as any).insertId;
-                console.log(`[Bulk Generation] Created automatic reading for ${customer.accountNumber}: ${newConsumption} kWh (variance: ${(variance * 100).toFixed(1)}%)`);
+                console.log(`[Bulk Generation] Created ${isFirstReading ? 'FIRST' : 'automatic'} reading for ${customer.accountNumber}: ${newConsumption} kWh (variance: ${(variance * 100).toFixed(1)}%)`);
                 stats.automaticReadings++;
+                if (isFirstReading) {
+                  stats.firstReadings++;
+                }
 
                 // Fetch the newly created reading
                 [reading] = await db

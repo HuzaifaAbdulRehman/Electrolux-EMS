@@ -36,7 +36,31 @@ export async function GET(request: NextRequest) {
       .from(customers)
       .where(eq(customers.status, 'active'));
 
-    // 2. Get customers with meter readings for this month
+    // 2. Get customers who already have bills for this month (with detailed info)
+    // IMPORTANT: Only count bills for ACTIVE customers to match totalActiveCustomers count
+    const existingBills = await db
+      .select({
+        customerId: bills.customerId,
+        billId: bills.id,
+        accountNumber: customers.accountNumber,
+        fullName: customers.fullName,
+        totalAmount: bills.totalAmount,
+        status: bills.status,
+        dueDate: bills.dueDate
+      })
+      .from(bills)
+      .innerJoin(customers, eq(bills.customerId, customers.id))
+      .where(
+        and(
+          sql`DATE(${bills.billingMonth}) = ${billingMonth}`,
+          eq(customers.status, 'active')
+        )
+      );
+
+    const customersWithBillsSet = new Set(existingBills.map(b => b.customerId));
+
+    // 3. Get customers with meter readings who DON'T have bills yet
+    // This shows: of the eligible customers, how many have readings ready
     const customersWithReadings = await db
       .select({
         customerId: meterReadings.customerId,
@@ -56,23 +80,10 @@ export async function GET(request: NextRequest) {
         )
       );
 
-    // 3. Get customers who already have bills for this month (with detailed info)
-    const existingBills = await db
-      .select({
-        customerId: bills.customerId,
-        billId: bills.id,
-        accountNumber: customers.accountNumber,
-        fullName: customers.fullName,
-        totalAmount: bills.totalAmount,
-        status: bills.status,
-        dueDate: bills.dueDate,
-        generatedAt: bills.createdAt
-      })
-      .from(bills)
-      .innerJoin(customers, eq(bills.customerId, customers.id))
-      .where(
-        sql`DATE(${bills.billingMonth}) = ${billingMonth}`
-      );
+    // Filter out customers who already have bills
+    const customersWithReadingsNoBills = customersWithReadings.filter(
+      c => !customersWithBillsSet.has(c.customerId)
+    );
 
     // Separate by status
     const billsByStatus = existingBills.reduce((acc, bill) => {
@@ -99,8 +110,8 @@ export async function GET(request: NextRequest) {
         )
       );
 
-    // 5. Analyze customer categories
-    const categoryAnalysis = customersWithReadings.reduce((acc, customer) => {
+    // 5. Analyze customer categories (only for customers WITH readings who need bills)
+    const categoryAnalysis = customersWithReadingsNoBills.reduce((acc, customer) => {
       const category = customer.connectionType || 'Residential';
       if (!acc[category]) {
         acc[category] = { count: 0, totalUnits: 0, hasTariff: false };
@@ -116,11 +127,11 @@ export async function GET(request: NextRequest) {
       categoryAnalysis[category].hasTariff = tariffCategories.has(category as any);
     });
 
-    // 6. Calculate eligible customers (have reading, no existing bill)
-    const customersWithBillsSet = new Set(existingBills.map(b => b.customerId));
-    const eligibleCustomers = customersWithReadings.filter(
-      customer => !customersWithBillsSet.has(customer.customerId)
-    );
+    // 6. Calculate eligible customers
+    // Total eligible = active customers minus UNIQUE customers who have bills
+    // Note: Use customersWithBillsSet.size (unique customers) NOT totalExistingBills (total bill count)
+    // because a customer might have multiple bills for the same month
+    const totalEligibleForGeneration = totalActiveCustomers.count - customersWithBillsSet.size;
 
     // 7. Fetch tariff slabs for all available tariffs
     const tariffSlabsMap = new Map<number, any[]>();
@@ -133,11 +144,11 @@ export async function GET(request: NextRequest) {
       tariffSlabsMap.set(tariff.id, slabs);
     }
 
-    // 8. Calculate estimated revenue
+    // 8. Calculate estimated revenue (for customers WITH readings)
     let estimatedRevenue = 0;
     const tariffMap = new Map(availableTariffs.map(t => [t.category, t]));
 
-    for (const customer of eligibleCustomers) {
+    for (const customer of customersWithReadingsNoBills) {
       const category = customer.connectionType || 'Residential';
       const tariff = tariffMap.get(category as 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural');
 
@@ -172,14 +183,14 @@ export async function GET(request: NextRequest) {
 
     // 9. Identify potential issues
     const issues = [];
-    
-    // Check for customers without readings
-    const customersWithoutReadings = totalActiveCustomers.count - customersWithReadings.length;
-    if (customersWithoutReadings > 0) {
+
+    // Check for eligible customers without readings (need auto-generation)
+    const eligibleWithoutReadings = totalEligibleForGeneration - customersWithReadingsNoBills.length;
+    if (eligibleWithoutReadings > 0) {
       issues.push({
-        type: 'warning',
-        message: `${customersWithoutReadings} customers don't have meter readings for this month`,
-        count: customersWithoutReadings
+        type: 'info',
+        message: `${eligibleWithoutReadings} eligible customers don't have meter readings yet (system will auto-generate based on historical consumption)`,
+        count: eligibleWithoutReadings
       });
     }
 
@@ -187,7 +198,7 @@ export async function GET(request: NextRequest) {
     const categoriesWithoutTariffs = Object.entries(categoryAnalysis)
       .filter(([_, data]) => !data.hasTariff)
       .map(([category, _]) => category);
-    
+
     if (categoriesWithoutTariffs.length > 0) {
       issues.push({
         type: 'error',
@@ -197,14 +208,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Check for customers with zero consumption
-    const zeroConsumptionCustomers = customersWithReadings.filter(
+    const zeroConsumptionCustomers = customersWithReadingsNoBills.filter(
       c => parseFloat(c.unitsConsumed || '0') === 0
     );
-    
+
     if (zeroConsumptionCustomers.length > 0) {
       issues.push({
         type: 'info',
-        message: `${zeroConsumptionCustomers.length} customers have zero consumption (will be charged fixed charges only)`,
+        message: `${zeroConsumptionCustomers.length} eligible customers have zero consumption (will be charged fixed charges only)`,
         count: zeroConsumptionCustomers.length
       });
     }
@@ -213,11 +224,11 @@ export async function GET(request: NextRequest) {
       billingMonth,
       summary: {
         totalActiveCustomers: totalActiveCustomers.count,
-        customersWithReadings: customersWithReadings.length,
-        customersWithoutReadings: customersWithoutReadings,
+        customersWithReadings: customersWithReadingsNoBills.length, // Eligible WITH readings
+        customersWithoutReadings: eligibleWithoutReadings, // Eligible WITHOUT readings
         customersWithExistingBills: totalExistingBills,
-        eligibleForGeneration: eligibleCustomers.length,
-        estimatedRevenue: Math.round(estimatedRevenue * 100) / 100
+        eligibleForGeneration: totalEligibleForGeneration, // All active customers without bills
+        estimatedRevenue: Math.round(estimatedRevenue * 100) / 100 // Note: Only includes customers WITH readings
       },
       existingBills: {
         total: totalExistingBills,
@@ -225,17 +236,17 @@ export async function GET(request: NextRequest) {
         byStatus: billsByStatus,
         statusCounts: {
           pending: billsByStatus['pending']?.length || 0,
-          issued: billsByStatus['issued']?.length || 0,
+          // Combine 'generated' and 'issued' bills - both are unpaid bills ready for payment
+          issued: (billsByStatus['issued']?.length || 0) + (billsByStatus['generated']?.length || 0),
           paid: billsByStatus['paid']?.length || 0,
           overdue: billsByStatus['overdue']?.length || 0,
           cancelled: billsByStatus['cancelled']?.length || 0
         },
-        details: existingBills.slice(0, 10), // First 10 for preview
-        generatedAt: existingBills[0]?.generatedAt || null
+        details: existingBills.slice(0, 10) // First 10 for preview
       },
       categoryBreakdown: categoryAnalysis,
       issues,
-      eligibleCustomers: eligibleCustomers.slice(0, 10), // First 10 for preview
+      eligibleCustomers: customersWithReadingsNoBills.slice(0, 10), // First 10 for preview
       availableTariffs: availableTariffs.map(t => ({
         id: t.id,
         category: t.category,

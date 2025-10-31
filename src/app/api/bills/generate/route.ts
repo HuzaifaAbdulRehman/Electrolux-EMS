@@ -61,49 +61,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    if (customer.status !== 'active') {
+    // Allow bill generation for active and suspended customers
+    // (suspended customers still need bills for outstanding balances)
+    if (customer.status !== 'active' && customer.status !== 'suspended') {
       return NextResponse.json(
         { error: `Cannot generate bill for ${customer.status} customer` },
         { status: 400 }
       );
     }
 
-    // Check if bill already exists for this month - use DATE matching (handles timezone)
-    console.log('[Bills Generate POST] Checking for existing bill...');
-    console.log('[Bills Generate POST] Customer ID:', customerId);
-    console.log('[Bills Generate POST] Billing Month (requested):', billingMonth);
-
-    const [existingBill] = await db
-      .select()
-      .from(bills)
-      .where(
-        and(
-          eq(bills.customerId, customerId),
-          eq(bills.billingMonth, billingMonth) // Direct DATE comparison (billingMonth is DATE type)
-        )
-      )
-      .limit(1);
-
-    console.log('[Bills Generate POST] Existing bill check result:', existingBill ? 'FOUND' : 'NOT FOUND');
-
-    if (existingBill) {
-      console.log('[Bills Generate POST] ❌ Bill already exists - preventing duplicate');
-      console.log('[Bills Generate POST] Existing bill ID:', existingBill.id);
-      console.log('[Bills Generate POST] Existing bill month:', existingBill.billingMonth);
-      console.log('[Bills Generate POST] Requested month:', billingMonth);
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Bill already exists for this billing month',
-          details: `Customer ${customerId} already has a bill for ${existingBill.billingMonth}`,
-          existingBillId: existingBill.id
-        },
-        { status: 400 }
-      );
+    // Warn if generating bill for suspended customer
+    if (customer.status === 'suspended') {
+      console.log('[Bills Generate POST] ⚠️  WARNING: Generating bill for suspended customer:', customerId);
     }
 
-    // Get the most recent meter reading for this month
+    // Get the most recent meter reading for this month (outside transaction - read-only)
     const billingMonthStart = new Date(billingMonth);
     const billingMonthEnd = new Date(billingMonthStart);
     billingMonthEnd.setMonth(billingMonthEnd.getMonth() + 1);
@@ -288,108 +260,199 @@ export async function POST(request: NextRequest) {
       totalAmount
     });
 
-    // Insert bill into database
-    console.log('[Bills Generate POST] ✅ Inserting bill into database...');
-    const insertResult = await db.insert(bills).values({
-      customerId,
-      billNumber,
-      billingMonth,
-      issueDate,
-      dueDate: dueDateStr,
-      unitsConsumed: unitsConsumed.toFixed(2),
-      meterReadingId: latestReading.id,
-      baseAmount: baseAmount.toFixed(2),
-      fixedCharges: fixedCharges.toFixed(2),
-      electricityDuty: electricityDuty.toFixed(2),
-      gstAmount: gstAmount.toFixed(2),
-      totalAmount: totalAmount.toFixed(2),
-      status: 'generated',
-      // Add tariff reference for audit trail
-      tariffId: activeTariff.id,
-    } as any);
+    // Use database transaction to prevent race conditions
+    // This ensures duplicate check + insert + update are atomic
+    console.log('[Bills Generate POST] Starting database transaction...');
 
-    const billId = (insertResult as any).insertId;
-    console.log('[Bills Generate POST] ✅ Bill inserted successfully - ID:', billId);
+    let billId: number;
+    let createdBill: any;
+
+    try {
+      const result = await db.transaction(async (tx) => {
+        // Re-check if bill exists inside transaction (prevents race condition)
+        const [existingBill] = await tx
+          .select()
+          .from(bills)
+          .where(
+            and(
+              eq(bills.customerId, customerId),
+              eq(bills.billingMonth, billingMonth)
+            )
+          )
+          .limit(1);
+
+        if (existingBill) {
+          console.log('[Bills Generate POST] ❌ Bill already exists (detected in transaction)');
+          throw new Error(`DUPLICATE_BILL:${existingBill.id}`);
+        }
+
+        // Insert bill into database
+        console.log('[Bills Generate POST] ✅ Inserting bill into database...');
+        const insertResult = await tx.insert(bills).values({
+          customerId,
+          billNumber,
+          billingMonth,
+          issueDate,
+          dueDate: dueDateStr,
+          unitsConsumed: unitsConsumed.toFixed(2),
+          meterReadingId: latestReading.id,
+          baseAmount: baseAmount.toFixed(2),
+          fixedCharges: fixedCharges.toFixed(2),
+          electricityDuty: electricityDuty.toFixed(2),
+          gstAmount: gstAmount.toFixed(2),
+          totalAmount: totalAmount.toFixed(2),
+          status: 'generated',
+          tariffId: activeTariff.id,
+        } as any);
+
+        const newBillId = (insertResult as any).insertId;
+        console.log('[Bills Generate POST] ✅ Bill inserted successfully - ID:', newBillId);
+
+        // Update customer's outstanding balance and last bill amount
+        const newOutstandingBalance = parseFloat(customer.outstandingBalance || '0') + totalAmount;
+        await tx
+          .update(customers)
+          .set({
+            outstandingBalance: newOutstandingBalance.toFixed(2),
+            lastBillAmount: totalAmount.toFixed(2),
+          })
+          .where(eq(customers.id, customerId));
+
+        console.log('[Bills Generate POST] ✅ Customer balance updated');
+
+        // Return bill data directly (no need to re-query)
+        const bill = {
+          id: newBillId,
+          customerId,
+          billNumber,
+          billingMonth,
+          issueDate,
+          dueDate: dueDateStr,
+          unitsConsumed: unitsConsumed.toFixed(2),
+          meterReadingId: latestReading.id,
+          baseAmount: baseAmount.toFixed(2),
+          fixedCharges: fixedCharges.toFixed(2),
+          electricityDuty: electricityDuty.toFixed(2),
+          gstAmount: gstAmount.toFixed(2),
+          totalAmount: totalAmount.toFixed(2),
+          status: 'generated',
+          tariffId: activeTariff.id,
+        };
+
+        console.log('[Bills Generate POST] ✅ Bill object constructed with ID:', newBillId);
+        return { billId: newBillId, bill };
+      });
+
+      billId = result.billId;
+      createdBill = result.bill;
+
+    } catch (error: any) {
+      // Handle duplicate bill error specifically
+      if (error.message?.startsWith('DUPLICATE_BILL:')) {
+        const existingBillId = error.message.split(':')[1];
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Bill already exists for this billing month',
+            details: `Customer ${customerId} already has a bill for ${billingMonth}`,
+            existingBillId: parseInt(existingBillId)
+          },
+          { status: 400 }
+        );
+      }
+      throw error; // Re-throw other errors
+    }
+
+    console.log('[Bills Generate POST] Transaction committed successfully');
     console.log('[Bills Generate POST] Customer ID:', customerId);
     console.log('[Bills Generate POST] Billing Month:', billingMonth);
     console.log('[Bills Generate POST] Total Amount:', totalAmount.toFixed(2));
 
-    // Update customer's outstanding balance and last bill amount
-    const newOutstandingBalance = parseFloat(customer.outstandingBalance || '0') + totalAmount;
-    await db
-      .update(customers)
-      .set({
-        outstandingBalance: newOutstandingBalance.toFixed(2),
-        lastBillAmount: totalAmount.toFixed(2),
-      })
-      .where(eq(customers.id, customerId));
-
-    console.log('[Bills Generate POST] ✅ Customer balance updated');
-
-    // Update bill_request status to 'completed' if exists
-    await db
-      .update(billRequests)
-      .set({
-        status: 'completed',
-        updatedAt: new Date()
-      })
-      .where(
-        and(
-          eq(billRequests.customerId, customerId),
-          eq(billRequests.billingMonth, billingMonth),
-          eq(billRequests.status, 'pending')
-        )
-      );
-
-    console.log('[Bills Generate POST] Bill request marked as completed');
-
-    // Create notification for customer about new bill
-    if (customer.userId) {
-      await db.insert(notifications).values({
-        userId: customer.userId,
-        notificationType: 'billing',
-        title: 'New Bill Generated',
-        message: `Your bill for ${billingMonth} has been generated. Amount: Rs ${totalAmount.toFixed(2)}. Due date: ${new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString()}`,
-        priority: 'high',
-        actionUrl: '/customer/view-bills',
-        actionText: 'View Bill',
-        isRead: 0,
-      } as any);
+    // Validate bill was created
+    if (!createdBill) {
+      console.error('[Bills Generate POST] ❌ Bill object is null/undefined after transaction!');
+      return NextResponse.json({
+        error: 'Bill creation failed - bill object not returned',
+        details: 'Transaction completed but bill object is missing'
+      }, { status: 500 });
     }
 
-    // Fetch the created bill
-    const [createdBill] = await db
-      .select()
-      .from(bills)
-      .where(eq(bills.id, billId))
-      .limit(1);
+    // Update bill_request status to 'completed' if exists (non-critical - don't fail if this errors)
+    try {
+      await db
+        .update(billRequests)
+        .set({
+          status: 'completed',
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(billRequests.customerId, customerId),
+            eq(billRequests.billingMonth, billingMonth),
+            eq(billRequests.status, 'pending')
+          )
+        );
+      console.log('[Bills Generate POST] Bill request marked as completed');
+    } catch (updateError) {
+      console.warn('[Bills Generate POST] ⚠️ Failed to update bill request status (non-critical):', updateError);
+    }
 
-    return NextResponse.json({
+    // Create notification for customer about new bill (non-critical - don't fail if this errors)
+    try {
+      if (customer.userId) {
+        await db.insert(notifications).values({
+          userId: customer.userId,
+          notificationType: 'billing',
+          title: 'New Bill Generated',
+          message: `Your bill for ${billingMonth} has been generated. Amount: Rs ${totalAmount.toFixed(2)}. Due date: ${new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString()}`,
+          priority: 'high',
+          actionUrl: '/customer/view-bills',
+          actionText: 'View Bill',
+          isRead: 0,
+        } as any);
+        console.log('[Bills Generate POST] Notification created successfully');
+      }
+    } catch (notifError) {
+      console.warn('[Bills Generate POST] ⚠️ Failed to create notification (non-critical):', notifError);
+    }
+
+    console.log('[Bills Generate POST] Preparing response with bill data...');
+    console.log('[Bills Generate POST] Bill ID:', createdBill.id);
+    console.log('[Bills Generate POST] Bill Number:', createdBill.billNumber);
+
+    const responseData = {
       success: true,
       message: 'Bill generated successfully',
       bill: {
         id: createdBill.id,
-        bill_number: createdBill.billNumber,
-        total_amount: createdBill.totalAmount,
-        billing_month: createdBill.billingMonth,
-        units_consumed: createdBill.unitsConsumed,
-        base_amount: createdBill.baseAmount,
-        fixed_charges: createdBill.fixedCharges,
-        electricity_duty: createdBill.electricityDuty,
-        gst_amount: createdBill.gstAmount,
+        billNumber: createdBill.billNumber,
+        totalAmount: createdBill.totalAmount,
+        billingMonth: createdBill.billingMonth,
+        unitsConsumed: createdBill.unitsConsumed,
+        baseAmount: createdBill.baseAmount,
+        fixedCharges: createdBill.fixedCharges,
+        electricityDuty: createdBill.electricityDuty,
+        gstAmount: createdBill.gstAmount,
         status: createdBill.status,
-        issue_date: createdBill.issueDate,
-        due_date: createdBill.dueDate
+        issueDate: createdBill.issueDate,
+        dueDate: createdBill.dueDate
       }
-    }, { status: 201 });
+    };
+
+    console.log('[Bills Generate POST] ✅ Returning success response');
+    return NextResponse.json(responseData, { status: 201 });
 
   } catch (error: any) {
-    console.error('[Bills Generate POST] Error:', error);
+    console.error('[Bills Generate POST] ❌ CRITICAL ERROR:', error);
+    console.error('[Bills Generate POST] Error message:', error.message);
     console.error('[Bills Generate POST] Error stack:', error.stack);
+    console.error('[Bills Generate POST] Error name:', error.name);
+    console.error('[Bills Generate POST] Full error object:', JSON.stringify(error, null, 2));
 
     return NextResponse.json({
       error: 'Failed to generate bill',
-      details: error.message
+      details: error.message,
+      errorType: error.name
     }, { status: 500 });
   }
 }

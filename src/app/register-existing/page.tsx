@@ -21,6 +21,7 @@ import {
   Loader2,
   Search
 } from 'lucide-react';
+import { formatPKPhone, onlyDigits } from '@/lib/utils/dataHandlers';
 
 interface FormErrors {
   fullName?: string;
@@ -366,10 +367,14 @@ export default function RegisterExistingMeter() {
                 </label>
                 <input
                   type="tel"
-                  value={formData.phoneNumber}
-                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                  inputMode="numeric"
+                  value={formatPKPhone(formData.phoneNumber)}
+                  onChange={(e) => {
+                    const raw = onlyDigits(e.target.value).slice(0, 11);
+                    setFormData({ ...formData, phoneNumber: raw });
+                  }}
                   className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="03001234567 (11 digits)"
+                  placeholder="0300-1234567"
                 />
                 {errors.phoneNumber && <p className="text-red-400 text-sm mt-1">{errors.phoneNumber}</p>}
               </div>

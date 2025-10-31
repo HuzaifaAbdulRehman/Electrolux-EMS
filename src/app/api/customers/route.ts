@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
     const connectionType = searchParams.get('connectionType') || '';
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
     const offset = (page - 1) * limit;
 
     // If customerId is provided, fetch that specific customer
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
           updatedAt: customers.updatedAt,
         })
         .from(customers)
-        .where(eq(customers.id, parseInt(customerId)))
+        .where(eq(customers.id, parseInt(customerId, 10)))
         .limit(1);
 
       return NextResponse.json({
@@ -215,11 +215,20 @@ export async function POST(request: NextRequest) {
     const propertyAddress = body.propertyAddress || body.address;
     const propertyType = body.propertyType || body.connectionType;
 
-    // Validate required fields (zone required for consistency)
+    // Validate required fields (zone and installation charges required for consistency)
     if (!applicantName || !body.email || !body.phone || !propertyAddress ||
-        !body.city || !body.state || !body.pincode || !propertyType || !body.zone) {
+        !body.city || !body.state || !body.pincode || !propertyType || !body.zone || !body.installationCharges) {
       return NextResponse.json(
-        { error: 'Missing required fields. Zone is required.' },
+        { error: 'Missing required fields. Zone and installation charges are required.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate installation charges is a valid positive number
+    const installationCharges = parseFloat(body.installationCharges);
+    if (isNaN(installationCharges) || installationCharges < 0) {
+      return NextResponse.json(
+        { error: 'Installation charges must be a valid positive number' },
         { status: 400 }
       );
     }
@@ -278,6 +287,7 @@ export async function POST(request: NextRequest) {
       connectionType: propertyType,
       status: customerStatus,
       connectionDate: body.connectionDate || new Date().toISOString().split('T')[0],
+      installationCharges: installationCharges,
     } as any);
 
     const customerId = newCustomer.insertId;

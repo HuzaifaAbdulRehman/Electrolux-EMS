@@ -35,7 +35,8 @@ import {
   Database,
   Plus,
   Loader2,
-  Eye
+  Eye,
+  KeyRound
 } from 'lucide-react';
 
 export default function DashboardLayout({ children, userType, userName }: DashboardLayoutProps) {
@@ -111,7 +112,6 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
           { name: 'Meter Reading', href: '/employee/meter-reading', icon: Gauge, description: 'Record customer readings' },
           { name: 'Work Orders', href: '/employee/work-orders', icon: ClipboardList, description: 'Manage assigned tasks' },
           { name: 'Bill Generation', href: '/employee/bill-generation', icon: FileText, description: 'Generate customer bills' },
-          { name: 'Outage Management', href: '/employee/outages', icon: ZapOff, description: 'Manage power outages' },
         ]},
         { section: 'CUSTOMER MANAGEMENT', items: [
           { name: 'Customers', href: '/employee/customers', icon: Users, description: 'View customer details' },
@@ -131,6 +131,8 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
           { name: 'Customers', href: '/admin/customers', icon: Users, description: 'Manage all customers' },
           { name: 'Employees', href: '/admin/employees', icon: Building, description: 'Manage staff members' },
           { name: 'Connection Requests', href: '/admin/connection-requests', icon: Zap, description: 'Review new connection applications' },
+          { name: 'Reading Requests', href: '/admin/reading-requests', icon: Gauge, description: 'Manage meter reading requests' },
+          { name: 'Password Resets', href: '/admin/password-resets', icon: KeyRound, description: 'Manage password reset requests' },
           { name: 'Complaints', href: '/admin/complaints', icon: MessageSquare, description: 'Review & assign complaints' },
         ]},
         { section: 'BILLING & FINANCE', items: [

@@ -50,6 +50,9 @@ export default function Notifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [markingAllRead, setMarkingAllRead] = useState(false);
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -82,61 +85,106 @@ export default function Notifications() {
 
   const markAsRead = async (id: number) => {
     try {
+      setActionLoading(id);
+      setError(null);
+
       const response = await fetch('/api/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
 
-      if (response.ok) {
-        setNotifications(prev => 
-          prev.map(notif => 
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setNotifications(prev =>
+          prev.map(notif =>
             notif.id === id ? { ...notif, read: true } : notif
           )
         );
+        showSuccess('Marked as read');
+      } else {
+        throw new Error(result.error || 'Failed to mark as read');
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
+      setError(error instanceof Error ? error.message : 'Failed to mark notification as read');
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const markAllAsRead = async () => {
     try {
+      setMarkingAllRead(true);
+      setError(null);
+
       const response = await fetch('/api/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ markAllRead: true })
       });
 
-      if (response.ok) {
-        setNotifications(prev => 
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setNotifications(prev =>
           prev.map(notif => ({ ...notif, read: true }))
         );
+        showSuccess('All notifications marked as read');
+      } else {
+        throw new Error(result.error || 'Failed to mark all as read');
       }
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
+      setError(error instanceof Error ? error.message : 'Failed to mark all notifications as read');
+    } finally {
+      setMarkingAllRead(false);
     }
   };
 
   const deleteNotification = async (id: number) => {
     try {
+      setActionLoading(id);
+      setError(null);
+
       const response = await fetch(`/api/notifications?id=${id}`, {
         method: 'DELETE'
       });
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
         setNotifications(prev => prev.filter(notif => notif.id !== id));
+        showSuccess('Notification deleted');
+      } else {
+        throw new Error(result.error || 'Failed to delete notification');
       }
     } catch (error) {
       console.error('Error deleting notification:', error);
+      setError(error instanceof Error ? error.message : 'Failed to delete notification');
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const handleRefresh = () => {
+  // Helper function to show success messages
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setTimeout(() => setSuccessMessage(null), 3000);
+  };
+
+  const handleRefresh = async () => {
     setRefreshing(true);
-    fetchNotifications().finally(() => {
-      setTimeout(() => setRefreshing(false), 500);
-    });
+    setError(null);
+    try {
+      await fetchNotifications();
+      showSuccess('Notifications refreshed');
+    } catch (err) {
+      // Error already handled in fetchNotifications
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleSettings = () => {
@@ -224,10 +272,15 @@ export default function Notifications() {
               </button>
               <button
                 onClick={markAllAsRead}
-                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all flex items-center space-x-2"
+                disabled={markingAllRead || notifications.filter(n => !n.read).length === 0}
+                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <CheckCircle className="w-4 h-4" />
-                <span>Mark All Read</span>
+                {markingAllRead ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="w-4 h-4" />
+                )}
+                <span>{markingAllRead ? 'Marking...' : 'Mark All Read'}</span>
               </button>
               <button 
                 onClick={handleSettings}
@@ -239,6 +292,14 @@ export default function Notifications() {
             </div>
           </div>
         </div>
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6 flex items-center space-x-3 animate-fade-in">
+            <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+            <p className="text-green-700 dark:text-green-300 font-medium">{successMessage}</p>
+          </div>
+        )}
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 flex-shrink-0">
@@ -403,18 +464,28 @@ export default function Notifications() {
                       {!notification.read && (
                         <button
                           onClick={() => markAsRead(notification.id)}
-                          className="p-2 text-gray-500 hover:text-green-500 transition-colors"
+                          disabled={actionLoading === notification.id}
+                          className="p-2 text-gray-500 hover:text-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Mark as read"
                         >
-                          <Eye className="w-4 h-4" />
+                          {actionLoading === notification.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
                         </button>
                       )}
                       <button
                         onClick={() => deleteNotification(notification.id)}
-                        className="p-2 text-gray-500 hover:text-red-500 transition-colors"
+                        disabled={actionLoading === notification.id}
+                        className="p-2 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Delete notification"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        {actionLoading === notification.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   </div>

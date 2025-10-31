@@ -126,9 +126,9 @@ function BillViewInner() {
       amount: safeNumber(b.totalAmount)
     }));
 
-    // Calculate slab breakdown using shared utility function
+    // Calculate slab breakdown using shared utility function with real tariff slabs from DB
     const units = safeNumber(bill.unitsConsumed);
-    const slabs = calculateTariffSlabs(units);
+    const slabs = calculateTariffSlabs(units, bill.tariffSlabs);
 
     const energyCharge = safeNumber(bill.baseAmount);
     const fixedCharge = safeNumber(bill.fixedCharges);

@@ -16,9 +16,26 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const filter = searchParams.get('filter') || 'all'; // all, unread, billing, payment, etc.
     const limit = parseInt(searchParams.get('limit') || '50');
+    const countOnly = searchParams.get('countOnly') === 'true';
 
     // Get user ID
     const userId = parseInt(session.user.id);
+
+    // If only count requested, return unread count
+    if (countOnly) {
+      const [result] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(notifications)
+        .where(and(
+          eq(notifications.userId, userId),
+          eq(notifications.isRead, 0)
+        )) as any;
+
+      return NextResponse.json({
+        success: true,
+        unreadCount: Number(result?.count || 0),
+      });
+    }
 
     // Build query
     let query = db
@@ -38,19 +55,17 @@ export async function GET(request: NextRequest) {
       .where(eq(notifications.userId, userId))
       .$dynamic();
 
-    // Apply filters
+    // Apply additional filters (userId already filtered above)
+    const conditions = [eq(notifications.userId, userId)];
+
     if (filter === 'unread') {
-      query = query.where(and(
-        eq(notifications.userId, userId),
-        eq(notifications.isRead, 0)
-      ));
+      conditions.push(eq(notifications.isRead, 0));
     } else if (filter !== 'all') {
       // Filter by notification type
-      query = query.where(and(
-        eq(notifications.userId, userId),
-        eq(notifications.notificationType, filter as any)
-      ));
+      conditions.push(eq(notifications.notificationType, filter as any));
     }
+
+    query = query.where(and(...conditions) as any);
 
     // Order by most recent first and limit
     query = query.orderBy(desc(notifications.createdAt)).limit(limit);

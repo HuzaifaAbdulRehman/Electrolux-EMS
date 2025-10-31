@@ -18,7 +18,7 @@ export const connectionApplications = mysqlTable('connection_applications', {
   idNumber: varchar('id_number', { length: 100 }).notNull(),
 
   // Connection details
-  propertyType: mysqlEnum('property_type', ['residential', 'commercial', 'industrial', 'agricultural']).notNull(),
+  propertyType: mysqlEnum('property_type', ['Residential', 'Commercial', 'Industrial', 'Agricultural']).notNull(),
   connectionType: mysqlEnum('connection_type', ['single-phase', 'three-phase', 'industrial']).notNull(),
   loadRequired: decimal('load_required', { precision: 10, scale: 2 }), // kW (Optional - determined during inspection)
 

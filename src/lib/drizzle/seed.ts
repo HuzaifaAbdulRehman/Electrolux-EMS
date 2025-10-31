@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import { db } from './db';
 import { users, customers, employees, tariffs, meterReadings, bills, payments, workOrders, connectionApplications, notifications, billRequests, outages, tariffSlabs } from './schema';
 import bcrypt from 'bcryptjs';
-import { subMonths, format, addDays } from 'date-fns';
+import { subMonths, format, addDays, subDays } from 'date-fns';
 import { eq, sql } from 'drizzle-orm';
 
 // Helper function to generate unique account numbers
@@ -30,6 +30,9 @@ async function seed() {
   console.log('🌱 Starting database seeding...\n');
 
   try {
+    // Get current date for use throughout seeding
+    const today = new Date();
+
     // 0. CLEAR EXISTING DATA (using TRUNCATE to reset AUTO_INCREMENT)
     console.log('🗑️  Clearing existing data...');
 
@@ -42,9 +45,11 @@ async function seed() {
     await db.execute(sql`TRUNCATE TABLE bill_requests`);
     await db.execute(sql`TRUNCATE TABLE connection_applications`);
     await db.execute(sql`TRUNCATE TABLE work_orders`);
+    await db.execute(sql`TRUNCATE TABLE complaints`);
     await db.execute(sql`TRUNCATE TABLE payments`);
     await db.execute(sql`TRUNCATE TABLE bills`);
     await db.execute(sql`TRUNCATE TABLE meter_readings`);
+    await db.execute(sql`TRUNCATE TABLE tariff_slabs`);
     await db.execute(sql`TRUNCATE TABLE tariffs`);
     await db.execute(sql`TRUNCATE TABLE customers`);
     await db.execute(sql`TRUNCATE TABLE employees`);
@@ -108,6 +113,7 @@ async function seed() {
     for (let i = 0; i < 10; i++) {
       employeeRecords.push({
         userId: i + 2, // Employee user IDs start from 2 (1 is admin)
+        employeeNumber: `EMP-${String(i + 1).padStart(3, '0')}`, // EMP-001, EMP-002, etc.
         employeeName: employeeUsers[i].name,
         email: employeeUsers[i].email,
         phone: employeeUsers[i].phone,
@@ -205,6 +211,95 @@ async function seed() {
     }
     await db.insert(customers).values(customerRecords as any);
     console.log('✅ Seeded 50 customers\n');
+
+    // Add EDGE CASE customers for testing bulk bill generation
+    console.log('🆕 Adding edge case customers for bulk generation testing...');
+
+    const currentMonth = format(today, 'yyyy-MM-01');
+    const lastMonth = format(subMonths(today, 1), 'yyyy-MM-01');
+    const twoMonthsAgo = format(subMonths(today, 2), 'yyyy-MM-01');
+
+    const edgeCaseCustomers = [
+      // EDGE CASE 1: Brand new customer - connected THIS month, zero history
+      {
+        userId: 62, // Customer 51
+        accountNumber: generateAccountNumber(51),
+        meterNumber: generateMeterNumber(51, 'KHI'),
+        fullName: faker.person.fullName(),
+        email: `customer51@gmail.com`,
+        phone: faker.phone.number(),
+        address: faker.location.streetAddress(),
+        city: 'Karachi',
+        state: 'Sindh',
+        pincode: '75000',
+        zone: 'Zone A',
+        connectionType: 'Residential',
+        status: 'active',
+        connectionDate: currentMonth, // ⭐ Connected THIS month
+        outstandingBalance: '0.00',
+        lastBillAmount: '0.00',
+        paymentStatus: 'paid',
+      },
+      // EDGE CASE 2: New customer - connected LAST month, has 1 month history
+      {
+        userId: 63, // Customer 52
+        accountNumber: generateAccountNumber(52),
+        meterNumber: generateMeterNumber(52, 'LHE'),
+        fullName: faker.person.fullName(),
+        email: `customer52@gmail.com`,
+        phone: faker.phone.number(),
+        address: faker.location.streetAddress(),
+        city: 'Lahore',
+        state: 'Punjab',
+        pincode: '54000',
+        zone: 'Zone B',
+        connectionType: 'Commercial',
+        status: 'active',
+        connectionDate: lastMonth, // ⭐ Connected last month
+        outstandingBalance: '0.00',
+        lastBillAmount: '0.00',
+        paymentStatus: 'paid',
+      },
+      // EDGE CASE 3: New customer - connected 2 months ago, has some history
+      {
+        userId: 64, // Customer 53
+        accountNumber: generateAccountNumber(53),
+        meterNumber: generateMeterNumber(53, 'ISB'),
+        fullName: faker.person.fullName(),
+        email: `customer53@gmail.com`,
+        phone: faker.phone.number(),
+        address: faker.location.streetAddress(),
+        city: 'Islamabad',
+        state: 'Islamabad Capital Territory',
+        pincode: '44000',
+        zone: 'Zone C',
+        connectionType: 'Agricultural',
+        status: 'active',
+        connectionDate: twoMonthsAgo, // ⭐ Connected 2 months ago
+        outstandingBalance: '0.00',
+        lastBillAmount: '0.00',
+        paymentStatus: 'paid',
+      },
+    ];
+
+    // Add edge case users first
+    const edgeCaseUsers = edgeCaseCustomers.map((c, i) => ({
+      id: c.userId,
+      email: c.email,
+      password: hashedPassword,
+      userType: 'customer' as const,
+      name: c.fullName,
+      phone: c.phone,
+      isActive: 1,
+    }));
+
+    await db.insert(users).values(edgeCaseUsers as any);
+    await db.insert(customers).values(edgeCaseCustomers as any);
+
+    console.log('✅ Added 3 edge case customers:');
+    console.log('   - Customer 51: Brand new (connected THIS month, no history)');
+    console.log('   - Customer 52: Recent (connected LAST month, 1 month history)');
+    console.log('   - Customer 53: New (connected 2 months ago, partial history)\n');
 
     // 4. SEED TARIFFS (4 categories) - normalized with tariff_slabs
     console.log('💰 Seeding tariffs...');
@@ -309,30 +404,50 @@ async function seed() {
     console.log('✅ Seeded 4 tariff categories with normalized slabs\n');
 
     // 5. SEED METER READINGS & BILLS (6 months for 50 customers = 300 records each)
-    console.log('📊 Seeding meter readings and bills (6 months)...');
+    console.log('📊 Seeding meter readings and bills (previous 5 months only)...');
+    console.log('⚠️  IMPORTANT: Current month has NO readings and NO bills - ready for bulk generation demo!');
 
-    const today = new Date();
+    // today is already declared at the top of the seed function
     let billCounter = 1;
     let paymentCounter = 1;
 
-    for (let customerId = 1; customerId <= 50; customerId++) {
+    // Process all customers including edge cases (50 regular + 3 edge case = 53 total)
+    for (let customerId = 1; customerId <= 53; customerId++) {
       let previousReading = faker.number.int({ min: 1000, max: 5000 });
 
-      // Get customer details
-      const customer = customerRecords[customerId - 1];
+      // Get customer details (handle edge case customers separately)
+      const customer = customerId <= 50 ? customerRecords[customerId - 1] : edgeCaseCustomers[customerId - 51];
       const tariffCategory = customer.connectionType;
 
       // Get tariff for this customer
       const tariff = tariffSeed.find((t: any) => t.category === tariffCategory)!;
 
-      for (let monthOffset = 5; monthOffset >= 0; monthOffset--) {
+      // EDGE CASE HANDLING: Skip historical data for edge case customers based on their connection date
+      let maxHistoryMonths = 5;
+      if (customerId === 51) {
+        // Customer 51: Connected THIS month - NO history at all
+        maxHistoryMonths = 0;
+        console.log(`⭐ Skipping historical data for Customer ${customerId} (brand new - connected this month)`);
+        previousReading = 0; // Will be used in next iteration if needed
+        continue; // Skip to next customer
+      } else if (customerId === 52) {
+        // Customer 52: Connected LAST month - Only 1 month of history
+        maxHistoryMonths = 1;
+      } else if (customerId === 53) {
+        // Customer 53: Connected 2 months ago - Only 2 months of history
+        maxHistoryMonths = 2;
+      }
+
+      // Only generate for previous months (based on customer history)
+      // Current month (monthOffset 0) is left EMPTY for bulk bill generation demo
+      for (let monthOffset = maxHistoryMonths; monthOffset >= 1; monthOffset--) {
         const readingDate = subMonths(today, monthOffset);
         const billingMonth = format(readingDate, 'yyyy-MM-01');
         const issueDate = format(addDays(readingDate, 2), 'yyyy-MM-dd');
         const dueDate = format(addDays(readingDate, 17), 'yyyy-MM-dd');
 
         // Generate consumption based on connection type
-        let monthlyConsumption;
+        let monthlyConsumption: number;
         switch (tariffCategory) {
           case 'Residential':
             monthlyConsumption = faker.number.int({ min: 80, max: 400 });
@@ -346,12 +461,15 @@ async function seed() {
           case 'Agricultural':
             monthlyConsumption = faker.number.int({ min: 300, max: 1500 });
             break;
+          default:
+            monthlyConsumption = faker.number.int({ min: 80, max: 400 }); // Default to residential
+            break;
         }
 
         const currentReading = previousReading + monthlyConsumption;
 
-        // Insert meter reading
-        await db.insert(meterReadings).values({
+        // Insert meter reading and capture its ID
+        const meterReadingInsert = await db.insert(meterReadings).values({
           customerId: customerId,
           meterNumber: customer.meterNumber,
           currentReading: currentReading.toString(),
@@ -365,6 +483,9 @@ async function seed() {
           photoPath: null,
           notes: null,
         } as any);
+
+        // Get the inserted meter reading ID
+        const meterReadingId = (meterReadingInsert as any).insertId;
 
         // Calculate bill amount using tariff slabs
         let baseAmount = 0;
@@ -389,61 +510,58 @@ async function seed() {
         const gstAmount = subtotal * (parseFloat(tariff.gstPercent) / 100);
         const totalAmount = subtotal + gstAmount;
 
-        // Insert bill ONLY for older months (not current month)
-        // This leaves current month with meter reading but no bill (so bill requests can be created)
-        const meterReadingId = (customerId - 1) * 6 + (6 - monthOffset);
+        // Always create bills for all months we have readings
+        // (We only create readings for 5 previous months, so all will get bills)
+        // Realistic payment behavior: 95% of old bills get paid, 5% remain unpaid
+        const willPayBill = Math.random() > 0.05;
+        const billStatus = willPayBill ? 'paid' : 'issued';
 
-        if (monthOffset > 0) {
-          // Realistic payment behavior: 95% of old bills get paid, 5% remain unpaid
-          const willPayBill = Math.random() > 0.05;
-          const billStatus = willPayBill ? 'paid' : 'issued';
+        await db.insert(bills).values({
+          customerId: customerId,
+          billNumber: generateBillNumber(6 - monthOffset, customerId),
+          billingMonth: billingMonth,
+          issueDate: issueDate,
+          dueDate: dueDate,
+          unitsConsumed: monthlyConsumption.toString(),
+          meterReadingId: meterReadingId,
+          baseAmount: baseAmount.toFixed(2),
+          fixedCharges: fixedCharges.toFixed(2),
+          electricityDuty: electricityDuty.toFixed(2),
+          gstAmount: gstAmount.toFixed(2),
+          totalAmount: totalAmount.toFixed(2),
+          status: billStatus,
+          paymentDate: willPayBill ? format(addDays(readingDate, faker.number.int({ min: 5, max: 15 })), 'yyyy-MM-dd') : null,
+        } as any);
 
-            await db.insert(bills).values({
+        // Insert payment only if bill was paid
+        if (willPayBill) {
+          const paymentMethods = ['credit_card', 'debit_card', 'bank_transfer', 'upi', 'wallet'] as const;
+          await db.insert(payments).values({
             customerId: customerId,
-            billNumber: generateBillNumber(6 - monthOffset, customerId),
-            billingMonth: billingMonth,
-            issueDate: issueDate,
-            dueDate: dueDate,
-            unitsConsumed: monthlyConsumption.toString(),
-            meterReadingId: meterReadingId,
-            baseAmount: baseAmount.toFixed(2),
-            fixedCharges: fixedCharges.toFixed(2),
-            electricityDuty: electricityDuty.toFixed(2),
-            gstAmount: gstAmount.toFixed(2),
-            totalAmount: totalAmount.toFixed(2),
-            status: billStatus,
-            paymentDate: willPayBill ? format(addDays(readingDate, faker.number.int({ min: 5, max: 15 })), 'yyyy-MM-dd') : null,
+            billId: billCounter,
+            paymentAmount: totalAmount.toFixed(2),
+            paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
+            paymentDate: format(addDays(readingDate, faker.number.int({ min: 5, max: 15 })), 'yyyy-MM-dd'),
+            transactionId: generateTransactionId(),
+            receiptNumber: generateReceiptNumber(paymentCounter),
+            status: 'completed',
+            notes: null,
           } as any);
+          paymentCounter++;
+        }
 
-          // Insert payment only if bill was paid
-          if (willPayBill) {
-            const paymentMethods = ['credit_card', 'debit_card', 'bank_transfer', 'upi', 'wallet'] as const;
-            await db.insert(payments).values({
-              customerId: customerId,
-              billId: billCounter,
-              paymentAmount: totalAmount.toFixed(2),
-              paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
-              paymentDate: format(addDays(readingDate, faker.number.int({ min: 5, max: 15 })), 'yyyy-MM-dd'),
-              transactionId: generateTransactionId(),
-              receiptNumber: generateReceiptNumber(paymentCounter),
-              status: 'completed',
-              notes: null,
-            } as any);
-            paymentCounter++;
-          }
-
-          billCounter++;
-        } // end if (monthOffset > 0)
+        billCounter++;
         previousReading = currentReading;
       }
     }
-    console.log('✅ Seeded 300 meter readings\n');
-    console.log('✅ Seeded 250 bills (5 months per customer, current month left without bills)\n');
+    console.log('✅ Seeded 250 meter readings (5 previous months only)\n');
+    console.log('✅ Seeded 250 bills (5 previous months only)\n');
     console.log(`✅ Seeded ~${paymentCounter - 1} payments\n`);
 
     // UPDATE CUSTOMER BALANCES AND PAYMENT STATUSES
     console.log('💰 Updating customer balances and payment statuses...');
-    for (let customerId = 1; customerId <= 50; customerId++) {
+    // Process all customers including edge cases (50 regular + 3 edge case = 53 total)
+    for (let customerId = 1; customerId <= 53; customerId++) {
       try {
         // Get all bills for this customer
         const customerBills = await db
@@ -523,72 +641,44 @@ async function seed() {
     console.log('✅ Updated customer balances and payment statuses\n');
 
     // 6. SEED BILL REQUESTS (Pending requests for customers with meter readings but no bills)
-    console.log('📝 Seeding bill requests...');
-    let billRequestCounter = 0;
+    console.log('📝 Seeding bill requests for CURRENT MONTH...');
+    console.log('💡 These simulate customers requesting meter reading + bill for current billing period');
 
-    // Strategy: Create bill requests for customers who have meter readings but no bills for specific months
-    // We'll create ~15 pending bill requests for realistic testing
+    // Strategy: Create bill requests for current month ONLY
+    // This demonstrates the flow: Customer requests → Employee takes reading → Admin generates bill
+    // (currentMonth already declared above in edge case customers section)
     const billRequestRecords: any[] = [];
 
-    for (let customerId = 1; customerId <= 50; customerId++) {
-      // Only create bill requests for ~30% of customers (15 customers)
-      if (Math.random() > 0.3) continue;
+    // Create bill requests for ~15 customers (30% of 50)
+    const customersWithRequests = Array.from({ length: 50 }, (_, i) => i + 1)
+      .sort(() => Math.random() - 0.5) // Shuffle
+      .slice(0, 15); // Take first 15
 
-      // Get all meter readings for this customer
-      const customerReadings = await db.select()
-        .from(meterReadings)
-        .where(eq(meterReadings.customerId, customerId));
+    for (let i = 0; i < customersWithRequests.length; i++) {
+      const customerId = customersWithRequests[i];
+      const requestId = `BREQ-2024-${String(i + 1).padStart(6, '0')}`;
+      const priorities = ['low', 'medium', 'high'] as const;
+      const randomPriority = priorities[i % 3]; // Distribute evenly
 
-      // Get all bills for this customer
-      const customerBills = await db.select()
-        .from(bills)
-        .where(eq(bills.customerId, customerId));
+      // Request date is somewhere in the last 5 days of previous month or first 3 days of current month
+      const requestDate = subDays(today, faker.number.int({ min: 0, max: 8 }));
 
-      // For each meter reading, check if there's a bill for that month
-      for (const reading of customerReadings) {
-        const readingMonth = format(new Date(reading.readingDate), 'yyyy-MM-01');
-
-        // Check if bill exists for this month
-        const billExists = customerBills.some(bill =>
-          format(new Date(bill.billingMonth), 'yyyy-MM-01') === readingMonth
-        );
-
-        // Check if bill request already created for this month
-        const requestExists = billRequestRecords.some(req =>
-          req.customerId === customerId && req.billingMonth === readingMonth
-        );
-
-        // If no bill and no request, create a pending bill request
-        if (!billExists && !requestExists && Math.random() > 0.5) {
-          billRequestCounter++;
-          const requestId = `BREQ-2024-${String(billRequestCounter).padStart(6, '0')}`;
-          const priorities = ['low', 'medium', 'high'] as const;
-          const randomPriority = priorities[Math.floor(Math.random() * 10) % 3]; // 70% medium, 20% high, 10% low
-
-          billRequestRecords.push({
-            requestId: requestId,
-            customerId: customerId,
-            billingMonth: readingMonth,
-            priority: randomPriority,
-            notes: `Auto-generated bill request for billing month ${format(new Date(readingMonth), 'MMMM yyyy')}. Meter reading available.`,
-            status: 'pending' as const,
-            requestDate: format(new Date(reading.readingDate), 'yyyy-MM-dd'),
-            createdBy: null, // System-generated
-          });
-
-          // Limit to 15-20 bill requests for testing
-          if (billRequestCounter >= 15) break;
-        }
-      }
-
-      if (billRequestCounter >= 15) break;
+      billRequestRecords.push({
+        requestId: requestId,
+        customerId: customerId,
+        billingMonth: currentMonth,
+        priority: randomPriority,
+        notes: `Customer requesting meter reading and bill generation for ${format(today, 'MMMM yyyy')} billing period. No reading taken yet for this month.`,
+        status: 'pending' as const,
+        requestDate: format(requestDate, 'yyyy-MM-dd'),
+        createdBy: null, // Customer-initiated via portal
+      });
     }
 
     if (billRequestRecords.length > 0) {
       await db.insert(billRequests).values(billRequestRecords as any);
-      console.log(`✅ Seeded ${billRequestRecords.length} bill requests (all pending)\n`);
-    } else {
-      console.log('⚠️  No bill requests created (all meter readings have bills)\n');
+      console.log(`✅ Seeded ${billRequestRecords.length} bill requests for current month (all pending)`);
+      console.log(`📌 Demo flow: Customers requested → Employees take readings → Admin generates bulk bills\n`);
     }
 
     // 7. SEED WORK ORDERS (20 recent work orders)
@@ -634,6 +724,17 @@ async function seed() {
       'Industrial Area', 'Residential Complex A', 'Residential Complex B', 'Business Park', 'Downtown'
     ];
 
+    // Calculate actual customer counts per zone (FIX FOR ACCURACY)
+    const zoneCounts: { [key: string]: number } = {};
+    for (const zone of outageZones) {
+      const [countResult] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(customers)
+        .where(eq(customers.zone, zone));
+      zoneCounts[zone] = countResult.count;
+    }
+    console.log('📊 Customer counts per zone:', zoneCounts);
+
     const outageData = [];
     const now = new Date();
 
@@ -663,7 +764,7 @@ async function seed() {
         scheduledEndTime: endTime,
         actualStartTime: startTime,
         actualEndTime: endTime,
-        affectedCustomerCount: Math.floor(Math.random() * 500) + 100,
+        affectedCustomerCount: zoneCounts[zone] || 0, // FIX: Use actual customer count
         status: 'restored',
         restorationNotes: 'Power successfully restored. All systems functioning normally.',
         createdBy: 1 // Admin user
@@ -690,7 +791,7 @@ async function seed() {
         scheduledEndTime: endTime,
         actualStartTime: startTime,
         actualEndTime: null,
-        affectedCustomerCount: Math.floor(Math.random() * 300) + 50,
+        affectedCustomerCount: zoneCounts[zone] || 0, // FIX: Use actual customer count
         status: 'ongoing',
         restorationNotes: 'Repair crew on site. Estimated completion time provided.',
         createdBy: 1
@@ -721,7 +822,7 @@ async function seed() {
         scheduledEndTime: endTime,
         actualStartTime: null,
         actualEndTime: null,
-        affectedCustomerCount: Math.floor(Math.random() * 200) + 50,
+        affectedCustomerCount: zoneCounts[zone] || 0, // FIX: Use actual customer count
         status: 'scheduled',
         restorationNotes: null,
         createdBy: 1
@@ -733,18 +834,30 @@ async function seed() {
 
     console.log('🎉 Database seeding completed successfully!\n');
     console.log('📊 Summary:');
-    console.log('  - 61 users (1 admin + 10 employees + 50 customers)');
+    console.log('  - 64 users (1 admin + 10 employees + 53 customers)');
     console.log('  - 10 employees');
-    console.log('  - 50 customers');
-    console.log('  - 4 tariff categories');
-    console.log('  - 300 meter readings (6 months)');
-    console.log('  - 300 bills (6 months)');
+    console.log('  - 53 customers (50 regular + 3 edge cases)');
+    console.log('  - 4 tariff categories with normalized slabs');
+    console.log('  - ~253 meter readings (5 months for regular, partial for edge cases)');
+    console.log('  - ~253 bills (historical data only)');
     console.log('  - ~240 payments');
+    console.log('  - ~15 bill requests for CURRENT month (pending)');
     console.log('  - 20 work orders');
     console.log('  - 10 connection applications');
     console.log('  - 50 notifications');
     console.log('  - 20 outages (10 completed + 2 ongoing + 8 scheduled)');
-    console.log('\n✨ Total: ~920+ records created!\n');
+    console.log('\n⚠️  IMPORTANT: Current month has NO readings/bills - ready for bulk generation demo!');
+    console.log('🆕 Edge Case Customers Added:');
+    console.log('   - Customer 51 (ELX-2024-000051): Brand new, connected THIS month, ZERO history');
+    console.log('   - Customer 52 (ELX-2024-000052): Connected LAST month, has 1 month history');
+    console.log('   - Customer 53 (ELX-2024-000053): Connected 2 months ago, has 2 months history');
+    console.log('\n📌 Viva Demo Flow:');
+    console.log('   1. Show pending bill requests from customers');
+    console.log('   2. Admin clicks "Generate Bulk Bills" → Load previews');
+    console.log('   3. System auto-generates readings for customers without history (edge cases!)');
+    console.log('   4. Admin confirms → Bills generated for ALL 53 customers!');
+    console.log('   5. Explain to professor how system handles brand new customers\n');
+    console.log('✨ Total: ~880+ records created!\n');
 
   } catch (error) {
     console.error('❌ Error during seeding:', error);

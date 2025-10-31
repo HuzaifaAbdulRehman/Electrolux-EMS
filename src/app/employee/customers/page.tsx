@@ -7,8 +7,6 @@ import {
   Users,
   Search,
   Eye,
-  Edit2,
-  Trash2,
   Phone,
   Mail,
   MapPin,
@@ -26,6 +24,7 @@ import {
   CreditCard,
   RefreshCw
 } from 'lucide-react';
+import { formatPKPhone } from '@/lib/utils/dataHandlers';
 
 interface Customer {
   id: number;
@@ -63,6 +62,12 @@ export default function EmployeeCustomers() {
     active: 0,
     overdue: 0,
     avgConsumption: '0'
+  });
+  const [paginationInfo, setPaginationInfo] = useState({
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
   });
 
   const itemsPerPage = 10;
@@ -107,6 +112,14 @@ export default function EmployeeCustomers() {
         active,
         overdue,
         avgConsumption
+      });
+
+      // Store pagination info
+      setPaginationInfo({
+        total: result.pagination?.total || 0,
+        totalPages: result.pagination?.totalPages || 0,
+        hasNext: currentPage < (result.pagination?.totalPages || 0),
+        hasPrev: currentPage > 1
       });
 
     } catch (err: any) {
@@ -264,7 +277,7 @@ export default function EmployeeCustomers() {
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Customer</th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Contact</th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Meter Info</th>
-                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Balance</th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Outstanding Balance</th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Status</th>
                     <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 dark:text-gray-400 uppercase">Actions</th>
                   </tr>
@@ -296,7 +309,7 @@ export default function EmployeeCustomers() {
                           <div className="space-y-1">
                             <div className="flex items-center space-x-2">
                               <Phone className="w-4 h-4 text-gray-400" />
-                              <span className="text-gray-300 text-sm">{customer.phone}</span>
+                              <span className="text-gray-300 text-sm">{formatPKPhone(customer.phone)}</span>
                             </div>
                             <div className="flex items-center space-x-2">
                               <MapPin className="w-4 h-4 text-gray-400" />
@@ -335,18 +348,6 @@ export default function EmployeeCustomers() {
                             >
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button
-                              className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                              title="Edit Customer"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
-                              title="Delete Customer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
                           </div>
                         </td>
                       </tr>
@@ -359,20 +360,20 @@ export default function EmployeeCustomers() {
             {/* Pagination */}
             <div className="px-6 py-4 bg-white/5 border-t border-gray-200 dark:border-white/10 flex items-center justify-between">
               <p className="text-sm text-gray-400">
-                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, customers.length)} of {customers.length} customers
+                Showing {paginationInfo.total > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0} to {Math.min(currentPage * itemsPerPage, paginationInfo.total)} of {paginationInfo.total} customers
               </p>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
+                  disabled={!paginationInfo.hasPrev}
                   className="px-3 py-1 bg-white/10 border border-white/20 rounded text-white hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   Previous
                 </button>
-                <span className="text-white">{currentPage}</span>
+                <span className="text-white">{currentPage} / {paginationInfo.totalPages || 1}</span>
                 <button
                   onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={customers.length < itemsPerPage}
+                  disabled={!paginationInfo.hasNext}
                   className="px-3 py-1 bg-white/10 border border-white/20 rounded text-white hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   Next
@@ -420,7 +421,7 @@ export default function EmployeeCustomers() {
                     </div>
                     <div>
                       <p className="text-gray-400 text-sm">Phone</p>
-                      <p className="text-white font-medium">{selectedCustomer.phone}</p>
+                      <p className="text-white font-medium">{formatPKPhone(selectedCustomer.phone)}</p>
                     </div>
                   </div>
                 </div>
@@ -468,7 +469,7 @@ export default function EmployeeCustomers() {
                     </div>
                     <div>
                       <p className="text-gray-400 text-sm">Connection Date</p>
-                      <p className="text-white font-medium">{selectedCustomer.connectionDate}</p>
+                      <p className="text-white font-medium">{new Date(selectedCustomer.connectionDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                     </div>
                     <div>
                       <p className="text-gray-400 text-sm">Status</p>

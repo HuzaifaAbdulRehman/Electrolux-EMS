@@ -203,6 +203,55 @@ export default function CustomerDashboard() {
     ]
   };
 
+  // Monthly Consumption Bar Chart Data (NEW)
+  const monthlyConsumptionData = {
+    labels: consumptionHistory.map((item: any) => {
+      const date = new Date(item.billingPeriod);
+      return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+    }).slice(-6),
+    datasets: [{
+      label: 'Consumption (kWh)',
+      data: consumptionHistory.map((item: any) => safeNumber(item.unitsConsumed, 0)).slice(-6),
+      backgroundColor: 'rgba(251, 146, 60, 0.8)',
+      borderColor: 'rgba(251, 146, 60, 1)',
+      borderWidth: 2,
+      borderRadius: 6
+    }]
+  };
+
+  const consumptionBarOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        padding: 12,
+        cornerRadius: 8,
+        callbacks: {
+          label: function(context: any) {
+            return 'Consumption: ' + context.parsed.y + ' kWh';
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: 'rgba(255, 255, 255, 0.6)' }
+      },
+      y: {
+        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.6)',
+          callback: function(value: any) {
+            return value + ' kWh';
+          }
+        }
+      }
+    }
+  };
+
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -246,7 +295,7 @@ export default function CustomerDashboard() {
     labels: monthlyPayments.map((item: any) => {
       const [year, month] = item.month.split('-');
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return `${monthNames[parseInt(month) - 1]} '${year.slice(2)}`;
+      return `${monthNames[parseInt(month, 10) - 1]} '${year.slice(2)}`;
     }).reverse(),
     datasets: [{
       label: 'Payments (Rs)',
@@ -540,7 +589,32 @@ export default function CustomerDashboard() {
             </div>
           </div>
 
-          {/* Payment History Chart (NEW) */}
+          {/* Monthly Consumption Bar Chart (NEW - RECOMMENDED) */}
+          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Monthly Consumption</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Compare usage across months</p>
+              </div>
+              <Zap className="w-6 h-6 text-orange-400" />
+            </div>
+            <div className="h-64">
+              {consumptionHistory.length > 0 ? (
+                <Bar data={monthlyConsumptionData} options={consumptionBarOptions} />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center px-4">
+                  <Zap className="w-12 h-12 text-gray-500 dark:text-gray-600 mb-3 opacity-50" />
+                  <p className="text-gray-600 dark:text-gray-400 font-medium mb-1">No consumption data yet</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500">Data will appear after your first meter reading</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Charts Grid - Row 2 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Payment History Chart */}
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -561,33 +635,8 @@ export default function CustomerDashboard() {
               )}
             </div>
           </div>
-        </div>
 
-        {/* Charts Grid - Row 2 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Bill Comparison Chart (NEW) */}
-          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Bill Comparison</h2>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Monthly bill amount trends</p>
-              </div>
-              <FileText className="w-6 h-6 text-blue-400" />
-            </div>
-            <div className="h-64">
-              {billsWithConsumption.length > 0 ? (
-                <Bar data={billComparisonData} options={barChartOptions} />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                  <FileText className="w-12 h-12 text-gray-500 dark:text-gray-600 mb-3 opacity-50" />
-                  <p className="text-gray-600 dark:text-gray-400 font-medium mb-1">No bills generated yet</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-500">Your first bill will be generated after meter reading</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Cost Breakdown Chart (NEW) */}
+          {/* Cost Breakdown Chart */}
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">
               <div>

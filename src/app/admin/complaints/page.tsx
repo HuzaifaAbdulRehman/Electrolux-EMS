@@ -101,7 +101,7 @@ export default function AdminComplaints() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'assigned',
-          employeeId: parseInt(selectedEmployee),
+          employeeId: parseInt(selectedEmployee, 10),
           priority: selectedPriority  // Admin-set priority!
         })
       });

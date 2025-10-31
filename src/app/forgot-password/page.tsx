@@ -11,14 +11,24 @@ import {
   CheckCircle,
   Send,
   KeyRound,
-  RefreshCw
+  Loader2,
+  CreditCard,
+  User,
+  Copy
 } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
+  const [formData, setFormData] = useState({
+    userType: 'customer' as 'employee' | 'customer',
+    email: '',
+    accountNumber: '',
+    requestReason: ''
+  });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [requestNumber, setRequestNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -29,269 +39,303 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError('');
 
-    if (!email) {
+    if (!formData.email) {
       setError('Please enter your email address');
       return;
     }
 
-    if (!validateEmail(email)) {
+    if (!validateEmail(formData.email)) {
       setError('Please enter a valid email address');
       return;
     }
 
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Password reset requested for:', email);
-      setIsSubmitted(true);
-      setIsLoading(false);
-    }, 1500);
-  };
+    if (formData.userType === 'customer' && formData.accountNumber && formData.accountNumber.length < 5) {
+      setError('Account number must be at least 5 characters');
+      return;
+    }
 
-  const handleResend = () => {
     setIsLoading(true);
-    setTimeout(() => {
-      console.log('Resending email to:', email);
+
+    try {
+      const response = await fetch('/api/password-reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to submit password reset request');
+      }
+
+      setRequestNumber(result.data.requestNumber);
+      setIsSubmitted(true);
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit request. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-6 px-4 flex items-center">
-      {/* Background Effects */}
-      <div className="fixed inset-0 overflow-hidden">
-        <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-bl from-yellow-400/10 to-transparent rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-tr from-orange-500/10 to-transparent rounded-full blur-3xl animate-pulse"></div>
-      </div>
-
-      <div className="container mx-auto max-w-5xl relative z-10 w-full">
-        <div className="grid lg:grid-cols-2 gap-8 items-start">
-          {/* Left Side - Info Section */}
-          <div className="hidden lg:block space-y-4">
-            <Link href="/login" className="inline-flex items-center text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors text-sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Login
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Header */}
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-white/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Zap className="w-8 h-8 text-cyan-500" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Electrolux EMS</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Password Reset Request</p>
+              </div>
+            </div>
+            <Link
+              href="/login"
+              className="flex items-center space-x-2 px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Login</span>
             </Link>
-
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">Electrolux</span>
-              </div>
-
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-                Reset Your
-                <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                  Password Securely
-                </span>
-              </h1>
-
-              <p className="text-base text-gray-700 dark:text-gray-300">
-                Don&apos;t worry, it happens to the best of us. Enter your email address and we&apos;ll send you instructions to reset your password.
-              </p>
-            </div>
-
-            {/* Security Features */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Security Measures</h3>
-              {[
-                {
-                  icon: <Shield />,
-                  text: "Secure password reset link valid for 1 hour"
-                },
-                {
-                  icon: <Mail />,
-                  text: "Verification sent to your registered email"
-                },
-                {
-                  icon: <KeyRound />,
-                  text: "Create a new strong password"
-                }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gray-50 dark:bg-white/10 backdrop-blur-sm rounded-lg flex items-center justify-center text-yellow-400">
-                    {React.cloneElement(item.icon, { className: "w-4 h-4" })}
-                  </div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{item.text}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Help Section */}
-            <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
-              <h3 className="text-white font-semibold text-sm mb-2">Need Additional Help?</h3>
-              <p className="text-gray-600 dark:text-gray-400 text-xs mb-3">
-                If you&apos;re still having trouble accessing your account, our support team is here to help.
-              </p>
-              <div className="space-y-1.5">
-                <div className="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
-                  <span className="text-xs">📧 support@electrolux.com</span>
-                </div>
-                <div className="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
-                  <span className="text-xs">📞 1-800-ELECTRO</span>
-                </div>
-                <div className="flex items-center space-x-2 text-gray-700 dark:text-gray-300">
-                  <span className="text-xs">💬 Live Chat Available 24/7</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side - Reset Form */}
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 blur-3xl"></div>
-            <div className="relative bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-              {!isSubmitted ? (
-                <>
-                  {/* Form Header */}
-                  <div className="text-center mb-6">
-                    <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center mx-auto mb-3">
-                      <KeyRound className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Forgot Password?</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">No worries, we&apos;ll send you reset instructions</p>
-                  </div>
-
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Email Field */}
-                    <div>
-                      <label className="text-xs text-gray-700 dark:text-gray-300 mb-1 block">Email Address</label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 dark:text-gray-400" />
-                        <input
-                          type="email"
-                          value={email}
-                          onChange={(e) => {
-                            setEmail(e.target.value);
-                            setError('');
-                          }}
-                          className="w-full pl-10 pr-10 py-2 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-yellow-400 transition-colors"
-                          placeholder="john@example.com"
-                          disabled={isLoading}
-                        />
-                        {email && validateEmail(email) && !error && (
-                          <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-400" />
-                        )}
-                      </div>
-                      {error && (
-                        <p className="text-red-400 text-xs mt-1 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
-                          {error}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Instructions */}
-                    <div className="bg-white dark:bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-gray-200 dark:border-white/10">
-                      <p className="text-xs text-gray-700 dark:text-gray-300">
-                        Enter the email address associated with your account and we&apos;ll send you a link to reset your password.
-                      </p>
-                    </div>
-
-                    {/* Submit Button */}
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className={`w-full py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-semibold rounded-lg transition-all duration-300 transform ${
-                        isLoading
-                          ? 'opacity-70 cursor-not-allowed'
-                          : 'hover:shadow-lg hover:shadow-orange-500/50 hover:scale-[1.01]'
-                      } flex items-center justify-center space-x-2`}
-                    >
-                      {isLoading ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          <span className="text-sm">Sending...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4" />
-                          <span className="text-sm">Send Reset Link</span>
-                        </>
-                      )}
-                    </button>
-
-                    {/* Alternative Options */}
-                    <div className="flex items-center justify-center space-x-3 pt-2">
-                      <Link href="/login" className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                        Remember your password?
-                      </Link>
-                      <span className="text-gray-600">•</span>
-                      <Link href="/register" className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                        Create new account
-                      </Link>
-                    </div>
-                  </form>
-                </>
-              ) : (
-                <>
-                  {/* Success Message */}
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-green-500/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle className="w-10 h-10 text-green-400" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Check Your Email</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      We&apos;ve sent a password reset link to:
-                    </p>
-                    <div className="bg-gray-50 dark:bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-gray-300 dark:border-white/20 mb-4">
-                      <p className="text-white font-semibold text-sm">{email}</p>
-                    </div>
-
-                    <div className="space-y-3">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        Click the link in the email to reset your password. The link will expire in 1 hour for security reasons.
-                      </p>
-
-                      <div className="bg-white dark:bg-white/5 backdrop-blur-sm rounded-lg p-3 border border-gray-200 dark:border-white/10">
-                        <p className="text-xs text-gray-700 dark:text-gray-300 mb-2">Didn&apos;t receive the email?</p>
-                        <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-                          <p>• Check your spam or junk folder</p>
-                          <p>• Make sure {email} is correct</p>
-                          <p>• Wait a few minutes and try again</p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={handleResend}
-                        disabled={isLoading}
-                        className={`w-full py-2.5 bg-white/10 backdrop-blur-sm border border-gray-300 dark:border-white/20 rounded-lg text-white transition-all duration-300 ${
-                          isLoading
-                            ? 'opacity-70 cursor-not-allowed'
-                            : 'hover:bg-gray-200 dark:hover:bg-white/20'
-                        } flex items-center justify-center space-x-2`}
-                      >
-                        {isLoading ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span className="text-xs">Resending...</span>
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="w-4 h-4" />
-                            <span className="text-xs">Resend Email</span>
-                          </>
-                        )}
-                      </button>
-
-                      <Link
-                        href="/login"
-                        className="inline-flex items-center justify-center w-full py-2.5 text-yellow-400 hover:text-yellow-300 transition-colors"
-                      >
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        <span className="text-xs">Back to Login</span>
-                      </Link>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {!isSubmitted ? (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full mb-4">
+                <KeyRound className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Reset Your Password</h2>
+              <p className="text-gray-600 dark:text-gray-400">Submit a password reset request to regain access to your account</p>
+            </div>
+
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center space-x-3">
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                <p className="text-red-800 dark:text-red-300">{error}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* User Type Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  I am a <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, userType: 'customer', accountNumber: '' })}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      formData.userType === 'customer'
+                        ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
+                        : 'border-gray-300 dark:border-white/20 hover:border-gray-400 dark:hover:border-white/30'
+                    }`}
+                  >
+                    <User className={`w-6 h-6 mx-auto mb-2 ${formData.userType === 'customer' ? 'text-cyan-500' : 'text-gray-400'}`} />
+                    <p className={`font-medium ${formData.userType === 'customer' ? 'text-cyan-900 dark:text-cyan-100' : 'text-gray-700 dark:text-gray-300'}`}>Customer</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, userType: 'employee', accountNumber: '' })}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      formData.userType === 'employee'
+                        ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
+                        : 'border-gray-300 dark:border-white/20 hover:border-gray-400 dark:hover:border-white/30'
+                    }`}
+                  >
+                    <Shield className={`w-6 h-6 mx-auto mb-2 ${formData.userType === 'employee' ? 'text-cyan-500' : 'text-gray-400'}`} />
+                    <p className={`font-medium ${formData.userType === 'employee' ? 'text-cyan-900 dark:text-cyan-100' : 'text-gray-700 dark:text-gray-300'}`}>Employee</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Email Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value });
+                      setError('');
+                    }}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    placeholder={formData.userType === 'customer' ? 'customer@example.com' : 'employee@electrolux.com'}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              {/* Account Number (Optional for Customers) */}
+              {formData.userType === 'customer' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Account Number (Optional)
+                  </label>
+                  <div className="relative">
+                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={formData.accountNumber}
+                      onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                      placeholder="e.g., ACC-2025-123456"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Providing your account number helps us verify your identity faster
+                  </p>
+                </div>
+              )}
+
+              {/* Request Reason (Optional) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Reason for Request (Optional)
+                </label>
+                <textarea
+                  value={formData.requestReason}
+                  onChange={(e) => setFormData({ ...formData, requestReason: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+                  placeholder="e.g., Forgot password, Account locked, etc."
+                  disabled={isLoading}
+                />
+              </div>
+
+              {/* Information Box */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-blue-800 dark:text-blue-300">
+                    <p className="font-semibold mb-1">How it works:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Submit your password reset request</li>
+                      <li>Admin will review and approve your request</li>
+                      <li>You'll receive a temporary password via email</li>
+                      <li>Track your request status using the request number</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    <span>Submit Request</span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Footer Links */}
+            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-white/10 text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                Already have a request number?
+              </p>
+              <Link
+                href="/track-password-reset"
+                className="text-cyan-500 hover:text-cyan-600 dark:hover:text-cyan-400 font-medium"
+              >
+                Track your request
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full mb-4">
+                <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Request Submitted Successfully!</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Your password reset request has been submitted and is pending admin approval
+              </p>
+
+              {/* Request Number Display */}
+              <div className="bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 rounded-xl p-6 mb-6 border-2 border-cyan-500 dark:border-cyan-400">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Your Request Number</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mb-2 font-mono">{requestNumber}</p>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(requestNumber);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  className="mt-3 px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold transition-all flex items-center space-x-2 mx-auto"
+                >
+                  <Copy className="w-4 h-4" />
+                  <span>{copied ? 'Copied!' : 'Copy'}</span>
+                </button>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-3">
+                  Save this number to track your request status
+                </p>
+              </div>
+
+              {/* Next Steps */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800 mb-6">
+                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">What happens next?</p>
+                <ul className="text-sm text-blue-800 dark:text-blue-300 text-left space-y-2">
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>Admin will review your request within 24 hours</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>If approved, you'll receive a temporary password via email</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                    <span>You can track your request status using the request number above</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/track-password-reset"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all flex items-center justify-center space-x-2"
+                >
+                  <span>Track Request Status</span>
+                </Link>
+                <Link
+                  href="/login"
+                  className="flex-1 px-6 py-3 bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-white/20 transition-all flex items-center justify-center space-x-2"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span>Back to Login</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

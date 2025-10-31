@@ -17,6 +17,7 @@ declare module 'next-auth' {
       employeeId?: number;
       accountNumber?: string;
       meterNumber?: string;
+      requiresPasswordChange?: number;
     };
   }
 
@@ -29,6 +30,7 @@ declare module 'next-auth' {
     employeeId?: number;
     accountNumber?: string;
     meterNumber?: string;
+    requiresPasswordChange?: number;
   }
 }
 
@@ -40,6 +42,7 @@ declare module 'next-auth/jwt' {
     employeeId?: number;
     accountNumber?: string;
     meterNumber?: string;
+    requiresPasswordChange?: number;
   }
 }
 
@@ -56,78 +59,74 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Invalid credentials');
         }
 
-        try {
-          // Find user in database
-          const userResults = await db
-            .select()
-            .from(users)
-            .where(eq(users.email, credentials.email))
+        // Find user in database
+        const userResults = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, credentials.email))
+          .limit(1);
+
+        const user = userResults[0];
+
+        if (!user || user.isActive !== 1) {
+          throw new Error('User not found or inactive');
+        }
+
+        // Verify password
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
+
+        if (!isPasswordValid) {
+          throw new Error('Invalid password');
+        }
+
+        // Get additional user data based on user type
+        let additionalData = {};
+
+        if (user.userType === 'customer') {
+          const customerResults = await db
+            .select({
+              customerId: customers.id,
+              accountNumber: customers.accountNumber,
+              meterNumber: customers.meterNumber,
+            })
+            .from(customers)
+            .where(eq(customers.userId, user.id))
             .limit(1);
 
-          const user = userResults[0];
-
-          if (!user || user.isActive !== 1) {
-            throw new Error('User not found or inactive');
+          if (customerResults[0]) {
+            additionalData = {
+              customerId: customerResults[0].customerId,
+              accountNumber: customerResults[0].accountNumber,
+              meterNumber: customerResults[0].meterNumber,
+            };
           }
+        } else if (user.userType === 'employee') {
+          const employeeResults = await db
+            .select({
+              employeeId: employees.id,
+            })
+            .from(employees)
+            .where(eq(employees.userId, user.id))
+            .limit(1);
 
-          // Verify password
-          const isPasswordValid = await bcrypt.compare(
-            credentials.password,
-            user.password
-          );
-
-          if (!isPasswordValid) {
-            throw new Error('Invalid password');
+          if (employeeResults[0]) {
+            additionalData = {
+              employeeId: employeeResults[0].employeeId,
+            };
           }
-
-          // Get additional user data based on user type
-          let additionalData = {};
-
-          if (user.userType === 'customer') {
-            const customerResults = await db
-              .select({
-                customerId: customers.id,
-                accountNumber: customers.accountNumber,
-                meterNumber: customers.meterNumber,
-              })
-              .from(customers)
-              .where(eq(customers.userId, user.id))
-              .limit(1);
-
-            if (customerResults[0]) {
-              additionalData = {
-                customerId: customerResults[0].customerId,
-                accountNumber: customerResults[0].accountNumber,
-                meterNumber: customerResults[0].meterNumber,
-              };
-            }
-          } else if (user.userType === 'employee') {
-            const employeeResults = await db
-              .select({
-                employeeId: employees.id,
-              })
-              .from(employees)
-              .where(eq(employees.userId, user.id))
-              .limit(1);
-
-            if (employeeResults[0]) {
-              additionalData = {
-                employeeId: employeeResults[0].employeeId,
-              };
-            }
-          }
-
-          return {
-            id: user.id.toString(),
-            email: user.email,
-            name: user.name,
-            userType: user.userType,
-            ...additionalData,
-          };
-        } catch (error) {
-          console.error('Auth error:', error);
-          return null;
         }
+
+        return {
+          id: user.id.toString(),
+          email: user.email,
+          name: user.name,
+          userType: user.userType,
+          requiresPasswordChange: user.requiresPasswordChange,
+          ...additionalData,
+        };
       },
     }),
   ],
@@ -140,6 +139,7 @@ export const authOptions: NextAuthOptions = {
         token.employeeId = user.employeeId;
         token.accountNumber = user.accountNumber;
         token.meterNumber = user.meterNumber;
+        token.requiresPasswordChange = user.requiresPasswordChange;
       }
       return token;
     },
@@ -151,6 +151,7 @@ export const authOptions: NextAuthOptions = {
         session.user.employeeId = token.employeeId as number | undefined;
         session.user.accountNumber = token.accountNumber as string | undefined;
         session.user.meterNumber = token.meterNumber as string | undefined;
+        session.user.requiresPasswordChange = token.requiresPasswordChange as number | undefined;
       }
       return session;
     },

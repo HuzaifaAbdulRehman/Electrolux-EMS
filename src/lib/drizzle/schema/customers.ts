@@ -17,6 +17,8 @@ export const customers = mysqlTable('customers', {
   connectionType: mysqlEnum('connection_type', ['Residential', 'Commercial', 'Industrial', 'Agricultural']).notNull(),
   status: mysqlEnum('status', ['pending_installation', 'active', 'suspended', 'inactive']).default('active').notNull(),
   connectionDate: date('connection_date').notNull(),
+  dateOfBirth: date('date_of_birth'), // Customer's date of birth (optional)
+  installationCharges: decimal('installation_charges', { precision: 10, scale: 2 }), // Same as estimatedCharges from connectionRequests
   lastBillAmount: decimal('last_bill_amount', { precision: 10, scale: 2 }).default('0.00'),
   lastPaymentDate: date('last_payment_date'),
   averageMonthlyUsage: decimal('average_monthly_usage', { precision: 10, scale: 2 }).default('0.00'), // kWh

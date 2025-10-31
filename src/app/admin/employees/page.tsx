@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { formatPKPhone, onlyDigits } from '@/lib/utils/dataHandlers';
 import {
   Building,
   Search,
@@ -237,7 +238,6 @@ export default function EmployeeManagement() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-500/20 text-green-400 border-green-500/50';
-      case 'on-leave': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
       case 'inactive': return 'bg-red-500/20 text-red-400 border-red-500/50';
       default: return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
     }
@@ -365,12 +365,6 @@ export default function EmployeeManagement() {
               value: loading ? '...' : allEmployees.filter(e => e.status === 'active').length.toString(),
               icon: CheckCircle,
               color: 'from-green-500 to-emerald-500'
-            },
-            {
-              label: 'On Leave',
-              value: loading ? '...' : allEmployees.filter(e => e.status === 'on-leave').length.toString(),
-              icon: XCircle,
-              color: 'from-yellow-400 to-orange-500'
             },
             {
               label: 'Work Orders',
@@ -623,10 +617,15 @@ export default function EmployeeManagement() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
                   <input
                     type="tel"
+                    inputMode="numeric"
                     required
-                    value={newEmployee.phone}
-                    onChange={(e) => setNewEmployee({...newEmployee, phone: e.target.value})}
+                    value={formatPKPhone(newEmployee.phone)}
+                    onChange={(e) => {
+                      const raw = onlyDigits(e.target.value).slice(0, 11);
+                      setNewEmployee({...newEmployee, phone: raw});
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="0300-1234567"
                   />
                 </div>
 
@@ -827,10 +826,15 @@ export default function EmployeeManagement() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
                     <input
                       type="tel"
+                      inputMode="numeric"
                       required
-                      value={employeeToEdit.phone}
-                      onChange={(e) => setEmployeeToEdit({...employeeToEdit, phone: e.target.value})}
+                      value={formatPKPhone(employeeToEdit.phone)}
+                      onChange={(e) => {
+                        const raw = onlyDigits(e.target.value).slice(0, 11);
+                        setEmployeeToEdit({...employeeToEdit, phone: raw});
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="0300-1234567"
                     />
                   </div>
 
@@ -876,7 +880,6 @@ export default function EmployeeManagement() {
                       className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500"
                     >
                       <option value="active">Active</option>
-                      <option value="on-leave">On Leave</option>
                       <option value="inactive">Inactive</option>
                     </select>
                   </div>

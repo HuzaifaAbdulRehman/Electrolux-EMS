@@ -18,6 +18,7 @@ export const connectionRequests = mysqlTable('connection_requests', {
   state: varchar('state', { length: 100 }),
   pincode: varchar('pincode', { length: 10 }),
   landmark: varchar('landmark', { length: 255 }),
+  zone: varchar('zone', { length: 50 }),
   preferredDate: date('preferred_date'),
   purposeOfConnection: mysqlEnum('purpose_of_connection', ['domestic', 'business', 'industrial', 'agricultural']).notNull(),
   existingConnection: boolean('existing_connection').default(false),

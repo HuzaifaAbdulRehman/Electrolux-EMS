@@ -15,8 +15,9 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const customerId = searchParams.get('customerId');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const billingMonth = searchParams.get('billingMonth');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
     const offset = (page - 1) * limit;
 
     let query = db
@@ -43,11 +44,27 @@ export async function GET(request: NextRequest) {
     if (session.user.userType === 'customer') {
       conditions.push(eq(meterReadings.customerId, session.user.customerId!));
     } else if (customerId) {
-      conditions.push(eq(meterReadings.customerId, parseInt(customerId)));
+      conditions.push(eq(meterReadings.customerId, parseInt(customerId, 10)));
     }
 
+    // Filter by billing month if provided
+    if (billingMonth) {
+      const monthStart = new Date(billingMonth);
+      const monthEnd = new Date(monthStart);
+      monthEnd.setMonth(monthEnd.getMonth() + 1);
+      const monthStartStr = monthStart.toISOString().split('T')[0];
+      const monthEndStr = monthEnd.toISOString().split('T')[0];
+
+      console.log(`[Meter Readings GET] Filtering by billing month: ${monthStartStr} to ${monthEndStr}`);
+
+      conditions.push(
+        sql`${meterReadings.readingDate} >= ${monthStartStr} AND ${meterReadings.readingDate} < ${monthEndStr}`
+      );
+    }
+
+    // Apply conditions with AND logic
     if (conditions.length > 0) {
-      query = query.where(conditions[0] as any);
+      query = query.where(conditions.length === 1 ? conditions[0] as any : and(...conditions) as any);
     }
 
     query = query.orderBy(desc(meterReadings.readingDate)).limit(limit).offset(offset);
@@ -56,7 +73,7 @@ export async function GET(request: NextRequest) {
     // Get total count
     let countQuery = db.select({ count: sql<number>`count(*)` }).from(meterReadings).$dynamic();
     if (conditions.length > 0) {
-      countQuery = countQuery.where(conditions[0] as any);
+      countQuery = countQuery.where(conditions.length === 1 ? conditions[0] as any : and(...conditions) as any);
     }
     const [{ count }] = await countQuery;
 
@@ -146,7 +163,18 @@ export async function POST(request: NextRequest) {
     console.log(`📊 Units consumed calculation: ${currentReadingValue} - ${previousReadingValue} = ${unitsConsumed} kWh`);
 
     // Create meter reading
-    const [reading] = await db.insert(meterReadings).values({
+    console.log('[Meter Readings POST] Inserting reading:', {
+      customerId,
+      meterNumber: customer.meterNumber,
+      currentReading: currentReadingValue.toString(),
+      previousReading: previousReadingValue.toString(),
+      unitsConsumed: unitsConsumed.toString(),
+    });
+    // 🔒 TRANSACTION FIX: Wrap reading insert and average update in a transaction
+    let readingId: number;
+    await db.transaction(async (tx) => {
+
+    const readingInsert = await tx.insert(meterReadings).values({
       customerId,
       meterNumber: customer.meterNumber,
       currentReading: currentReadingValue.toString(),
@@ -160,20 +188,24 @@ export async function POST(request: NextRequest) {
       notes,
     } as any);
 
+    readingId = (readingInsert as any).insertId;
+
     // Update customer's average monthly usage
-    const avgUsage = await db
+    const avgUsage = await tx
       .select({ avg: sql<number>`AVG(${meterReadings.unitsConsumed})` })
       .from(meterReadings)
       .where(eq(meterReadings.customerId, customerId));
 
     if (avgUsage[0]?.avg != null) {
-      await db
+      await tx
         .update(customers)
         .set({
           averageMonthlyUsage: Number(avgUsage[0].avg).toFixed(2),
         })
         .where(eq(customers.id, customerId));
     }
+
+    });  // End transaction
 
     // Create notification for customer about completed meter reading
     if (customer.userId) {
@@ -193,7 +225,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Meter reading recorded successfully',
       data: {
-        readingId: reading.insertId,
+        readingId: readingId!,
         unitsConsumed,
       },
     }, { status: 201 });

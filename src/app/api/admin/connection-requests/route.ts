@@ -78,6 +78,7 @@ export async function GET(request: NextRequest) {
         connectionType: connectionRequests.connectionType,
         loadRequired: connectionRequests.loadRequired,
         purposeOfConnection: connectionRequests.purposeOfConnection,
+        zone: connectionRequests.zone,
         status: connectionRequests.status,
         applicationDate: connectionRequests.applicationDate,
         preferredDate: connectionRequests.preferredDate,

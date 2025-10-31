@@ -32,8 +32,9 @@ export default function OnlinePayment() {
   const router = useRouter();
 
   // State management
-  const [selectedMethod, setSelectedMethod] = useState('card');
+  const [selectedMethod, setSelectedMethod] = useState('credit_card');
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]); // Default to today
   const [customAmount, setCustomAmount] = useState(false);
   const [showCardDetails, setShowCardDetails] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
@@ -43,6 +44,7 @@ export default function OnlinePayment() {
 
   // Data from API
   const [currentBill, setCurrentBill] = useState<any>(null);
+  const [unpaidBills, setUnpaidBills] = useState<any[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [paymentResult, setPaymentResult] = useState<any>(null);
 
@@ -65,16 +67,19 @@ export default function OnlinePayment() {
       setLoading(true);
       setError(null);
 
-      // Fetch current unpaid bill
-      const billResponse = await fetch('/api/bills?status=issued&limit=1');
+      // Fetch ALL unpaid bills (generated and issued, not just one)
+      const billResponse = await fetch('/api/bills?status=generated,issued&limit=100');
       const billResult = await billResponse.json();
 
       if (billResult.success && billResult.data.length > 0) {
-        const bill = billResult.data[0];
-        setCurrentBill(bill);
-        setPaymentAmount(safeNumber(bill.totalAmount, 0).toString());
+        const bills = billResult.data;
+        setUnpaidBills(bills);
+        // Set first bill as default
+        setCurrentBill(bills[0]);
+        setPaymentAmount(safeNumber(bills[0].totalAmount, 0).toString());
       } else {
         setError('No pending bills found');
+        setUnpaidBills([]);
       }
 
       // Fetch recent payments
@@ -93,45 +98,71 @@ export default function OnlinePayment() {
     }
   };
 
+  // Handle bill selection change
+  const handleBillSelection = (billId: number) => {
+    const selectedBill = unpaidBills.find(b => b.id === billId);
+    if (selectedBill) {
+      setCurrentBill(selectedBill);
+      setPaymentAmount(safeNumber(selectedBill.totalAmount, 0).toString());
+      setError(null);
+    }
+  };
+
   const paymentMethods = [
     {
-      id: 'card',
-      name: 'Credit/Debit Card',
+      id: 'credit_card',
+      name: 'Credit Card',
       icon: CreditCard,
-      description: 'Pay securely with your card',
+      description: 'Visa, Mastercard, etc.',
       color: 'from-blue-500 to-cyan-500',
       popular: true
     },
     {
-      id: 'bank',
-      name: 'Bank Transfer',
+      id: 'debit_card',
+      name: 'Debit Card',
+      icon: CreditCard,
+      description: 'Bank debit card payment',
+      color: 'from-indigo-500 to-blue-500',
+      popular: true
+    },
+    {
+      id: 'bank_transfer',
+      name: 'Bank Transfer / IBFT',
       icon: Building2,
-      description: 'Direct bank account transfer',
+      description: 'Direct bank transfer',
       color: 'from-green-500 to-emerald-500',
       popular: false
     },
     {
       id: 'wallet',
-      name: 'Digital Wallet',
-      icon: Wallet,
-      description: 'PayPal, Google Pay, Apple Pay',
-      color: 'from-purple-500 to-pink-500',
+      name: 'JazzCash',
+      icon: Smartphone,
+      description: 'JazzCash mobile wallet',
+      color: 'from-red-500 to-orange-500',
       popular: true
     },
     {
       id: 'upi',
-      name: 'UPI Payment',
-      icon: Smartphone,
-      description: 'Pay using UPI ID',
-      color: 'from-yellow-400 to-orange-500',
+      name: 'EasyPaisa',
+      icon: Wallet,
+      description: 'EasyPaisa mobile wallet',
+      color: 'from-green-600 to-emerald-600',
       popular: true
     },
     {
-      id: 'qr',
-      name: 'QR Code',
-      icon: QrCode,
-      description: 'Scan and pay instantly',
-      color: 'from-red-500 to-rose-500',
+      id: 'cash',
+      name: 'Cash Payment',
+      icon: DollarSign,
+      description: 'Paid at office counter',
+      color: 'from-yellow-500 to-amber-500',
+      popular: false
+    },
+    {
+      id: 'cheque',
+      name: 'Cheque',
+      icon: FileText,
+      description: 'Bank cheque payment',
+      color: 'from-gray-500 to-slate-500',
       popular: false
     }
   ];
@@ -196,6 +227,7 @@ export default function OnlinePayment() {
           billId: currentBill.id,
           paymentMethod: selectedMethod,
           amount: amount,
+          paymentDate: paymentDate, // Send custom payment date
         }),
       });
 
@@ -259,13 +291,13 @@ export default function OnlinePayment() {
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-4 border border-gray-200 dark:border-white/10 mb-4 flex-shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Payment Center</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Pay your electricity bills securely online</p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Record Payment</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Select payment method and amount to record your bill payment</p>
             </div>
             <div className="mt-3 sm:mt-0 flex items-center space-x-2">
-              <div className="flex items-center space-x-2 px-3 py-2 bg-green-500/20 rounded-lg border border-green-500/50">
-                <Shield className="w-4 h-4 text-green-400" />
-                <span className="text-green-400 font-semibold text-sm">Secure</span>
+              <div className="flex items-center space-x-2 px-3 py-2 bg-blue-500/20 rounded-lg border border-blue-500/50">
+                <FileText className="w-4 h-4 text-blue-400" />
+                <span className="text-blue-400 font-semibold text-sm">Manual Entry</span>
               </div>
             </div>
           </div>
@@ -281,6 +313,32 @@ export default function OnlinePayment() {
             <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300">
               <X className="w-4 h-4" />
             </button>
+          </div>
+        )}
+
+        {/* Total Outstanding Balance Display */}
+        {unpaidBills.length > 0 && (
+          <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/50 rounded-xl p-4 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-orange-500/30 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-orange-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Outstanding Balance</p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {formatCurrency(
+                      unpaidBills.reduce((sum, bill) => sum + safeNumber(bill.totalAmount, 0), 0),
+                      'Rs.'
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Unpaid Bills</p>
+                <p className="text-xl font-bold text-orange-400">{unpaidBills.length}</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -329,10 +387,30 @@ export default function OnlinePayment() {
                 <div className="mb-6">
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                     <FileText className="w-5 h-5 mr-2 text-yellow-400" />
-                    Current Bill Details
+                    Bill Details
                   </h2>
 
                   <div className="space-y-4">
+                    {/* Bill Selection Dropdown - NEW */}
+                    {unpaidBills.length > 1 && (
+                      <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                        <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                          Select Bill to Pay ({unpaidBills.length} unpaid bills)
+                        </label>
+                        <select
+                          value={currentBill?.id || ''}
+                          onChange={(e) => handleBillSelection(parseInt(e.target.value, 10))}
+                          className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                        >
+                          {unpaidBills.map((bill) => (
+                            <option key={bill.id} value={bill.id}>
+                              {bill.billNumber} - {new Date(bill.billingMonth).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - Rs. {safeNumber(bill.totalAmount, 0).toFixed(2)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
                     {/* Bill Number - Prominent Display */}
                     <div className="p-4 bg-gradient-to-r from-yellow-400/10 to-orange-500/10 rounded-xl border border-yellow-400/30">
                       <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Bill Number</p>
@@ -559,6 +637,24 @@ export default function OnlinePayment() {
                       </div>
                     </div>
                   )}
+
+                  {/* Payment Date Picker - NEW */}
+                  <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                      <Clock className="w-4 h-4 mr-2 text-blue-500" />
+                      Payment Date
+                    </label>
+                    <input
+                      type="date"
+                      value={paymentDate}
+                      onChange={(e) => setPaymentDate(e.target.value)}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                    />
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                      Select the date when payment was actually made (defaults to today)
+                    </p>
+                  </div>
 
                   <div className="flex space-x-4 mt-6">
                     <button

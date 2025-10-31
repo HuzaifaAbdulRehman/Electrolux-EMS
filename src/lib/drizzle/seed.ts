@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { db } from './db';
-import { users, customers, employees, tariffs, meterReadings, bills, payments, workOrders, connectionApplications, notifications, billRequests, outages, tariffSlabs } from './schema';
+import { users, customers, employees, tariffs, meterReadings, bills, payments, workOrders, notifications, billRequests, outages, tariffSlabs } from './schema';
 import bcrypt from 'bcryptjs';
 import { subMonths, format, addDays, subDays } from 'date-fns';
 import { eq, sql } from 'drizzle-orm';
@@ -43,7 +43,7 @@ async function seed() {
     await db.execute(sql`TRUNCATE TABLE outages`);
     await db.execute(sql`TRUNCATE TABLE notifications`);
     await db.execute(sql`TRUNCATE TABLE bill_requests`);
-    await db.execute(sql`TRUNCATE TABLE connection_applications`);
+    // Removed: connection_applications - redundant table
     await db.execute(sql`TRUNCATE TABLE work_orders`);
     await db.execute(sql`TRUNCATE TABLE complaints`);
     await db.execute(sql`TRUNCATE TABLE payments`);
@@ -709,7 +709,7 @@ async function seed() {
     await db.insert(workOrders).values(workOrderRecords as any);
     console.log('✅ Seeded 20 work orders\n');
 
-    // 8. SEED CONNECTION APPLICATIONS (10 applications) - SKIPPED DUE TO SCHEMA MISMATCH
+    // 8. CONNECTION APPLICATIONS - REMOVED (redundant with connectionRequests table)
     console.log('🔌 Skipping connection applications...\n');
 
     // 9. SEED NOTIFICATIONS (50 recent notifications) - SKIPPED

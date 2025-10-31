@@ -607,7 +607,7 @@ export default function AdminDashboard() {
 
                             // Only calculate percentage if value is meaningful
                             if (value < 0.01 || total < 0.01) {
-                              return null; // Don't show tooltip for invalid data
+                              return ''; // Return empty string instead of null
                             }
 
                             const percentage = ((value / total) * 100).toFixed(1);

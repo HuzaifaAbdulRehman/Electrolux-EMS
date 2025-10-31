@@ -32,7 +32,6 @@ import {
   Clock,
   Calculator,
   ZapOff,
-  Database,
   Plus,
   Loader2,
   Eye,
@@ -145,7 +144,6 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
         ]},
         { section: 'SYSTEM', items: [
           { name: 'Outages', href: '/admin/outages', icon: ZapOff, description: 'Manage power outages' },
-          { name: 'Data Import', href: '/admin/data-import', icon: Database, description: 'Import bulk data' },
           { name: 'Settings', href: '/admin/settings', icon: Settings, description: 'System configuration' },
         ]},
         { section: 'ACCOUNT', items: [

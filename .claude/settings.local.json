@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(cp:*)",
-      "Bash(do echo \"=== $table ===\")"
+      "Bash(do echo \"=== $table ===\")",
+      "Bash(del \"d:\\Programming\\Projects\\electrolux_ems\\src\\app\\admin\\data-import\\page.tsx\")"
     ],
     "deny": [],
     "ask": []

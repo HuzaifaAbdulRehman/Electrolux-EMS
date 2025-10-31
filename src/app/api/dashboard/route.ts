@@ -23,36 +23,45 @@ export async function GET(request: NextRequest) {
     const currentMonth = currentDate.toISOString().substring(0, 7);
 
     let startDate: Date;
+    let previousStartDate: Date;
     let monthLimit = 6;
 
     switch (period) {
       case 'month':
         startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        previousStartDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
         monthLimit = 1;
         break;
       case 'lastMonth':
         startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+        previousStartDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 2, 1);
         monthLimit = 1;
         break;
       case '3months':
         startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 3, 1);
+        previousStartDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 6, 1);
         monthLimit = 3;
         break;
       case '6months':
         startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 6, 1);
+        previousStartDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 12, 1);
         monthLimit = 6;
         break;
       case 'all':
         startDate = new Date(2020, 0, 1);
+        previousStartDate = new Date(2020, 0, 1);
         monthLimit = 24;
         break;
       default:
         startDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 6, 1);
+        previousStartDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 12, 1);
         monthLimit = 6;
     }
 
     const startDateStr = startDate.toISOString().split('T')[0];
-    console.log('[Dashboard API] Date filter:', startDateStr, 'Months:', monthLimit);
+    const previousStartDateStr = previousStartDate.toISOString().split('T')[0];
+    const previousEndDateStr = startDateStr; // Previous period ends where current starts
+    console.log('[Dashboard API] Current period:', startDateStr, 'Previous period:', previousStartDateStr, 'to', previousEndDateStr);
 
     // 1. BASIC METRICS (DBMS: Aggregate Functions)
     // Get customer count by status
@@ -91,12 +100,23 @@ export async function GET(request: NextRequest) {
       .from(bills)
       .where(sql`${bills.billingMonth} >= ${startDateStr}`);
 
+    // Calculate average monthly revenue based on ACTUAL months with bills, not period limit
+    const monthsWithBillsResult = await db
+      .select({ count: sql<number>`COUNT(DISTINCT DATE_FORMAT(${bills.billingMonth}, '%Y-%m'))` })
+      .from(bills)
+      .where(sql`${bills.billingMonth} >= ${startDateStr}`);
+
+    const revenueTotal = totalRevenue.total || 0;
+    const actualMonths = (monthsWithBillsResult[0]?.count || 0) > 0 ? monthsWithBillsResult[0].count : 1;
+    const averageMonthlyRevenue = revenueTotal / actualMonths;
+
+    // Outstanding amount should come from customers table, not bills
+    // Because partial payments update customer.outstandingBalance but not bill.totalAmount
     const [outstandingAmount] = await db
         .select({
-        total: sql<number>`COALESCE(SUM(${bills.totalAmount}), 0)`
+        total: sql<number>`COALESCE(SUM(${customers.outstandingBalance}), 0)`
         })
-        .from(bills)
-        .where(eq(bills.status, 'issued'));
+        .from(customers);
 
     const [paidBills] = await db
       .select({ count: sql<number>`COUNT(*)` })
@@ -192,7 +212,71 @@ export async function GET(request: NextRequest) {
       .groupBy(customers.connectionType)
       .orderBy(sql`COUNT(*) DESC`);
 
+    // Fetch PREVIOUS PERIOD metrics for trend calculation (if not 'all' period)
+    let previousMetrics = null;
+    if (period !== 'all') {
+      const [prevRevenue] = await db
+        .select({ total: sql<number>`COALESCE(SUM(${bills.totalAmount}), 0)` })
+        .from(bills)
+        .where(and(
+          sql`${bills.billingMonth} >= ${previousStartDateStr}`,
+          sql`${bills.billingMonth} < ${previousEndDateStr}`
+        ));
+
+      const [prevTotalBills] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(bills)
+        .where(and(
+          sql`${bills.billingMonth} >= ${previousStartDateStr}`,
+          sql`${bills.billingMonth} < ${previousEndDateStr}`
+        ));
+
+      const [prevPaidBills] = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(bills)
+        .where(and(
+          sql`${bills.billingMonth} >= ${previousStartDateStr}`,
+          sql`${bills.billingMonth} < ${previousEndDateStr}`,
+          eq(bills.status, 'paid')
+        ));
+
+      // Count actual months with bills in PREVIOUS period
+      const prevMonthsWithBillsResult = await db
+        .select({ count: sql<number>`COUNT(DISTINCT DATE_FORMAT(${bills.billingMonth}, '%Y-%m'))` })
+        .from(bills)
+        .where(and(
+          sql`${bills.billingMonth} >= ${previousStartDateStr}`,
+          sql`${bills.billingMonth} < ${previousEndDateStr}`
+        ));
+
+      const prevRevenueTotal = prevRevenue.total || 0;
+      const prevActualMonths = (prevMonthsWithBillsResult[0]?.count || 0) > 0 ? prevMonthsWithBillsResult[0].count : 1;
+      const prevAverageMonthlyRevenue = prevRevenueTotal / prevActualMonths;
+
+      previousMetrics = {
+        monthlyRevenue: prevAverageMonthlyRevenue,
+        totalRevenue: prevRevenueTotal,
+        collectionRate: prevTotalBills.count > 0 ? parseFloat(((prevPaidBills.count / prevTotalBills.count) * 100).toFixed(1)) : 0,
+        totalBills: prevTotalBills.count,
+        averageBillAmount: prevTotalBills.count > 0 ? prevRevenueTotal / prevTotalBills.count : 0,
+        activeCustomers: activeCustomers // Use current as baseline (customers don't change much period to period)
+      };
+    }
+
+    // Calculate trends
+    const calculateTrend = (current: number, previous: number | null) => {
+      if (previous === null || previous === 0) return { change: 0, direction: 'neutral' };
+      const change = ((current - previous) / previous) * 100;
+      return {
+        change: parseFloat(change.toFixed(1)),
+        direction: change > 0 ? 'up' : change < 0 ? 'down' : 'neutral'
+      };
+    };
+
     // Calculate derived metrics
+    const currentCollectionRate = totalBills.count > 0 ? parseFloat(((paidBills.count / totalBills.count) * 100).toFixed(1)) : 0;
+    const currentAvgBillAmount = totalBills.count > 0 ? revenueTotal / totalBills.count : 0;
+
     const metrics = {
       totalCustomers: totalCustomersAll,
       activeCustomers: activeCustomers,
@@ -200,14 +284,23 @@ export async function GET(request: NextRequest) {
       inactiveCustomers: inactiveCustomers,
       totalEmployees: totalEmployees.count,
       activeBills: activeBills.count,
-      monthlyRevenue: totalRevenue.total || 0,
+      monthlyRevenue: averageMonthlyRevenue,
+      totalRevenue: revenueTotal,
       outstandingAmount: outstandingAmount.total || 0,
-      collectionRate: totalBills.count > 0 ? parseFloat(((paidBills.count / totalBills.count) * 100).toFixed(1)) : 0,
+      collectionRate: currentCollectionRate,
       totalBills: totalBills.count,
       paidBills: paidBills.count,
       pendingBills: totalBills.count - paidBills.count,
       paymentRate: totalBills.count > 0 ? (paidBills.count / totalBills.count) * 100 : 0,
-      averageBillAmount: totalBills.count > 0 ? (totalRevenue.total || 0) / totalBills.count : 0
+      averageBillAmount: currentAvgBillAmount,
+      // Add trends
+      trends: previousMetrics ? {
+        monthlyRevenue: calculateTrend(averageMonthlyRevenue, previousMetrics.monthlyRevenue),
+        collectionRate: calculateTrend(currentCollectionRate, previousMetrics.collectionRate),
+        totalCustomers: calculateTrend(totalCustomersAll, previousMetrics.activeCustomers),
+        averageBillAmount: calculateTrend(currentAvgBillAmount, previousMetrics.averageBillAmount),
+        activeCustomers: calculateTrend(activeCustomers, previousMetrics.activeCustomers)
+      } : null
     };
 
     // Format data for charts

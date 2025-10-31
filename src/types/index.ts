@@ -21,16 +21,22 @@ export interface Customer {
   userId: string;
   accountNumber: string;
   meterNumber: string;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   phone: string;
   address: string;
   city: string;
   state: string;
-  zipCode: string;
-  connectionType: 'residential' | 'commercial' | 'industrial' | 'agricultural';
-  status: 'active' | 'suspended' | 'pending_installation' | 'disconnected';
+  pincode: string;
+  zone?: string | null;
+  connectionType: 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural';
+  status: 'active' | 'suspended' | 'pending_installation' | 'inactive';
+  connectionDate: string;
+  lastBillAmount?: string;
+  lastPaymentDate?: string;
+  averageMonthlyUsage?: string;
+  outstandingBalance?: string;
+  paymentStatus?: 'paid' | 'pending' | 'overdue';
   createdAt: string;
   updatedAt: string;
 }
@@ -39,14 +45,14 @@ export interface Employee {
   id: number;
   userId: string;
   employeeNumber: string;
-  firstName: string;
-  lastName: string;
+  employeeName: string;
   email: string;
   phone: string;
+  designation: string;
   department: string;
-  position: string;
-  hireDate: string;
+  assignedZone?: string | null;
   status: 'active' | 'inactive';
+  hireDate: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -56,22 +62,25 @@ export interface Employee {
 export interface Bill {
   id: number;
   customerId: number;
-  accountNumber: string;
-  meterNumber: string;
-  billingPeriod: string;
+  billNumber: string;
+  billingMonth: string;
+  issueDate: string;
   dueDate: string;
-  unitsConsumed: number;
-  previousReading: number;
-  currentReading: number;
+  unitsConsumed: number | string;
+  meterReadingId?: number;
   tariffId: number;
-  baseAmount: number;
-  taxAmount: number;
-  totalAmount: number;
-  status: 'issued' | 'paid' | 'overdue' | 'cancelled';
+  baseAmount: number | string;
+  fixedCharges: number | string;
+  electricityDuty: number | string;
+  gstAmount: number | string;
+  totalAmount: number | string;
+  status: 'generated' | 'issued' | 'paid' | 'overdue' | 'cancelled';
+  paymentDate?: string;
   createdAt: string;
   updatedAt: string;
   customer?: Customer;
   tariff?: Tariff;
+  tariffSlabs?: DBTariffSlab[];
 }
 
 export interface TariffSlab {
@@ -82,6 +91,16 @@ export interface TariffSlab {
   endUnits: number | null;
   ratePerUnit: number;
   createdAt: string;
+}
+
+export interface DBTariffSlab {
+  id: number;
+  tariffId: number;
+  slabOrder: number;
+  startUnits: number;
+  endUnits: number | null;
+  ratePerUnit: string | number;
+  createdAt: string | Date;
 }
 
 export interface Tariff {
@@ -99,14 +118,18 @@ export interface Tariff {
 
 export interface Payment {
   id: number;
-  billId: number;
   customerId: number;
-  amount: number;
-  paymentMethod: 'cash' | 'card' | 'bank_transfer' | 'online';
+  billId?: number;
+  paymentAmount: number | string;
+  paymentMethod: 'credit_card' | 'debit_card' | 'bank_transfer' | 'cash' | 'cheque' | 'upi' | 'wallet';
+  paymentDate: string;
   transactionId?: string;
+  receiptNumber?: string;
   status: 'pending' | 'completed' | 'failed' | 'refunded';
+  notes?: string;
   paidAt?: string;
   createdAt: string;
+  updatedAt: string;
   bill?: Bill;
 }
 
@@ -115,13 +138,19 @@ export interface Payment {
 export interface MeterReading {
   id: number;
   customerId: number;
-  meterNumber: string;
-  readingValue: number;
+  currentReading: number | string;
+  previousReading: number | string;
+  unitsConsumed: number | string;
   readingDate: string;
+  readingTime?: string;
   readingType: 'manual' | 'automatic' | 'estimated';
+  meterCondition?: 'good' | 'fair' | 'poor' | 'damaged';
+  accessibility?: 'accessible' | 'partially_accessible' | 'inaccessible';
+  photoPath?: string;
   employeeId?: number;
   notes?: string;
   createdAt: string;
+  updatedAt: string;
   customer?: Customer;
   employee?: Employee;
 }
@@ -131,14 +160,19 @@ export interface MeterReading {
 export interface Complaint {
   id: number;
   customerId: number;
-  category: 'power_outage' | 'billing_issue' | 'meter_problem' | 'service_request' | 'other';
+  employeeId?: number;
+  workOrderId?: number;
+  category: 'power_outage' | 'billing' | 'service' | 'meter_issue' | 'connection' | 'other';
   title: string;
   description: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  status: 'submitted' | 'under_review' | 'assigned' | 'in_progress' | 'resolved' | 'closed';
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  assignedTo?: number;
-  resolution?: string;
+  resolutionNotes?: string;
+  submittedAt?: string;
+  reviewedAt?: string;
+  assignedAt?: string;
   resolvedAt?: string;
+  closedAt?: string;
   createdAt: string;
   updatedAt: string;
   customer?: Customer;
@@ -169,16 +203,17 @@ export interface Outage {
 
 export interface WorkOrder {
   id: number;
-  title: string;
-  description: string;
-  type: 'maintenance' | 'repair' | 'installation' | 'inspection' | 'other';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
-  assignedTo?: number;
+  employeeId?: number;
   customerId?: number;
-  scheduledDate?: string;
-  completedDate?: string;
-  notes?: string;
+  workType: 'meter_reading' | 'maintenance' | 'complaint_resolution' | 'new_connection' | 'disconnection' | 'reconnection';
+  title: string;
+  description?: string;
+  status: 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  assignedDate: string;
+  dueDate: string;
+  completionDate?: string;
+  completionNotes?: string;
   createdAt: string;
   updatedAt: string;
   assignedEmployee?: Employee;
@@ -190,12 +225,13 @@ export interface WorkOrder {
 export interface ConnectionRequest {
   id: number;
   customerId: number;
-  connectionType: 'residential' | 'commercial' | 'industrial' | 'agricultural';
+  connectionType: 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural';
   address: string;
   city: string;
   state: string;
-  zipCode: string;
-  requiredCapacity: number;
+  pincode: string;
+  zone?: string;
+  requiredCapacity: number | string;
   status: 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed';
   applicationDate: string;
   processedDate?: string;
@@ -316,8 +352,7 @@ export interface LoginForm {
 }
 
 export interface RegisterForm {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   phone: string;
   password: string;
@@ -325,13 +360,14 @@ export interface RegisterForm {
   address: string;
   city: string;
   state: string;
-  zipCode: string;
-  connectionType: 'residential' | 'commercial' | 'industrial' | 'agricultural';
+  pincode: string;
+  zone?: string;
+  connectionType: 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural';
   termsAccepted: boolean;
 }
 
 export interface ComplaintForm {
-  category: 'power_outage' | 'billing_issue' | 'meter_problem' | 'service_request' | 'other';
+  category: 'power_outage' | 'billing' | 'service' | 'meter_issue' | 'connection' | 'other';
   title: string;
   description: string;
 }
@@ -339,13 +375,16 @@ export interface ComplaintForm {
 // ========== UTILITY TYPES ==========
 
 export type UserType = 'admin' | 'employee' | 'customer';
-export type ConnectionType = 'residential' | 'commercial' | 'industrial' | 'agricultural';
-export type BillStatus = 'issued' | 'paid' | 'overdue' | 'cancelled';
-export type ComplaintStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+export type ConnectionType = 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural';
+export type BillStatus = 'generated' | 'issued' | 'paid' | 'overdue' | 'cancelled';
+export type ComplaintStatus = 'submitted' | 'under_review' | 'assigned' | 'in_progress' | 'resolved' | 'closed';
+export type ComplaintCategory = 'power_outage' | 'billing' | 'service' | 'meter_issue' | 'connection' | 'other';
 export type OutageStatus = 'scheduled' | 'ongoing' | 'restored' | 'cancelled';
-export type WorkOrderStatus = 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
-export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'online';
+export type WorkOrderStatus = 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+export type WorkOrderType = 'meter_reading' | 'maintenance' | 'complaint_resolution' | 'new_connection' | 'disconnection' | 'reconnection';
+export type PaymentMethod = 'credit_card' | 'debit_card' | 'bank_transfer' | 'cash' | 'cheque' | 'upi' | 'wallet';
 export type Priority = 'low' | 'medium' | 'high' | 'urgent';
+export type CustomerStatus = 'active' | 'suspended' | 'pending_installation' | 'inactive';
 
 // ========== COMPONENT PROPS TYPES ==========
 

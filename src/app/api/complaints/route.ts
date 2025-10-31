@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status') || '';
     const category = searchParams.get('category') || '';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
     const offset = (page - 1) * limit;
 
     let query = db
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       const customer = await db
         .select({ id: customers.id })
         .from(customers)
-        .where(eq(customers.userId, parseInt(session.user.id)))
+        .where(eq(customers.userId, parseInt(session.user.id, 10)))
         .limit(1);
 
       if (customer.length) {
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       const employee = await db
         .select({ id: employees.id })
         .from(employees)
-        .where(eq(employees.userId, parseInt(session.user.id)))
+        .where(eq(employees.userId, parseInt(session.user.id, 10)))
         .limit(1);
 
       if (employee.length) {
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
     const customer = await db
       .select({ id: customers.id })
       .from(customers)
-      .where(eq(customers.userId, parseInt(session.user.id)))
+      .where(eq(customers.userId, parseInt(session.user.id, 10)))
       .limit(1);
 
     if (!customer.length) {

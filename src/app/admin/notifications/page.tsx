@@ -48,6 +48,9 @@ export default function AdminNotifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [markingAllRead, setMarkingAllRead] = useState(false);
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -80,61 +83,106 @@ export default function AdminNotifications() {
 
   const markAsRead = async (id: number) => {
     try {
+      setActionLoading(id);
+      setError(null);
+
       const response = await fetch('/api/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
 
-      if (response.ok) {
-        setNotifications(prev => 
-          prev.map(notif => 
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setNotifications(prev =>
+          prev.map(notif =>
             notif.id === id ? { ...notif, read: true } : notif
           )
         );
+        showSuccess('Marked as read');
+      } else {
+        throw new Error(result.error || 'Failed to mark as read');
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
+      setError(error instanceof Error ? error.message : 'Failed to mark notification as read');
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const markAllAsRead = async () => {
     try {
+      setMarkingAllRead(true);
+      setError(null);
+
       const response = await fetch('/api/notifications', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ markAllRead: true })
       });
 
-      if (response.ok) {
-        setNotifications(prev => 
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setNotifications(prev =>
           prev.map(notif => ({ ...notif, read: true }))
         );
+        showSuccess('All notifications marked as read');
+      } else {
+        throw new Error(result.error || 'Failed to mark all as read');
       }
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
+      setError(error instanceof Error ? error.message : 'Failed to mark all notifications as read');
+    } finally {
+      setMarkingAllRead(false);
     }
   };
 
   const deleteNotification = async (id: number) => {
     try {
+      setActionLoading(id);
+      setError(null);
+
       const response = await fetch(`/api/notifications?id=${id}`, {
         method: 'DELETE'
       });
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
         setNotifications(prev => prev.filter(notif => notif.id !== id));
+        showSuccess('Notification deleted');
+      } else {
+        throw new Error(result.error || 'Failed to delete notification');
       }
     } catch (error) {
       console.error('Error deleting notification:', error);
+      setError(error instanceof Error ? error.message : 'Failed to delete notification');
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true);
-    fetchNotifications().finally(() => {
-      setTimeout(() => setRefreshing(false), 500);
-    });
+    setError(null);
+    try {
+      await fetchNotifications();
+      showSuccess('Notifications refreshed');
+    } catch (err) {
+      // Error already handled in fetchNotifications
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Helper function to show success messages
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setTimeout(() => setSuccessMessage(null), 3000);
   };
 
   const getNotificationIcon = (type: string) => {

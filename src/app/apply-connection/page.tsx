@@ -17,6 +17,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatPKPhone, formatCNIC, onlyDigits } from '@/lib/utils/dataHandlers';
 
 export default function ApplyConnection() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function ApplyConnection() {
     email: '',
     phone: '',
     alternatePhone: '',
-    idType: 'national_id' as 'passport' | 'drivers_license' | 'national_id' | 'voter_id' | 'aadhaar',
+    idType: 'national_id' as 'national_id',
     idNumber: '',
     propertyType: 'Residential' as 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural',
     connectionType: 'single-phase',
@@ -59,31 +60,17 @@ export default function ApplyConnection() {
         if (resp.ok && json?.success && Array.isArray(json.data)) {
           setZones(json.data);
         } else {
-          setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D']);
+          setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D', 'Zone E']);
         }
       } catch (e: any) {
         setZonesError('Failed to load zones');
-        setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D']);
+        setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D', 'Zone E']);
       } finally {
         setZonesLoading(false);
       }
     };
     fetchZones();
   }, []);
-
-  // Helpers: formatting without storing hyphens in state
-  const onlyDigits = (v: string) => v.replace(/\D+/g, '');
-  const formatPKPhone = (digits: string) => {
-    const d = onlyDigits(digits).slice(0, 11);
-    if (d.length <= 4) return d;
-    return `${d.slice(0, 4)}-${d.slice(4)}`;
-  };
-  const formatCNIC = (digits: string) => {
-    const d = onlyDigits(digits).slice(0, 13);
-    if (d.length <= 5) return d;
-    if (d.length <= 12) return `${d.slice(0, 5)}-${d.slice(5)}`;
-    return `${d.slice(0, 5)}-${d.slice(5, 12)}-${d.slice(12)}`;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -360,45 +347,21 @@ export default function ApplyConnection() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  ID Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  required
-                  value={formData.idType}
-                  onChange={(e) => setFormData({ ...formData, idType: e.target.value as any })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="national_id">National ID</option>
-                  <option value="passport">Passport</option>
-                  <option value="drivers_license">Driver's License</option>
-                  <option value="voter_id">Voter ID</option>
-                  <option value="aadhaar">Aadhaar</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  ID Number <span className="text-red-500">*</span>
+                  National ID (CNIC) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  inputMode={formData.idType === 'national_id' ? 'numeric' : 'text'}
+                  inputMode="numeric"
                   required
-                  value={formData.idType === 'national_id' ? formatCNIC(formData.idNumber) : formData.idNumber}
+                  value={formatCNIC(formData.idNumber)}
                   onChange={(e) => {
-                    if (formData.idType === 'national_id') {
-                      const raw = onlyDigits(e.target.value).slice(0, 13);
-                      setFormData({ ...formData, idNumber: raw });
-                    } else {
-                      setFormData({ ...formData, idNumber: e.target.value });
-                    }
+                    const raw = onlyDigits(e.target.value).slice(0, 13);
+                    setFormData({ ...formData, idNumber: raw });
                   }}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder={formData.idType === 'national_id' ? '42101-1234567-1 (13 digits)' : 'Enter ID number'}
+                  placeholder="42101-1234567-1 (13 digits)"
                 />
-                {formData.idType === 'national_id' && (
-                  <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">CNIC must be 13 digits (formatted 5-7-1).</p>
-                )}
+                <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">CNIC must be 13 digits (formatted 5-7-1)</p>
               </div>
             </div>
           </div>
@@ -471,7 +434,7 @@ export default function ApplyConnection() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     City <span className="text-red-500">*</span>
@@ -488,10 +451,11 @@ export default function ApplyConnection() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    State/Province
+                    State/Province <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
+                    required
                     value={formData.state}
                     onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -499,34 +463,37 @@ export default function ApplyConnection() {
                   />
                 </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Zone <span className="text-red-500">*</span>
-                </label>
-                <select
-                  required
-                  value={formData.zone}
-                  onChange={(e) => setFormData({ ...formData, zone: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="">{zonesLoading ? 'Loading zones...' : 'Select Zone'}</option>
-                  {zones.map((z) => (
-                    <option key={z} value={z}>{z}</option>
-                  ))}
-                </select>
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Zone <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.zone}
+                    onChange={(e) => setFormData({ ...formData, zone: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="">{zonesLoading ? 'Loading zones...' : 'Select Zone'}</option>
+                    {zones.map((z) => (
+                      <option key={z} value={z}>{z}</option>
+                    ))}
+                  </select>
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Pincode
+                    Pincode <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    pattern="[0-9]{6}"
+                    required
+                    pattern="[0-9]{5,6}"
+                    minLength={5}
+                    maxLength={6}
                     value={formData.pincode}
                     onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="6-digit pincode"
+                    placeholder="5-6 digit pincode"
                   />
                 </div>
               </div>

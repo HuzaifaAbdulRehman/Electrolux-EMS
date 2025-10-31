@@ -32,9 +32,17 @@ export default function BulkBillGeneration() {
   const handleLoadPreview = async () => {
     try {
       setLoadingPreview(true);
-      const response = await fetch(`/api/bills/preview?month=${selectedMonth}-01`);
-      const result = await response.json();
+      setPreviewData(null); // Clear previous data
 
+      console.log('[Load Preview] Fetching preview for:', selectedMonth);
+
+      const response = await fetch(`/api/bills/preview?month=${selectedMonth}-01`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
       console.log('[Load Preview] API Response:', result);
 
       if (result.success && result.data) {
@@ -49,12 +57,16 @@ export default function BulkBillGeneration() {
           issues: result.data.issues,
           existing_bills: result.data.existingBills
         });
+
+        toast.success(`Preview loaded: ${result.data.summary.eligibleForGeneration} customers eligible`);
       } else {
         console.error('Preview error:', result.error);
+        toast.error(result.error || 'Failed to load preview');
         setPreviewData(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Preview load error:', error);
+      toast.error(`Failed to load preview: ${error.message}`);
       setPreviewData(null);
     } finally {
       setLoadingPreview(false);
@@ -262,9 +274,6 @@ export default function BulkBillGeneration() {
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white">Bills Already Generated</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {previewData.existing_bills.total} bills exist for {selectedMonth}
-                          {previewData.existing_bills.generatedAt && (
-                            <> • Generated on {new Date(previewData.existing_bills.generatedAt).toLocaleDateString()}</>
-                          )}
                         </p>
                       </div>
                     </div>

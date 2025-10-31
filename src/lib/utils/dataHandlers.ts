@@ -49,17 +49,17 @@ export const formatNumber = (
 /**
  * Format currency with symbol
  * @param value - Amount to format
- * @param symbol - Currency symbol (default: '₹')
+ * @param symbol - Currency symbol (default: 'Rs.')
  * @param decimals - Decimal places (default: 2)
  * @returns Formatted currency string
  */
 export const formatCurrency = (
   value: unknown,
-  symbol: string = '₹',
+  symbol: string = 'Rs.',
   decimals: number = 2
 ): string => {
   const num = safeNumber(value);
-  return `${symbol}${num.toLocaleString('en-IN', {
+  return `${symbol} ${num.toLocaleString('en-PK', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
   })}`;
@@ -137,7 +137,7 @@ export const safeDate = (
   try {
     const date = new Date(value as string | number | Date);
     if (isNaN(date.getTime())) return defaultValue;
-    return date.toLocaleDateString('en-IN', format);
+    return date.toLocaleDateString('en-PK', format);
   } catch {
     return defaultValue;
   }
@@ -262,6 +262,61 @@ export const firstValid = (...values: unknown[]): unknown => {
   return values[values.length - 1];
 };
 
+// ========== PHONE NUMBER HANDLERS ==========
+
+/**
+ * Extract only digits from a string
+ * @param value - String containing digits
+ * @returns String with only digits
+ */
+export const onlyDigits = (value: string): string => {
+  return value.replace(/\D+/g, '');
+};
+
+/**
+ * Format Pakistani phone number with dashes (0300-1234567)
+ * @param value - Phone number string
+ * @param maxLength - Maximum digits allowed (default: 11)
+ * @returns Formatted phone number
+ */
+export const formatPKPhone = (value: string, maxLength: number = 11): string => {
+  const digits = onlyDigits(value).slice(0, maxLength);
+  if (digits.length <= 4) return digits;
+  return `${digits.slice(0, 4)}-${digits.slice(4)}`;
+};
+
+/**
+ * Format CNIC with dashes (42101-1234567-1)
+ * @param value - CNIC string
+ * @returns Formatted CNIC
+ */
+export const formatCNIC = (value: string): string => {
+  const digits = onlyDigits(value).slice(0, 13);
+  if (digits.length <= 5) return digits;
+  if (digits.length <= 12) return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  return `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`;
+};
+
+/**
+ * Validate Pakistani phone number
+ * @param value - Phone number string
+ * @returns true if valid (10-11 digits)
+ */
+export const isValidPKPhone = (value: string): boolean => {
+  const digits = onlyDigits(value);
+  return digits.length >= 10 && digits.length <= 11;
+};
+
+/**
+ * Validate CNIC
+ * @param value - CNIC string
+ * @returns true if valid (13 digits)
+ */
+export const isValidCNIC = (value: string): boolean => {
+  const digits = onlyDigits(value);
+  return digits.length === 13;
+};
+
 // ========== BILL-SPECIFIC HELPERS ==========
 
 /**
@@ -305,7 +360,7 @@ export const getBillStatusColor = (status: string): string => {
 };
 
 /**
- * Tariff slab interface
+ * Tariff slab interface (display format)
  */
 export interface TariffSlab {
   units: number;
@@ -315,78 +370,74 @@ export interface TariffSlab {
 }
 
 /**
- * Calculate tariff slab breakdown from units consumed and tariff rates
+ * Database tariff slab interface
+ */
+export interface DBTariffSlab {
+  id: number;
+  tariffId: number;
+  slabOrder: number;
+  startUnits: number;
+  endUnits: number | null;
+  ratePerUnit: string | number;
+  createdAt: string | Date;
+}
+
+/**
+ * Calculate tariff slab breakdown from units consumed and tariff slabs from database
  * This mimics the calculation done in the backend bill generation
  * @param unitsConsumed - Total units consumed
- * @param tariff - Tariff object with slab rates (optional - uses default Pakistani residential rates)
+ * @param tariffSlabs - Array of tariff slabs from database (optional - uses default Pakistani residential rates)
  * @returns Array of tariff slabs with units, rate, and amount
  */
 export const calculateTariffSlabs = (
   unitsConsumed: number,
-  tariff?: {
-    slab1Start: number;
-    slab1End: number;
-    slab1Rate: number;
-    slab2Start: number;
-    slab2End: number;
-    slab2Rate: number;
-    slab3Start: number;
-    slab3End: number;
-    slab3Rate: number;
-    slab4Start: number;
-    slab4End: number;
-    slab4Rate: number;
-    slab5Start: number;
-    slab5End: number | null;
-    slab5Rate: number;
-  }
+  tariffSlabs?: DBTariffSlab[]
 ): TariffSlab[] => {
   // Default Pakistani residential tariff structure if not provided
-  const defaultTariff = {
-    slab1Start: 0,
-    slab1End: 100,
-    slab1Rate: 5.0,
-    slab2Start: 100,
-    slab2End: 200,
-    slab2Rate: 8.0,
-    slab3Start: 200,
-    slab3End: 300,
-    slab3Rate: 12.0,
-    slab4Start: 300,
-    slab4End: 500,
-    slab4Rate: 18.0,
-    slab5Start: 500,
-    slab5End: null,
-    slab5Rate: 22.0,
-  };
-
-  const t = tariff || defaultTariff;
-
-  const slabs = [
-    { start: t.slab1Start, end: t.slab1End, rate: t.slab1Rate },
-    { start: t.slab2Start, end: t.slab2End, rate: t.slab2Rate },
-    { start: t.slab3Start, end: t.slab3End, rate: t.slab3Rate },
-    { start: t.slab4Start, end: t.slab4End, rate: t.slab4Rate },
-    { start: t.slab5Start, end: t.slab5End || 999999, rate: t.slab5Rate },
+  const defaultSlabs: DBTariffSlab[] = [
+    { id: 1, tariffId: 1, slabOrder: 1, startUnits: 0, endUnits: 100, ratePerUnit: 5.0, createdAt: new Date() },
+    { id: 2, tariffId: 1, slabOrder: 2, startUnits: 100, endUnits: 200, ratePerUnit: 8.0, createdAt: new Date() },
+    { id: 3, tariffId: 1, slabOrder: 3, startUnits: 200, endUnits: 300, ratePerUnit: 12.0, createdAt: new Date() },
+    { id: 4, tariffId: 1, slabOrder: 4, startUnits: 300, endUnits: 500, ratePerUnit: 18.0, createdAt: new Date() },
+    { id: 5, tariffId: 1, slabOrder: 5, startUnits: 500, endUnits: null, ratePerUnit: 22.0, createdAt: new Date() },
   ];
+
+  const slabs = tariffSlabs || defaultSlabs;
 
   const result: TariffSlab[] = [];
   let remainingUnits = safeNumber(unitsConsumed, 0);
 
-  for (const slab of slabs) {
+  // Sort by slab order to ensure correct calculation
+  const sortedSlabs = [...slabs].sort((a, b) => a.slabOrder - b.slabOrder);
+
+  for (const slab of sortedSlabs) {
     if (remainingUnits <= 0) break;
 
-    const slabUnits = Math.min(remainingUnits, slab.end - slab.start);
+    // Calculate units that fall in this slab
+    const slabCapacity = slab.endUnits === null
+      ? remainingUnits // For unlimited slabs, consume all remaining units
+      : Math.max(0, slab.endUnits - slab.startUnits);
+
+    const slabUnits = slab.endUnits === null
+      ? remainingUnits
+      : Math.min(remainingUnits, slabCapacity);
+
     if (slabUnits > 0) {
-      const amount = slabUnits * slab.rate;
+      const rate = typeof slab.ratePerUnit === 'string'
+        ? parseFloat(slab.ratePerUnit)
+        : slab.ratePerUnit;
+
+      const amount = slabUnits * rate;
+
       result.push({
         units: slabUnits,
-        rate: slab.rate,
+        rate: rate,
         amount: amount,
-        range: slab.end === 999999
-          ? `${slab.start}+ kWh`
-          : `${slab.start}-${slab.end} kWh`
+        range: slab.endUnits === null
+          ? `${slab.startUnits}+ kWh`
+          : `${slab.startUnits}-${slab.endUnits} kWh`
       });
+
       remainingUnits -= slabUnits;
     }
   }
@@ -426,6 +477,13 @@ export default {
   // Validation
   isValid,
   firstValid,
+
+  // Phone & ID
+  onlyDigits,
+  formatPKPhone,
+  formatCNIC,
+  isValidPKPhone,
+  isValidCNIC,
 
   // Bill-specific
   formatUnits,

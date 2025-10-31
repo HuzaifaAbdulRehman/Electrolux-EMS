@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const customerId = searchParams.get('customerId');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
     const offset = (page - 1) * limit;
 
     let query = db
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     if (session.user.userType === 'customer') {
       conditions.push(eq(payments.customerId, session.user.customerId!));
     } else if (customerId) {
-      conditions.push(eq(payments.customerId, parseInt(customerId)));
+      conditions.push(eq(payments.customerId, parseInt(customerId, 10)));
     }
 
     if (conditions.length > 0) {
@@ -85,11 +85,14 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { billId, paymentMethod, amount } = body;
+    const { billId, paymentMethod, amount, paymentDate } = body;
 
     if (!billId || !paymentMethod || !amount) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    // Use provided payment date or default to today
+    const recordedPaymentDate = paymentDate || new Date().toISOString().split('T')[0];
 
     // Get bill details
     const [bill] = await db
@@ -107,40 +110,88 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Check if bill is already paid
+    if (bill.status === 'paid') {
+      return NextResponse.json({ error: 'Bill has already been paid' }, { status: 400 });
+    }
+
+    // Check for duplicate payments (prevent double payment)
+    const [existingPayment] = await db
+      .select()
+      .from(payments)
+      .where(and(eq(payments.billId, billId), eq(payments.status, 'completed')))
+      .limit(1);
+
+    if (existingPayment) {
+      return NextResponse.json({
+        error: 'A payment for this bill already exists',
+        payment: {
+          transactionId: existingPayment.transactionId,
+          receiptNumber: existingPayment.receiptNumber,
+          paymentDate: existingPayment.paymentDate
+        }
+      }, { status: 400 });
+    }
+
     // Generate transaction and receipt numbers
     const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     const receiptNumber = `RCP-${new Date().getFullYear()}-${String(Date.now()).slice(-8)}`;
 
+    // Determine if this is full or partial payment
+    const billAmount = parseFloat(bill.totalAmount);
+    const paymentAmount = parseFloat(amount.toString());
+    const isFullPayment = Math.abs(paymentAmount - billAmount) < 0.01; // Allow 1 paisa tolerance for rounding
+
+    // 🔒 TRANSACTION FIX: Wrap all payment operations in a transaction for atomicity
+    // This ensures either ALL operations succeed or ALL are rolled back (no partial payments)
+    let paymentId: number;
+
+    await db.transaction(async (tx) => {
     // Create payment
-    const [payment] = await db.insert(payments).values({
+    const payment = await tx.insert(payments).values({
       customerId: bill.customerId,
       billId: bill.id,
       paymentAmount: amount.toString(),
       paymentMethod,
-      paymentDate: new Date().toISOString().split('T')[0],
+      paymentDate: recordedPaymentDate,
       transactionId,
       receiptNumber,
       status: 'completed',
     } as any);
 
-    // Update bill status
-    await db
+      paymentId = (payment as any).insertId;
+
+    // Update bill status - only mark as 'paid' if full amount received
+    // Keep as 'issued' for partial payments
+    await tx
       .update(bills)
       .set({
-        status: 'paid',
-        paymentDate: new Date().toISOString().split('T')[0],
+        status: isFullPayment ? 'paid' : 'issued',
+        paymentDate: isFullPayment ? recordedPaymentDate : undefined,
       } as any)
       .where(eq(bills.id, billId));
 
-    // Update customer outstanding balance
-    await db
+    // Get customer's current outstanding balance before update
+    const [customerData] = await tx
+      .select({ outstandingBalance: customers.outstandingBalance })
+      .from(customers)
+      .where(eq(customers.id, bill.customerId))
+      .limit(1);
+
+    const currentOutstanding = parseFloat(customerData?.outstandingBalance || '0');
+    const newOutstanding = Math.max(0, currentOutstanding - paymentAmount);
+
+    // Update customer outstanding balance and payment status
+    await tx
       .update(customers)
       .set({
-        outstandingBalance: sql`GREATEST(0, ${customers.outstandingBalance} - ${amount})`,
-        lastPaymentDate: new Date().toISOString().split('T')[0],
-        paymentStatus: 'paid',
+        outstandingBalance: newOutstanding.toFixed(2),
+        lastPaymentDate: recordedPaymentDate,
+        paymentStatus: newOutstanding < 0.01 ? 'paid' : 'pending',
       } as any)
       .where(eq(customers.id, bill.customerId));
+
+    });  // End transaction
 
     // Get customer's user ID for notification
     const [customer] = await db
@@ -167,7 +218,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Payment processed successfully',
       data: {
-        paymentId: payment.insertId,
+        paymentId: paymentId!,
         transactionId,
         receiptNumber,
       },

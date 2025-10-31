@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
-import ToastTest from '@/components/ToastTest';
 import {
   DollarSign,
   Users,
@@ -170,10 +169,18 @@ export default function AdminDashboard() {
   const { metrics, recentBills = [], revenueByCategory = {}, monthlyRevenue = [], paymentMethods = {}, billsStatus = {}, connectionTypeDistribution = {} } = dashboardData;
 
   // Chart data from API - Revenue by Connection Type
-  const categoryLabels = Object.keys(revenueByCategory);
-  const categoryValues = Object.values(revenueByCategory).map((item) => 
-    typeof item === 'object' && item !== null ? item.total : item
-  );
+  // Filter out categories with zero, null, or very small revenue (< Rs 1)
+  const validRevenueEntries = Object.entries(revenueByCategory).filter(([_, value]) => {
+    const numValue = typeof value === 'object' && value !== null ? value.total : value;
+    const parsedValue = parseFloat(String(numValue || 0));
+    return !isNaN(parsedValue) && parsedValue >= 1; // Only show if >= Rs 1
+  });
+
+  const categoryLabels = validRevenueEntries.map(([key]) => key);
+  const categoryValues = validRevenueEntries.map(([_, value]) => {
+    const numValue = typeof value === 'object' && value !== null ? value.total : value;
+    return parseFloat(String(numValue || 0));
+  });
 
   const categoryData: ChartData = {
     labels: categoryLabels.map(label => {
@@ -207,7 +214,7 @@ export default function AdminDashboard() {
       // Format: "2025-05" -> "May '25"
       const [year, month] = item.month.split('-');
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return `${monthNames[parseInt(month) - 1]} '${year.slice(2)}`;
+      return `${monthNames[parseInt(month, 10) - 1]} '${year.slice(2)}`;
     }),
     datasets: [
       {
@@ -490,7 +497,8 @@ export default function AdminDashboard() {
                 <DollarSign className="w-5 h-5 text-white" />
               </div>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Monthly Revenue</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Avg Monthly Revenue</p>
+            <p className="text-xs text-gray-500 dark:text-gray-500 mb-1">(Last 6 Months)</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
               Rs {((metrics?.monthlyRevenue || 0) / 1000).toFixed(1)}K
             </p>
@@ -525,6 +533,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Collection Rate</p>
+            <p className="text-xs text-gray-500 dark:text-gray-500 mb-1">(Last 6 Months)</p>
             <p className="text-2xl font-bold text-gray-900 dark:text-white">
               {metrics?.collectionRate || 0}%
             </p>
@@ -593,8 +602,14 @@ export default function AdminDashboard() {
                         callbacks: {
                           label: function(context: any) {
                             const label = context.label || '';
-                            const value = context.parsed || 0;
+                            const value = typeof context.parsed === 'number' ? context.parsed : (context.raw || 0);
                             const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+
+                            // Only calculate percentage if value is meaningful
+                            if (value < 0.01 || total < 0.01) {
+                              return null; // Don't show tooltip for invalid data
+                            }
+
                             const percentage = ((value / total) * 100).toFixed(1);
                             return `${label}: Rs ${value.toLocaleString('en-IN', {minimumFractionDigits: 2})} (${percentage}%)`;
                           }
@@ -823,13 +838,6 @@ export default function AdminDashboard() {
             <p className="text-gray-600 dark:text-gray-400 text-sm">Manage customer complaints</p>
           </button>
         </div>
-
-        {/* Toast Test Section - Only show in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-8">
-            <ToastTest />
-          </div>
-        )}
       </div>
     </DashboardLayout>
   );

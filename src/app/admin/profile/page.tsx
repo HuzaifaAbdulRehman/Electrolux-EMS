@@ -15,6 +15,7 @@ import {
   CheckCircle,
   AlertCircle
 } from 'lucide-react';
+import { formatPKPhone, onlyDigits } from '@/lib/utils/dataHandlers';
 
 export default function AdminProfile() {
   const [isEditing, setIsEditing] = useState(false);
@@ -248,14 +249,18 @@ export default function AdminProfile() {
               {isEditing ? (
                 <input
                   type="tel"
-                  value={editData.phone}
-                  onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                  inputMode="numeric"
+                  value={formatPKPhone(editData.phone)}
+                  onChange={(e) => {
+                    const raw = onlyDigits(e.target.value).slice(0, 11);
+                    setEditData({ ...editData, phone: raw });
+                  }}
                   className="w-full px-4 py-3 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-red-500 dark:focus:border-red-400"
-                  placeholder="03001234567 (11 digits)"
+                  placeholder="0300-1234567"
                 />
               ) : (
                 <div className="px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-lg">
-                  <p className="text-gray-900 dark:text-white font-medium">{profileData.phone || 'Not set'}</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{formatPKPhone(profileData.phone) || 'Not set'}</p>
                 </div>
               )}
             </div>

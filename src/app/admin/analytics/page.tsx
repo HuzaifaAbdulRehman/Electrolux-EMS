@@ -201,27 +201,35 @@ export default function AdminAnalytics() {
   const billsStatus = analyticsData.billsStatus || {};
   const metrics = analyticsData.metrics || {};
 
-  // Build KPIs from metrics data
+  // Build KPIs from metrics data with REAL trends
+  const trends = metrics.trends || {};
+
+  const formatTrend = (trendData: any) => {
+    if (!trendData) return { trend: 'neutral', change: 'N/A' };
+    const { change, direction } = trendData;
+    const sign = change > 0 ? '+' : '';
+    return {
+      trend: direction,
+      change: `${sign}${change}%`
+    };
+  };
+
   const kpis = {
     collectionRate: {
       value: `${safeNumber(metrics.collectionRate, 0).toFixed(1)}%`,
-      trend: 'up',
-      change: '+4.3%'
+      ...formatTrend(trends.collectionRate)
     },
     totalCustomers: {
       value: safeNumber(metrics.totalCustomers, 0).toLocaleString(),
-      trend: 'up',
-      change: '+8.2%'
+      ...formatTrend(trends.totalCustomers)
     },
     avgBillAmount: {
       value: formatCurrency(safeNumber(metrics.averageBillAmount, 0)),
-      trend: 'up',
-      change: '+2.8%'
+      ...formatTrend(trends.averageBillAmount)
     },
     activeConnections: {
       value: safeNumber(metrics.activeCustomers, 0).toLocaleString(),
-      trend: 'up',
-      change: '+5.7%'
+      ...formatTrend(trends.activeCustomers)
     }
   };
 
@@ -230,7 +238,7 @@ export default function AdminAnalytics() {
     labels: collectionRateTrend.map((item: any) => {
       const [year, month] = item.month.split('-');
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return `${monthNames[parseInt(month) - 1]} '${year.slice(2)}`;
+      return `${monthNames[parseInt(month, 10) - 1]} '${year.slice(2)}`;
     }),
     datasets: [{
       label: 'Collection Rate (%)',
@@ -380,9 +388,9 @@ export default function AdminAnalytics() {
               </div>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">{data.value}</p>
               <div className={`flex items-center space-x-1 text-sm ${
-                data.trend === 'up' ? 'text-green-400' : 'text-red-400'
+                data.trend === 'up' ? 'text-green-400' : data.trend === 'down' ? 'text-red-400' : 'text-gray-400'
               }`}>
-                {data.trend === 'up' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                {data.trend === 'up' ? <ArrowUp className="w-4 h-4" /> : data.trend === 'down' ? <ArrowDown className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
                 <span>{data.change}</span>
               </div>
             </div>

@@ -19,6 +19,7 @@ import {
   Eye,
   XCircle
 } from 'lucide-react';
+import { formatPKPhone, onlyDigits } from '@/lib/utils/dataHandlers';
 
 export default function RequestReading() {
   const { data: session } = useSession();
@@ -27,7 +28,7 @@ export default function RequestReading() {
     requestType: 'regular',
     preferredDate: '',
     preferredTimeSlot: 'morning',
-    contactPhone: '+1234567890',
+    contactPhone: '',
     alternatePhone: '',
     accessInstructions: '',
     urgency: 'medium'
@@ -146,8 +147,8 @@ export default function RequestReading() {
             customerName: result.data.fullName || 'Customer',
             address: result.data.address || 'N/A',
             meterNumber: result.data.meterNumber || 'N/A',
-            lastReading: result.data.lastReading || 0,
-            lastReadingDate: result.data.lastReadingDate || 'N/A',
+            lastReading: result.data.lastReading,
+            lastReadingDate: result.data.lastReadingDate,
             zone: result.data.zone || 'N/A'
           });
         }
@@ -160,16 +161,12 @@ export default function RequestReading() {
   const fetchPreviousRequests = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/work-orders');
+      const response = await fetch('/api/reading-requests');
 
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          // Filter only meter_reading work orders
-          const readingRequests = (result.data || []).filter(
-            (order: any) => order.workType === 'meter_reading'
-          );
-          setPreviousRequests(readingRequests);
+          setPreviousRequests(result.data || []);
         }
       }
     } catch (error) {
@@ -205,16 +202,18 @@ export default function RequestReading() {
     setIsSubmitting(true);
 
     try {
-      // Create work order with type 'meter_reading'
-      const response = await fetch('/api/work-orders', {
+      // Create reading request (will be assigned by admin later)
+      const requestReason = `Request Type: ${formData.requestType}\nPreferred Time: ${formData.preferredTimeSlot}\nContact: ${formData.contactPhone}\nAlternate: ${formData.alternatePhone}\n\nAccess Instructions:\n${formData.accessInstructions || 'None provided'}`;
+
+      const response = await fetch('/api/reading-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          workType: 'meter_reading',
-          title: `${formData.requestType} - Meter Reading Request`,
-          description: `Request Type: ${formData.requestType}\nPreferred Time: ${formData.preferredTimeSlot}\nContact: ${formData.contactPhone}\nAlternate: ${formData.alternatePhone}\n\nAccess Instructions:\n${formData.accessInstructions || 'None provided'}`,
-          priority: formData.urgency,
-          dueDate: formData.preferredDate,
+          customerId: session?.user.customerId,
+          preferredDate: formData.preferredDate || null,
+          requestReason: requestReason,
+          priority: formData.urgency === 'urgent' || formData.urgency === 'high' ? 'urgent' : 'normal',
+          notes: null,
         }),
       });
 
@@ -225,7 +224,7 @@ export default function RequestReading() {
       const result = await response.json();
 
       if (result.success) {
-        const newRequestId = `WO-${result.data.workOrderId}`;
+        const newRequestId = result.data.requestNumber;
         setRequestId(newRequestId);
         setShowSuccess(true);
 
@@ -397,14 +396,18 @@ export default function RequestReading() {
                       <Zap className="w-4 h-4 text-purple-400 mt-0.5" />
                       <div>
                         <p className="text-xs text-gray-600 dark:text-gray-400">Last Reading</p>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{accountInfo.lastReading} kWh</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {accountInfo.lastReading ? `${accountInfo.lastReading} kWh` : 'N/A'}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-start space-x-3">
                       <Calendar className="w-4 h-4 text-purple-400 mt-0.5" />
                       <div>
                         <p className="text-xs text-gray-600 dark:text-gray-400">Last Reading Date</p>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{accountInfo.lastReadingDate}</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {accountInfo.lastReadingDate || 'N/A'}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -517,11 +520,15 @@ export default function RequestReading() {
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <input
                       type="tel"
+                      inputMode="numeric"
                       required
-                      value={formData.contactPhone}
-                      onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
+                      value={formatPKPhone(formData.contactPhone)}
+                      onChange={(e) => {
+                        const raw = onlyDigits(e.target.value).slice(0, 11);
+                        setFormData({ ...formData, contactPhone: raw });
+                      }}
                       className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-purple-400 transition-colors"
-                      placeholder="03123456789"
+                      placeholder="0300-1234567"
                     />
                   </div>
                 </div>
@@ -535,10 +542,14 @@ export default function RequestReading() {
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 dark:text-gray-400" />
                     <input
                       type="tel"
-                      value={formData.alternatePhone}
-                      onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
+                      inputMode="numeric"
+                      value={formatPKPhone(formData.alternatePhone)}
+                      onChange={(e) => {
+                        const raw = onlyDigits(e.target.value).slice(0, 11);
+                        setFormData({ ...formData, alternatePhone: raw });
+                      }}
                       className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-purple-400 transition-colors"
-                      placeholder="03123456789"
+                      placeholder="0300-1234567"
                     />
                   </div>
                 </div>

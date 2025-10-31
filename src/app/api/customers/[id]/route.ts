@@ -17,7 +17,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const customerId = parseInt(params.id);
+    const customerId = parseInt(params.id, 10);
 
     // Customers can only view their own data
     if (session.user.userType === 'customer' && session.user.customerId !== customerId) {
@@ -122,7 +122,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const customerId = parseInt(params.id);
+    const customerId = parseInt(params.id, 10);
 
     // Customers can only update their own profile with limited fields
     if (session.user.userType === 'customer' && session.user.customerId !== customerId) {
@@ -257,7 +257,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
     }
 
-    const customerId = parseInt(params.id);
+    const customerId = parseInt(params.id, 10);
 
     console.log('[DELETE CUSTOMER] Soft deleting customer ID:', customerId);
 

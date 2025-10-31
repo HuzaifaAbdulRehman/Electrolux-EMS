@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
 import { customers, bills, payments, meterReadings } from '@/lib/drizzle/schema';
-import { eq, sql, desc, and, gte } from 'drizzle-orm';
+import { eq, sql, desc, and, gte, lte } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     console.log('[Customer Dashboard API] Fetching dashboard data for customer:', session.user.id, 'Period:', period);
 
     // Get customer details using the numeric userId
-    const userId = parseInt(session.user.id);
+    const userId = parseInt(session.user.id, 10);
     const [customer] = await db
       .select()
       .from(customers)
@@ -84,13 +84,23 @@ export async function GET(request: NextRequest) {
     const startDateStr = startDate.toISOString().split('T')[0];
     console.log('[Customer Dashboard API] Date filter:', startDateStr, 'Limit:', billLimit);
 
-    // Get current bill (most recent issued or paid bill)
+    // Get current bill (bill for the current billing month, NOT just most recently created)
+    // This ensures "current bill" actually means bill for current month (e.g., October 2025)
+    const currentMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const currentMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
     const [currentBill] = await db
       .select()
       .from(bills)
-      .where(eq(bills.customerId, customer.id))
+      .where(and(
+        eq(bills.customerId, customer.id),
+        gte(bills.billingMonth, currentMonthStart),
+        lte(bills.billingMonth, currentMonthEnd)
+      ))
       .orderBy(desc(bills.createdAt))
       .limit(1);
+
+    console.log('[Customer Dashboard API] Current month:', currentMonth, 'Current bill:', currentBill ? `${currentBill.billNumber} (${currentBill.billingMonth})` : 'No bill for current month');
 
     // Get recent bills (filtered by period)
     const recentBills = await db
@@ -177,6 +187,17 @@ export async function GET(request: NextRequest) {
       }))
       .sort((a, b) => new Date(a.billingPeriod).getTime() - new Date(b.billingPeriod).getTime());
 
+    // Get latest meter reading (cumulative reading from meter)
+    const [latestMeterReading] = await db
+      .select({
+        currentReading: meterReadings.currentReading,
+        readingDate: meterReadings.readingDate
+      })
+      .from(meterReadings)
+      .where(eq(meterReadings.customerId, customer.id))
+      .orderBy(desc(meterReadings.readingDate))
+      .limit(1);
+
     // Calculate average consumption from last 6 months
     const avgConsumption = consumptionHistory.length > 0
       ? Math.round(consumptionHistory.reduce((sum, item) => sum + item.unitsConsumed, 0) / consumptionHistory.length)
@@ -228,6 +249,7 @@ export async function GET(request: NextRequest) {
       monthlyPayments: monthlyPayments || [], // For payment history chart
       consumptionHistory: consumptionHistory || [], // Last 6 months for dashboard
       extendedConsumptionHistory: extendedConsumptionHistory || [], // Last 12 months for analytics
+      latestMeterReading: latestMeterReading || null, // Current cumulative meter reading
       avgConsumption: avgConsumption,
       avgMonthlyCost: avgMonthlyCost,
       consumptionTrend: consumptionTrend,

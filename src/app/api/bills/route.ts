@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/drizzle/db';
 import { bills, customers, meterReadings, tariffs, tariffSlabs, notifications } from '@/lib/drizzle/schema';
-import { eq, and, desc, gte, lte, or, like, sql, asc } from 'drizzle-orm';
+import { eq, and, desc, gte, lte, or, like, sql, asc, inArray } from 'drizzle-orm';
 
 // GET /api/bills - Get bills (filtered by user type)
 export async function GET(request: NextRequest) {
@@ -22,31 +22,45 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const fromDate = searchParams.get('fromDate');
     const toDate = searchParams.get('toDate');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
     const offset = (page - 1) * limit;
 
     const conditions = [];
 
     // Filter by bill ID if provided
     if (billId) {
-      conditions.push(eq(bills.id, parseInt(billId)));
+      conditions.push(eq(bills.id, parseInt(billId, 10)));
     }
 
     // Filter based on user type
     if (session.user.userType === 'customer' && !billId) {
       conditions.push(eq(bills.customerId, session.user.customerId!));
     } else if (customerId) {
-      conditions.push(eq(bills.customerId, parseInt(customerId)));
+      conditions.push(eq(bills.customerId, parseInt(customerId, 10)));
     }
 
     // Filter by month if provided (format: YYYY-MM-01)
     if (month) {
-      conditions.push(sql`DATE(${bills.billingMonth}) = ${month}`);
+      // Use date range to handle both DATE and DATETIME columns
+      const monthStart = new Date(month);
+      const monthEnd = new Date(monthStart);
+      monthEnd.setMonth(monthEnd.getMonth() + 1);
+      const monthStartStr = monthStart.toISOString().split('T')[0];
+      const monthEndStr = monthEnd.toISOString().split('T')[0];
+      conditions.push(
+        sql`${bills.billingMonth} >= ${monthStartStr} AND ${bills.billingMonth} < ${monthEndStr}`
+      );
     }
 
+    // Filter by status - supports single value or comma-separated values
     if (status) {
-      conditions.push(eq(bills.status, status as any));
+      const statusValues = status.split(',').map(s => s.trim());
+      if (statusValues.length === 1) {
+        conditions.push(eq(bills.status, statusValues[0] as any));
+      } else {
+        conditions.push(inArray(bills.status, statusValues as any));
+      }
     }
 
     if (fromDate) {
@@ -81,6 +95,7 @@ export async function GET(request: NextRequest) {
         totalAmount: bills.totalAmount,
         status: bills.status,
         paymentDate: bills.paymentDate,
+        tariffId: bills.tariffId,
         // Meter reading data
         previousReading: meterReadings.previousReading,
         currentReading: meterReadings.currentReading,
@@ -95,7 +110,27 @@ export async function GET(request: NextRequest) {
       query = query.where(conditions.length === 1 ? conditions[0] : and(...conditions) as any);
     }
 
-    const result = await query.orderBy(desc(bills.issueDate)).limit(limit).offset(offset);
+    const billsResult = await query.orderBy(desc(bills.issueDate)).limit(limit).offset(offset);
+
+    // Fetch tariff slabs for each bill
+    const result = await Promise.all(billsResult.map(async (bill) => {
+      if (bill.tariffId) {
+        const slabs = await db
+          .select()
+          .from(tariffSlabs)
+          .where(eq(tariffSlabs.tariffId, bill.tariffId))
+          .orderBy(asc(tariffSlabs.slabOrder));
+
+        return {
+          ...bill,
+          tariffSlabs: slabs
+        };
+      }
+      return {
+        ...bill,
+        tariffSlabs: []
+      };
+    }));
 
     // Get total count and aggregate stats
     let countQuery = db
@@ -211,6 +246,13 @@ export async function POST(request: NextRequest) {
       .from(customers)
       .where(eq(customers.id, customerId))
       .limit(1);
+
+    if (!customer) {
+      return NextResponse.json(
+        { error: 'Customer not found' },
+        { status: 404 }
+      );
+    }
 
     // Get applicable tariff
     const [tariff] = await db

@@ -109,12 +109,27 @@ export default function UsageAnalytics() {
   const avgConsumptionFromAPI = analyticsData?.data?.avgConsumption || 0;
 
   // Calculate metrics from real data
-  const currentMonthUsage = consumptionHistoryFiltered.length > 0
-    ? safeNumber(consumptionHistoryFiltered[0]?.unitsConsumed, 0)
+  // Check if the most recent bill is actually from the current month
+  const currentDate = new Date();
+  const currentMonth = currentDate.toISOString().substring(0, 7); // e.g., "2025-10"
+
+  const mostRecentBill = consumptionHistoryFiltered.length > 0
+    ? consumptionHistoryFiltered[consumptionHistoryFiltered.length - 1]
+    : null;
+
+  const mostRecentBillMonth = mostRecentBill
+    ? new Date(mostRecentBill.billingPeriod).toISOString().substring(0, 7)
+    : null;
+
+  // Only show as "current month" if the most recent bill is actually from current month
+  const isCurrentMonthBill = mostRecentBillMonth === currentMonth;
+
+  const currentMonthUsage = isCurrentMonthBill && mostRecentBill
+    ? safeNumber(mostRecentBill.unitsConsumed, 0)
     : 0;
 
-  const lastMonthUsage = consumptionHistoryFiltered.length > 1
-    ? safeNumber(consumptionHistoryFiltered[1]?.unitsConsumed, 0)
+  const lastMonthUsage = consumptionHistoryFiltered.length > 0
+    ? safeNumber(consumptionHistoryFiltered[consumptionHistoryFiltered.length - 1]?.unitsConsumed, 0)
     : 0;
 
   const avgConsumption = analyticsData?.data?.avgConsumption || 0;
@@ -198,27 +213,81 @@ export default function UsageAnalytics() {
     ]
   };
 
-  // Usage vs Average Comparison (Grouped Bar Chart) - Real data
-  const usageComparisonData = {
-    labels: extendedConsumptionHistoryFiltered.map((item: any) => {
+  // Cumulative Consumption Chart (NEW - RECOMMENDED) - Shows running total like meter reading
+  const cumulativeConsumptionData = {
+    labels: consumptionHistoryFiltered.map((item: any) => {
       const date = new Date(item.billingPeriod);
-      return date.toLocaleDateString('en-US', { month: 'short' });
-    }).slice(-6),
+      return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+    }),
     datasets: [
       {
-        label: 'Your Usage (kWh)',
-        data: extendedConsumptionHistoryFiltered.map((item: any) => safeNumber(item.unitsConsumed, 0)).slice(-6),
-        backgroundColor: 'rgba(251, 146, 60, 0.8)',
-        borderRadius: 4,
-      },
-      {
-        label: 'Average Usage (kWh)',
-        data: Array(6).fill(avgConsumptionFromAPI),
-        backgroundColor: 'rgba(156, 163, 175, 0.5)',
-        borderRadius: 4,
+        label: 'Cumulative Consumption (kWh)',
+        data: consumptionHistoryFiltered.reduce((acc: number[], item: any, index: number) => {
+          const cumulative = index === 0
+            ? safeNumber(item.unitsConsumed, 0)
+            : acc[index - 1] + safeNumber(item.unitsConsumed, 0);
+          return [...acc, cumulative];
+        }, []),
+        borderColor: 'rgb(139, 92, 246)',
+        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+        fill: true,
+        tension: 0.4,
+        borderWidth: 3,
+        pointBackgroundColor: 'rgb(139, 92, 246)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7
       }
     ]
   };
+
+  const cumulativeChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          color: 'rgba(156, 163, 175, 0.8)',
+          padding: 15,
+          font: { size: 11 },
+          usePointStyle: true
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(17, 24, 39, 0.95)',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        padding: 12,
+        borderColor: 'rgba(139, 92, 246, 0.5)',
+        borderWidth: 1,
+        callbacks: {
+          label: function(context: any) {
+            return 'Total Consumption: ' + context.parsed.y + ' kWh';
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(156, 163, 175, 0.1)' },
+        ticks: {
+          color: 'rgba(156, 163, 175, 0.6)',
+          font: { size: 10 },
+          callback: function(value: any) {
+            return value + ' kWh';
+          }
+        }
+      },
+      x: {
+        grid: { color: 'rgba(156, 163, 175, 0.1)' },
+        ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 10 } }
+      }
+    }
+  };
+
 
   const savingsTips = [
     { icon: ThermometerSun, tip: 'Set AC to 24°C to save up to 15% on cooling costs', savings: 'Rs. 300/month', priority: 'high' },
@@ -329,20 +398,8 @@ export default function UsageAnalytics() {
     }
   };
 
-  // Empty state for brand-new customers (no readings/bills)
-  if (consumptionHistoryFiltered.length === 0 && billsWithConsumption.length === 0) {
-    return (
-      <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-10 border border-gray-200 dark:border-white/10 text-center">
-            <Activity className="w-12 h-12 text-purple-400 mx-auto mb-3" />
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No analytics yet</h2>
-            <p className="text-gray-600 dark:text-gray-400">Analytics will appear after your first meter reading and bill.</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  // Check if no data for ANY period (brand-new customer with no bills ever)
+  const hasNoDataAtAll = consumptionHistoryFiltered.length === 0 && billsWithConsumption.length === 0;
 
   return (
     <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
@@ -370,6 +427,17 @@ export default function UsageAnalytics() {
 
         {/* Main Content - Scrollable */}
         <div className="flex-1 min-h-0 overflow-y-auto">
+          {hasNoDataAtAll ? (
+            /* Empty state for brand-new customers - but dropdown remains visible above */
+            <div className="max-w-4xl mx-auto py-10">
+              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-10 border border-gray-200 dark:border-white/10 text-center">
+                <Activity className="w-12 h-12 text-purple-400 mx-auto mb-3" />
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">No analytics yet</h2>
+                <p className="text-gray-600 dark:text-gray-400">Analytics will appear after your first meter reading and bill.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mt-3">Try changing the time period above to see if you have data for other months.</p>
+              </div>
+            </div>
+          ) : (
           <div className="space-y-4">
 
             {/* Key Metrics - Real Data from Database */}
@@ -379,13 +447,21 @@ export default function UsageAnalytics() {
                   <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
                     <Zap className="w-4 h-4 text-white" />
                   </div>
-                  <span className={`text-xs flex items-center ${parseFloat(monthlyChange) > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                    {parseFloat(monthlyChange) > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
-                    {Math.abs(parseFloat(monthlyChange))}%
-                  </span>
+                  {isCurrentMonthBill ? (
+                    <span className={`text-xs flex items-center ${parseFloat(monthlyChange) > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                      {parseFloat(monthlyChange) > 0 ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+                      {Math.abs(parseFloat(monthlyChange))}%
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-400">No bill yet</span>
+                  )}
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">This Month Usage</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-white">{formatUnits(currentMonthUsage)}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {isCurrentMonthBill ? 'This Month Usage' : 'This Month (No Bill)'}
+                </p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {isCurrentMonthBill ? formatUnits(currentMonthUsage) : '0 kWh'}
+                </p>
               </div>
 
               <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-3 border border-gray-200 dark:border-white/10">
@@ -448,16 +524,61 @@ export default function UsageAnalytics() {
               </div>
             </div>
 
-            {/* Additional Analytics - Professional 3-Column Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Cumulative Consumption Trend (NEW - RECOMMENDED) */}
+            <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                    <Activity className="w-5 h-5 mr-2 text-purple-500" />
+                    Cumulative Consumption Trend
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Total billed consumption growth over time (like meter odometer)
+                  </p>
+                </div>
+                <div className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                  <p className="text-xs text-purple-600 dark:text-purple-400">💡 Shows running total</p>
+                </div>
+              </div>
+              <div className="h-80">
+                {consumptionHistoryFiltered.length > 0 ? (
+                  <Line data={cumulativeConsumptionData} options={cumulativeChartOptions} />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <p>No data available</p>
+                  </div>
+                )}
+              </div>
+              {consumptionHistoryFiltered.length > 0 && (
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Total Billed Consumption</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {formatUnits(consumptionHistoryFiltered.reduce((sum: number, item: any) => sum + safeNumber(item.unitsConsumed, 0), 0))}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500">Since connection</p>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Billing Months</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {consumptionHistoryFiltered.length}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500">Total bills generated</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Additional Analytics - Professional 2-Column Grid (Larger Charts) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Monthly Cost Breakdown */}
-              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
                   <DollarSign className="w-5 h-5 mr-2 text-green-500" />
-                  Monthly Cost
+                  Monthly Cost Trend
                 </h3>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Last 6 months bills</p>
-                <div className="h-64">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Last 6 months billing amounts</p>
+                <div className="h-80">
                   <Bar
                     data={costBreakdownData}
                     options={{
@@ -482,7 +603,7 @@ export default function UsageAnalytics() {
                           grid: { color: 'rgba(156, 163, 175, 0.1)' },
                           ticks: {
                             color: 'rgba(156, 163, 175, 0.6)',
-                            font: { size: 9 },
+                            font: { size: 11 },
                             callback: function(value: any) {
                               return 'Rs. ' + value;
                             }
@@ -490,7 +611,7 @@ export default function UsageAnalytics() {
                         },
                         x: {
                           grid: { display: false },
-                          ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 9 } }
+                          ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 11 } }
                         }
                       }
                     }}
@@ -499,13 +620,13 @@ export default function UsageAnalytics() {
               </div>
 
               {/* Bill Components Breakdown */}
-              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
                   <DollarSign className="w-5 h-5 mr-2 text-blue-500" />
-                  Bill Components
+                  Bill Components Breakdown
                 </h3>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Charges breakdown</p>
-                <div className="h-64">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Detailed charges by category</p>
+                <div className="h-80">
                   {extendedConsumptionHistory.length > 0 ? (
                     <Bar data={billComponentsData} options={{
                       responsive: true,
@@ -513,11 +634,11 @@ export default function UsageAnalytics() {
                       plugins: {
                         legend: {
                           position: 'bottom',
-                          labels: { color: 'rgba(156, 163, 175, 0.8)', padding: 8, font: { size: 8 } }
+                          labels: { color: 'rgba(156, 163, 175, 0.8)', padding: 12, font: { size: 11 } }
                         },
                         tooltip: {
                           backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                          padding: 8,
+                          padding: 12,
                           callbacks: {
                             label: function(context: any) {
                               return context.dataset.label + ': Rs ' + context.parsed.y.toFixed(0);
@@ -529,55 +650,13 @@ export default function UsageAnalytics() {
                         x: {
                           stacked: true,
                           grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                          ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 9 } }
+                          ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 11 } }
                         },
                         y: {
                           stacked: true,
                           beginAtZero: true,
                           grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                          ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 9 } }
-                        }
-                      }
-                    }} />
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      <p>No data available</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Usage vs Average Comparison */}
-              <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-5 border border-gray-200 dark:border-white/10">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                  <Zap className="w-5 h-5 mr-2 text-orange-500" />
-                  Usage vs Average
-                </h3>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Your comparison</p>
-                <div className="h-64">
-                  {extendedConsumptionHistory.length > 0 ? (
-                    <Bar data={usageComparisonData} options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: {
-                          position: 'bottom',
-                          labels: { color: 'rgba(156, 163, 175, 0.8)', padding: 8, font: { size: 9 } }
-                        },
-                        tooltip: {
-                          backgroundColor: 'rgba(17, 24, 39, 0.95)',
-                          padding: 10
-                        }
-                      },
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                          ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 9 } }
-                        },
-                        x: {
-                          grid: { color: 'rgba(156, 163, 175, 0.1)' },
-                          ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 9 } }
+                          ticks: { color: 'rgba(156, 163, 175, 0.6)', font: { size: 11 } }
                         }
                       }
                     }} />
@@ -600,12 +679,25 @@ export default function UsageAnalytics() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Monthly Analysis</h3>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                      Your usage {parseFloat(monthlyChange) > 0 ? 'increased' : 'decreased'} by {Math.abs(parseFloat(monthlyChange))}% compared to last month.
-                    </p>
-                    <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
-                      Current: {formatUnits(currentMonthUsage)} | Last: {formatUnits(lastMonthUsage)}
-                    </p>
+                    {isCurrentMonthBill ? (
+                      <>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                          Your usage {parseFloat(monthlyChange) > 0 ? 'increased' : 'decreased'} by {Math.abs(parseFloat(monthlyChange))}% compared to last month.
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                          Current: {formatUnits(currentMonthUsage)} | Last: {formatUnits(lastMonthUsage)}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                          No bill generated for current month yet. Your last recorded usage was {formatUnits(lastMonthUsage)}.
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                          Last Bill: {formatUnits(lastMonthUsage)} | Current: Not yet billed
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -661,6 +753,7 @@ export default function UsageAnalytics() {
             </div>
 
           </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

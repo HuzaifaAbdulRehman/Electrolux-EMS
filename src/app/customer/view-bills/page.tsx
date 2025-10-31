@@ -50,7 +50,7 @@ interface Bill {
   dueDate: string;
   units: number;
   amount: number;
-  status: 'paid' | 'pending' | 'overdue';
+  status: 'generated' | 'issued' | 'paid' | 'pending' | 'overdue' | 'cancelled';
   paidDate?: string;
   paymentMethod?: string;
   breakdown?: {
@@ -97,8 +97,8 @@ export default function ViewBills() {
       // Transform API data to match Bill interface
       const transformedBills = result.data.map((bill: any) => {
         const unitsConsumed = safeNumber(bill.unitsConsumed, 0);
-        // Calculate tariff slabs breakdown using the utility function
-        const tariffSlabs = calculateTariffSlabs(unitsConsumed);
+        // Calculate tariff slabs breakdown using the utility function with real tariff slabs from DB
+        const tariffSlabs = calculateTariffSlabs(unitsConsumed, bill.tariffSlabs);
 
         return {
           id: bill.id,

@@ -13,6 +13,8 @@ export * from './complaints';
 export * from './notifications';
 export * from './billRequests';
 export * from './connectionRequests';
+export * from './readingRequests';
 export * from './outages';
 export * from './systemSettings';
 
+export * from './passwordResetRequests';

@@ -26,6 +26,8 @@ export default function CustomerComplaints() {
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [newComplaint, setNewComplaint] = useState<ComplaintForm>({
     category: 'power_outage',
     title: '',
@@ -68,29 +70,53 @@ export default function CustomerComplaints() {
 
   const handleSubmitComplaint = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Clear any previous errors
+    setModalError(null);
+    setError(null);
+
     try {
       setSaving(true);
+
+      console.log('🔄 Submitting complaint...', newComplaint);
+
       const response = await fetch('/api/complaints', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newComplaint)
       });
-      
-      if (response.ok) {
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        console.log('✅ Complaint submitted successfully');
+
+        // Show success message
+        setSuccessMessage('Complaint submitted successfully!');
+
+        // Refresh complaints list
         await fetchComplaints();
-        setShowAddModal(false);
-        setNewComplaint({
-          category: 'power_outage',
-          title: '',
-          description: ''
-        });
+
+        // Close modal after short delay (so user sees success)
+        setTimeout(() => {
+          setShowAddModal(false);
+          setNewComplaint({
+            category: 'power_outage',
+            title: '',
+            description: ''
+          });
+          setSuccessMessage(null);
+        }, 1500);
+
       } else {
-        const error = await response.json();
-        setError(error.error || 'Failed to submit complaint');
+        console.error('❌ Complaint submission failed:', result);
+        // Show error inside modal
+        setModalError(result.error || result.details || 'Failed to submit complaint. Please try again.');
       }
     } catch (err) {
-      setError('Network error while submitting complaint');
-      console.error('Error submitting complaint:', err);
+      console.error('❌ Network error while submitting complaint:', err);
+      // Show error inside modal
+      setModalError('Network error. Please check your connection and try again.');
     } finally {
       setSaving(false);
     }
@@ -271,10 +297,10 @@ export default function CustomerComplaints() {
                           <span>Resolved: {new Date(complaint.resolvedAt).toLocaleDateString()}</span>
                         )}
                       </div>
-                      {complaint.resolution && (
+                      {complaint.resolutionNotes && (
                         <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                           <p className="text-sm text-green-800 dark:text-green-200">
-                            <strong>Resolution:</strong> {complaint.resolution}
+                            <strong>Resolution:</strong> {complaint.resolutionNotes}
                           </p>
                         </div>
                       )}
@@ -293,12 +319,35 @@ export default function CustomerComplaints() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Submit New Complaint</h2>
                 <button
-                  onClick={() => setShowAddModal(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setModalError(null);
+                    setSuccessMessage(null);
+                  }}
+                  disabled={saving}
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-50"
                 >
                   <XCircle className="w-5 h-5" />
                 </button>
               </div>
+
+              {/* Error Message Inside Modal */}
+              {modalError && (
+                <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 flex items-start space-x-2">
+                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm text-red-700 dark:text-red-300">{modalError}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Success Message Inside Modal */}
+              {successMessage && (
+                <div className="mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 flex items-center space-x-2">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <p className="text-sm text-green-700 dark:text-green-300">{successMessage}</p>
+                </div>
+              )}
 
               <form onSubmit={handleSubmitComplaint} className="space-y-4">
                 <div>
@@ -306,12 +355,12 @@ export default function CustomerComplaints() {
                   <select
                     required
                     value={newComplaint.category}
-                    onChange={(e) => setNewComplaint({...newComplaint, category: e.target.value as 'power_outage' | 'billing_issue' | 'meter_problem' | 'service_request' | 'other'})}
+                    onChange={(e) => setNewComplaint({...newComplaint, category: e.target.value as 'power_outage' | 'billing' | 'meter_issue' | 'service' | 'connection' | 'other'})}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-white [&>option]:dark:bg-gray-800 [&>option]:text-gray-900 [&>option]:dark:text-white"
                   >
                     <option value="power_outage" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Power Outage</option>
-                    <option value="meter_problem" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Meter Problem</option>
-                    <option value="billing_issue" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Billing Issue</option>
+                    <option value="meter_issue" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Meter Issue</option>
+                    <option value="billing" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Billing Issue</option>
                     <option value="service" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Service Request</option>
                     <option value="connection" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Connection Issue</option>
                     <option value="other" className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">Other</option>
@@ -348,20 +397,30 @@ export default function CustomerComplaints() {
                 <div className="flex items-center space-x-3 pt-4">
                   <button
                     type="button"
-                    onClick={() => setShowAddModal(false)}
-                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/10 rounded-lg hover:bg-gray-200 dark:bg-white/20 transition-colors"
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setModalError(null);
+                      setSuccessMessage(null);
+                    }}
+                    disabled={saving}
+                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/10 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={saving}
-                    className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
+                    disabled={saving || !!successMessage}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     {saving ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span>Submitting...</span>
+                      </>
+                    ) : successMessage ? (
+                      <>
+                        <CheckCircle className="w-4 h-4" />
+                        <span>Submitted!</span>
                       </>
                     ) : (
                       <>

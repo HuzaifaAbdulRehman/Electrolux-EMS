@@ -21,6 +21,7 @@ import {
   Home,
   RefreshCw
 } from 'lucide-react';
+import { formatPKPhone, formatCNIC } from '@/lib/utils/dataHandlers';
 
 export default function AdminConnectionRequests() {
   const { data: session } = useSession();
@@ -79,10 +80,17 @@ export default function AdminConnectionRequests() {
   // Reset approval state when opening modal for a specific request
   useEffect(() => {
     if (showApproveModal && selectedRequest) {
+      const zoneToUse = selectedRequest.zone || 'Zone A';
+      console.log('🔍 Auto-filling approve modal:', {
+        customerSelectedZone: selectedRequest.zone,
+        zoneFilled: zoneToUse,
+        applicantName: selectedRequest.applicantName
+      });
+
       setApprovalData({
         employeeId: '',
         estimatedCharges: selectedRequest.estimatedCharges ? String(selectedRequest.estimatedCharges) : '',
-        zone: selectedRequest.zone || 'Zone A'
+        zone: zoneToUse
       });
       setEmployeeSearch('');
     }
@@ -124,6 +132,17 @@ export default function AdminConnectionRequests() {
       toast.error('Please select an employee');
       return;
     }
+    if (!approvalData.zone) {
+      toast.error('Please select a zone');
+      return;
+    }
+
+    console.log('✅ Approving application:', {
+      requestId: selectedRequest.id,
+      applicantName: selectedRequest.applicantName,
+      zone: approvalData.zone,
+      employeeId: approvalData.employeeId
+    });
 
     setIsProcessing(true);
     try {
@@ -133,7 +152,7 @@ export default function AdminConnectionRequests() {
         body: JSON.stringify({
           requestId: selectedRequest.id,
           action: 'approve',
-          employeeId: parseInt(approvalData.employeeId),
+          employeeId: parseInt(approvalData.employeeId, 10),
           estimatedCharges: approvalData.estimatedCharges,
           zone: approvalData.zone
         })
@@ -190,7 +209,7 @@ export default function AdminConnectionRequests() {
 
   const [zones, setZones] = React.useState<string[]>([]);
   const [zonesLoading, setZonesLoading] = React.useState(false);
-  const [selectedZone, setSelectedZone] = React.useState<string>('');
+  const [selectedZones, setSelectedZones] = React.useState<Record<number, string>>({});
 
   React.useEffect(() => {
     const fetchZones = async () => {
@@ -199,9 +218,9 @@ export default function AdminConnectionRequests() {
         const resp = await fetch('/api/zones');
         const json = await resp.json();
         if (resp.ok && json?.success && Array.isArray(json.data)) setZones(json.data);
-        else setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D']);
+        else setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D', 'Zone E']);
       } catch {
-        setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D']);
+        setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D', 'Zone E']);
       } finally {
         setZonesLoading(false);
       }
@@ -210,7 +229,11 @@ export default function AdminConnectionRequests() {
   }, []);
 
   const handleCreateAccount = async (requestId: number) => {
-    if (!selectedZone) {
+    // Get the request to use its zone
+    const request = requests.find(r => r.id === requestId);
+    const zoneToUse = selectedZones[requestId] || request?.zone;
+
+    if (!zoneToUse) {
       alert('Please select a zone before creating the account.');
       return;
     }
@@ -224,7 +247,7 @@ export default function AdminConnectionRequests() {
           body: JSON.stringify({
           requestId,
           action: 'create_customer',
-          zone: selectedZone
+          zone: zoneToUse
         })
       });
 
@@ -260,7 +283,6 @@ export default function AdminConnectionRequests() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-500/20 text-yellow-600 border-yellow-500/50';
-      case 'under_review': return 'bg-blue-500/20 text-blue-600 border-blue-500/50';
       case 'approved': return 'bg-green-500/20 text-green-600 border-green-500/50';
       case 'rejected': return 'bg-red-500/20 text-red-600 border-red-500/50';
       case 'connected': return 'bg-purple-500/20 text-purple-600 border-purple-500/50';
@@ -297,7 +319,6 @@ export default function AdminConnectionRequests() {
           {[
             { label: 'All', status: 'all', count: requests.length, color: 'text-gray-600' },
             { label: 'Pending', status: 'pending', count: requests.filter(r => r.status === 'pending').length, color: 'text-yellow-600' },
-            { label: 'Under Review', status: 'under_review', count: requests.filter(r => r.status === 'under_review').length, color: 'text-blue-600' },
             { label: 'Approved', status: 'approved', count: requests.filter(r => r.status === 'approved').length, color: 'text-green-600' },
             { label: 'Rejected', status: 'rejected', count: requests.filter(r => r.status === 'rejected').length, color: 'text-red-600' }
           ].map((stat) => (
@@ -384,7 +405,7 @@ export default function AdminConnectionRequests() {
                   </div>
                   <div className="flex items-center space-x-2 text-sm">
                     <Phone className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-600 dark:text-gray-400">{request.phone}</span>
+                    <span className="text-gray-600 dark:text-gray-400">{formatPKPhone(request.phone)}</span>
                   </div>
                   <div className="flex items-center space-x-2 text-sm">
                     <Home className="w-4 h-4 text-gray-400" />
@@ -445,16 +466,21 @@ export default function AdminConnectionRequests() {
                     {request.status === 'approved' && (
                       request.startedCount && request.startedCount > 0 ? (
                         <>
-                          <select
-                            value={selectedZone}
-                            onChange={(e) => setSelectedZone(e.target.value)}
-                            className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                          >
-                            <option value="">{zonesLoading ? 'Loading zones...' : 'Select Zone'}</option>
-                            {zones.map((z) => (
-                              <option key={z} value={z}>{z}</option>
-                            ))}
-                          </select>
+                          <div className="flex flex-col">
+                            <label className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                              Zone {request.zone && `(from application: ${request.zone})`}
+                            </label>
+                            <select
+                              value={selectedZones[request.id] || request.zone || ''}
+                              onChange={(e) => setSelectedZones({...selectedZones, [request.id]: e.target.value})}
+                              className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                            >
+                              <option value="">{zonesLoading ? 'Loading zones...' : 'Select Zone'}</option>
+                              {zones.map((z) => (
+                                <option key={z} value={z}>{z}</option>
+                              ))}
+                            </select>
+                          </div>
                           <button
                             onClick={() => handleCreateAccount(request.id)}
                             disabled={isProcessing}
@@ -515,7 +541,7 @@ export default function AdminConnectionRequests() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Phone</p>
-                    <p className="text-gray-900 dark:text-white">{selectedRequest.phone}</p>
+                    <p className="text-gray-900 dark:text-white">{formatPKPhone(selectedRequest.phone)}</p>
                   </div>
                 </div>
                 <div>
@@ -535,7 +561,9 @@ export default function AdminConnectionRequests() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Load Required</p>
-                  <p className="text-gray-900 dark:text-white">{selectedRequest.loadRequired} kW</p>
+                  <p className="text-gray-900 dark:text-white">
+                    {selectedRequest.loadRequired ? `${selectedRequest.loadRequired} kW` : 'TBD (during inspection)'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
@@ -610,17 +638,27 @@ export default function AdminConnectionRequests() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Zone <span className="text-red-500">*</span>
+                    {selectedRequest.zone && (
+                      <span className="ml-2 text-xs font-normal text-green-600 dark:text-green-400">
+                        (from application: {selectedRequest.zone})
+                      </span>
+                    )}
                   </label>
                   <select
                     value={approvalData.zone}
                     onChange={(e) => setApprovalData({ ...approvalData, zone: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
                   >
-                    <option value="Zone A">Zone A</option>
-                    <option value="Zone B">Zone B</option>
-                    <option value="Zone C">Zone C</option>
-                    <option value="Zone D">Zone D</option>
+                    <option value="">{zonesLoading ? 'Loading zones...' : 'Select Zone'}</option>
+                    {zones.map((z) => (
+                      <option key={z} value={z}>{z}</option>
+                    ))}
                   </select>
+                  {!selectedRequest.zone && (
+                    <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
+                      ⚠️ Customer didn't select a zone - please assign one
+                    </p>
+                  )}
                 </div>
 
                 <div>

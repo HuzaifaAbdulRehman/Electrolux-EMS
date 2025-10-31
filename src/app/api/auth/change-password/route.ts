@@ -70,11 +70,12 @@ export async function POST(request: NextRequest) {
     // Hash new password with 12 salt rounds (matching registration)
     const hashedNewPassword = await bcrypt.hash(newPassword, 12);
 
-    // Update password in database
+    // Update password in database and clear requiresPasswordChange flag
     await db
       .update(users)
       .set({
         password: hashedNewPassword,
+        requiresPasswordChange: 0,
         updatedAt: new Date()
       })
       .where(eq(users.id, userId));

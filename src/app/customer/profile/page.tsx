@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useToast } from '@/hooks/useToast';
-import { safeNumber, formatCurrency, safeDate, formatUnits } from '@/lib/utils/dataHandlers';
+import { safeNumber, formatCurrency, safeDate, formatUnits, formatPKPhone, onlyDigits } from '@/lib/utils/dataHandlers';
 import {
   User,
   Mail,
@@ -92,10 +92,12 @@ export default function CustomerProfile() {
       }
 
       // Fetch dashboard data for usage statistics
-      const dashboardResponse = await fetch('/api/dashboard');
+      const dashboardResponse = await fetch('/api/customer/dashboard?period=all');
       if (dashboardResponse.ok) {
         const dashboardResult = await dashboardResponse.json();
-        setUsageData(dashboardResult.data);
+        if (dashboardResult.success) {
+          setUsageData(dashboardResult.data);
+        }
       }
 
       // Fetch recent payments
@@ -133,18 +135,32 @@ export default function CustomerProfile() {
     }
   };
 
-  // Account information from real data
+  // Account information from real data - Calculate payment health properly
+  const calculatePaymentHealth = () => {
+    const totalBills = recentBills.length;
+    if (totalBills === 0) return 'New Account';
+
+    const paidBills = recentBills.filter((b: any) => b.status === 'paid').length;
+    const onTimeRate = Math.round((paidBills / totalBills) * 100);
+
+    if (onTimeRate >= 90) return 'Excellent';
+    if (onTimeRate >= 70) return 'Good';
+    if (onTimeRate >= 50) return 'Fair';
+    return 'Needs Attention';
+  };
+
   const accountInfo = {
     accountNumber: customerData?.accountNumber || 'Loading...',
     meterNumber: customerData?.meterNumber || 'Loading...',
     zone: customerData?.zone || 'N/A',
     connectionType: customerData?.connectionType || 'Residential',
-    loadSanction: '5 kW',
     connectionDate: customerData?.connectionDate || new Date().toISOString().split('T')[0],
-    category: customerData?.connectionType || 'Domestic',
-    phase: 'Single Phase',
     status: customerData?.status || 'Active',
-    paymentHealth: customerData?.paymentStatus === 'paid' ? 'Excellent' : 'Good',
+    outstandingBalance: formatCurrency(safeNumber(customerData?.outstandingBalance, 0), 'Rs.'),
+    averageMonthlyUsage: formatUnits(safeNumber(customerData?.averageMonthlyUsage, 0)),
+    lastPaymentDate: safeDate(customerData?.lastPaymentDate),
+    currentMeterReading: formatUnits(safeNumber(customerData?.lastReading, 0)),
+    paymentHealth: calculatePaymentHealth(),
     accountAge: customerData?.connectionDate
       ? `${Math.floor((new Date().getTime() - new Date(customerData.connectionDate).getTime()) / (365 * 24 * 60 * 60 * 1000))} years`
       : 'N/A'
@@ -153,24 +169,33 @@ export default function CustomerProfile() {
   // Usage statistics - Calculated from real database data
   const calculateUsageStats = () => {
     const consumptionHistory = usageData?.consumptionHistory || [];
+    // Filter out zero-unit bills (connection/installation charges)
+    const consumptionHistoryFiltered = consumptionHistory.filter((item: any) => safeNumber(item.unitsConsumed, 0) > 0);
+
     const totalBills = recentBills.length;
     const paidBills = recentBills.filter((b: any) => b.status === 'paid').length;
 
-    // Calculate total consumption
-    const totalConsumption = consumptionHistory.reduce((sum: number, item: any) =>
+    // Get current meter reading (cumulative)
+    const latestMeterReading = usageData?.latestMeterReading;
+    const currentMeterReading = latestMeterReading
+      ? safeNumber(latestMeterReading.currentReading, 0)
+      : 0;
+
+    // Calculate total billed consumption (excluding zero-unit bills)
+    const billedConsumption = consumptionHistoryFiltered.reduce((sum: number, item: any) =>
       sum + safeNumber(item.unitsConsumed, 0), 0
     );
 
-    // Calculate average monthly
-    const averageMonthly = consumptionHistory.length > 0
-      ? Math.round(totalConsumption / consumptionHistory.length)
+    // Calculate average monthly (excluding zero-unit bills)
+    const averageMonthly = consumptionHistoryFiltered.length > 0
+      ? Math.round(billedConsumption / consumptionHistoryFiltered.length)
       : safeNumber(usageData?.avgConsumption, 0);
 
-    // Find peak and lowest months
+    // Find peak and lowest months (excluding zero-unit bills)
     let peakMonth = { month: 'N/A', units: 0 };
     let lowestMonth = { month: 'N/A', units: Infinity };
 
-    consumptionHistory.forEach((item: any) => {
+    consumptionHistoryFiltered.forEach((item: any) => {
       const units = safeNumber(item.unitsConsumed, 0);
       if (units > peakMonth.units) {
         peakMonth = {
@@ -197,7 +222,8 @@ export default function CustomerProfile() {
       : 100;
 
     return {
-      totalConsumption: formatUnits(totalConsumption),
+      currentMeterReading: formatUnits(currentMeterReading),
+      billedConsumption: formatUnits(billedConsumption),
       averageMonthly: formatUnits(averageMonthly),
       peakMonth: peakMonth.month,
       lowestMonth: lowestMonth.month !== 'N/A' && lowestMonth.units !== Infinity ? lowestMonth.month : 'N/A',
@@ -266,10 +292,7 @@ export default function CustomerProfile() {
         return;
       }
 
-      if (profileData.pincode && !/^\d{5,6}$/.test(profileData.pincode)) {
-        setError('Pincode must be 5-6 digits');
-        return;
-      }
+      // Pincode validation removed - field not visible in UI, no need to validate
 
       // Call API to update profile
       const response = await fetch('/api/customers/profile', {
@@ -287,14 +310,17 @@ export default function CustomerProfile() {
       }
 
       // Success
-      setSuccess('Profile updated successfully!');
+      setSuccess('Profile updated successfully! Refreshing...');
       setIsEditing(false);
 
       // Refresh customer data
       await fetchCustomerData();
 
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(null), 3000);
+      // Reload page after 1.5 seconds to refresh session data
+      // This ensures the status bar name and all other session-based data are updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
 
     } catch (err: any) {
       console.error('Error saving profile:', err);
@@ -488,15 +514,19 @@ export default function CustomerProfile() {
                     {isEditing ? (
                       <input
                         type="tel"
-                        value={profileData.phone}
-                        onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                        inputMode="numeric"
+                        value={formatPKPhone(profileData.phone)}
+                        onChange={(e) => {
+                          const raw = onlyDigits(e.target.value).slice(0, 11);
+                          setProfileData({ ...profileData, phone: raw });
+                        }}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-50 dark:bg-white/10 border border-gray-300 dark:border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-yellow-400"
-                        placeholder="03001234567 (11 digits)"
+                        placeholder="0300-1234567 (11 digits)"
                       />
                     ) : (
                       <div className="flex items-center space-x-3 p-3 bg-white dark:bg-white/5 rounded-lg">
                         <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                        <span className="text-gray-900 dark:text-white">{profileData.phone}</span>
+                        <span className="text-gray-900 dark:text-white">{formatPKPhone(profileData.phone)}</span>
                       </div>
                     )}
                   </div>
@@ -579,16 +609,32 @@ export default function CustomerProfile() {
 
             {activeTab === 'usage' && (
               <div className="bg-white dark:bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Usage Statistics</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {Object.entries(usageStats).map(([key, value]) => (
-                    <div key={key} className="p-4 bg-white dark:bg-white/5 rounded-xl">
-                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-1 capitalize">
-                        {key.replace(/([A-Z])/g, ' $1').trim()}
-                      </p>
-                      <p className="text-xl font-semibold text-gray-900 dark:text-white">{value}</p>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Usage Statistics</h2>
+                  <div className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <p className="text-xs text-blue-600 dark:text-blue-400">💡 Meter reading is cumulative like odometer</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.entries(usageStats).map(([key, value]) => {
+                    const labels: { [key: string]: string } = {
+                      currentMeterReading: 'Current Meter Reading',
+                      billedConsumption: 'Billed Consumption (Since Connection)',
+                      averageMonthly: 'Average Monthly',
+                      peakMonth: 'Peak Month',
+                      lowestMonth: 'Lowest Month',
+                      totalPayments: 'Total Payments',
+                      onTimePayments: 'On Time Payments'
+                    };
+                    return (
+                      <div key={key} className="p-4 bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10">
+                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">
+                          {labels[key] || key.replace(/([A-Z])/g, ' $1').trim()}
+                        </p>
+                        <p className="text-xl font-semibold text-gray-900 dark:text-white">{value}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -615,26 +661,6 @@ export default function CustomerProfile() {
                     <span className="text-gray-600 dark:text-gray-400 text-xs">{activity.amount}</span>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            {/* Account Health */}
-            <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 backdrop-blur-xl rounded-2xl p-6 border border-green-500/20">
-              <div className="flex items-center space-x-3 mb-4">
-                <CheckCircle className="w-8 h-8 text-green-400" />
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Account Healthy</h3>
-                  <p className="text-gray-700 dark:text-gray-300 text-sm">All systems normal</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Profile Completion</span>
-                  <span className="text-green-400 font-semibold">95%</span>
-                </div>
-                <div className="w-full bg-gray-50 dark:bg-gray-50 dark:bg-white/10 rounded-full h-2">
-                  <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full" style={{ width: '95%' }} />
-                </div>
               </div>
             </div>
           </div>

@@ -1,0 +1,386 @@
+===========================================
+REPLACEMENT FOR ADD CUSTOMER MODAL
+File: src/app/admin/customers/page.tsx
+Lines: 66-84 (State) and 771-1085 (Modal)
+===========================================
+
+STEP 1: Replace the newCustomer state (Lines 66-84)
+----------------------------------------------------
+
+FIND:
+  const [newCustomer, setNewCustomer] = useState({
+    applicantName: '',
+    fatherName: '',
+    email: '',
+    phone: '',
+    alternatePhone: '',
+    idType: 'national_id' as 'passport' | 'drivers_license' | 'national_id' | 'voter_id' | 'aadhaar',
+    idNumber: '',
+    propertyType: 'Residential' as 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural',
+    connectionType: 'single-phase',
+    loadRequired: '5',
+    propertyAddress: '',
+    city: '',
+    state: '',
+    zone: '',
+    pincode: '',
+    landmark: '',
+    purposeOfConnection: 'domestic' as 'domestic' | 'business' | 'industrial' | 'agricultural'
+  });
+
+REPLACE WITH:
+  const [newCustomer, setNewCustomer] = useState({
+    applicantName: '',
+    fatherName: '',
+    email: '',
+    phone: '',
+    alternatePhone: '',
+    idType: 'national_id' as 'national_id',
+    idNumber: '',
+    propertyType: 'Residential' as 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural',
+    connectionType: 'single-phase',
+    propertyAddress: '',
+    city: '',
+    state: '',
+    zone: '',
+    pincode: '',
+    landmark: ''
+  });
+
+
+STEP 2: Replace the form reset in handleAddCustomer (Lines 190-208)
+---------------------------------------------------------------------
+
+FIND:
+        setNewCustomer({
+          applicantName: '',
+          fatherName: '',
+          email: '',
+          phone: '',
+          alternatePhone: '',
+          idType: 'national_id' as 'passport' | 'drivers_license' | 'national_id' | 'voter_id' | 'aadhaar',
+          idNumber: '',
+          propertyType: 'Residential' as 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural',
+          connectionType: 'single-phase',
+          loadRequired: '5',
+          propertyAddress: '',
+          city: '',
+          state: '',
+          zone: '',
+          pincode: '',
+          landmark: '',
+          purposeOfConnection: 'domestic' as 'domestic' | 'business' | 'industrial' | 'agricultural'
+        });
+
+REPLACE WITH:
+        setNewCustomer({
+          applicantName: '',
+          fatherName: '',
+          email: '',
+          phone: '',
+          alternatePhone: '',
+          idType: 'national_id' as 'national_id',
+          idNumber: '',
+          propertyType: 'Residential' as 'Residential' | 'Commercial' | 'Industrial' | 'Agricultural',
+          connectionType: 'single-phase',
+          propertyAddress: '',
+          city: '',
+          state: '',
+          zone: '',
+          pincode: '',
+          landmark: ''
+        });
+
+
+STEP 3: Update handleAddCustomer to add loadRequired and purposeOfConnection (Line 167-170)
+---------------------------------------------------------------------------------------------
+
+FIND:
+      const response = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCustomer)
+      });
+
+REPLACE WITH:
+      // Auto-set purpose based on property type (like online form)
+      const purposeMap: Record<string, string> = {
+        'Residential': 'domestic',
+        'Commercial': 'business',
+        'Industrial': 'industrial',
+        'Agricultural': 'agricultural'
+      };
+
+      const submitData = {
+        ...newCustomer,
+        purposeOfConnection: purposeMap[newCustomer.propertyType],
+        loadRequired: '5' // Default 5kW for single phase
+      };
+
+      const response = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submitData)
+      });
+
+
+STEP 4: Replace the entire Add Customer Modal form section (Lines 788-1082)
+------------------------------------------------------------------------------
+
+FIND the entire <form onSubmit={handleAddCustomer} className="space-y-4">
+and REPLACE with the form below:
+
+              <form onSubmit={handleAddCustomer} className="space-y-4">
+                {/* Personal Information */}
+                <div className="border-b border-gray-200 dark:border-white/10 pb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Personal Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Applicant Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={newCustomer.applicantName}
+                        onChange={(e) => setNewCustomer({...newCustomer, applicantName: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Full name as per ID"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Father's Name</label>
+                      <input
+                        type="text"
+                        value={newCustomer.fatherName}
+                        onChange={(e) => setNewCustomer({...newCustomer, fatherName: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Father's full name"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email *</label>
+                      <input
+                        type="email"
+                        required
+                        value={newCustomer.email}
+                        onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="customer@example.com"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone *</label>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        required
+                        value={formatPKPhone(newCustomer.phone)}
+                        onChange={(e) => {
+                          const raw = onlyDigits(e.target.value).slice(0, 11);
+                          setNewCustomer({ ...newCustomer, phone: raw });
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., 0300-1234567"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Alternate Phone</label>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        value={formatPKPhone(newCustomer.alternatePhone)}
+                        onChange={(e) => {
+                          const raw = onlyDigits(e.target.value).slice(0, 11);
+                          setNewCustomer({ ...newCustomer, alternatePhone: raw });
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="e.g., 0300-1234567 (optional)"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* ID Verification */}
+                <div className="border-b border-gray-200 dark:border-white/10 pb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Identity Verification</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">National ID (CNIC) *</label>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        required
+                        value={formatCNIC(newCustomer.idNumber)}
+                        onChange={(e) => {
+                          const raw = onlyDigits(e.target.value).slice(0, 13);
+                          setNewCustomer({ ...newCustomer, idNumber: raw });
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="42101-1234567-1 (13 digits)"
+                      />
+                      <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">CNIC must be 13 digits (formatted 5-7-1).</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Connection Details */}
+                <div className="border-b border-gray-200 dark:border-white/10 pb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Connection Details</h3>
+                  <div className="mb-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                      <strong>Note:</strong> All connections are Single-Phase. One customer can have only one meter connection.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Property Type *</label>
+                      <select
+                        required
+                        value={newCustomer.propertyType}
+                        onChange={(e) => {
+                          setNewCustomer({
+                            ...newCustomer,
+                            propertyType: e.target.value as any
+                          });
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-white [&>option]:text-gray-900 dark:[&>option]:bg-gray-800 dark:[&>option]:text-white"
+                      >
+                        <option value="Residential">Residential</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Industrial">Industrial</option>
+                        <option value="Agricultural">Agricultural</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address Information */}
+                <div className="pb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Address Information</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Property Address *</label>
+                      <textarea
+                        required
+                        value={newCustomer.propertyAddress}
+                        onChange={(e) => setNewCustomer({...newCustomer, propertyAddress: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        rows={2}
+                        placeholder="House/Plot number, Street name, Area"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">City *</label>
+                        <input
+                          type="text"
+                          required
+                          value={newCustomer.city}
+                          onChange={(e) => setNewCustomer({...newCustomer, city: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="City"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">State/Province *</label>
+                        <input
+                          type="text"
+                          required
+                          value={newCustomer.state}
+                          onChange={(e) => setNewCustomer({...newCustomer, state: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="e.g., Punjab"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Zone *</label>
+                        <select
+                          required
+                          value={newCustomer.zone}
+                          onChange={(e) => setNewCustomer({ ...newCustomer, zone: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 [&>option]:bg-white [&>option]:text-gray-900 dark:[&>option]:bg-gray-800 dark:[&>option]:text-white"
+                        >
+                          <option value="">{zonesLoading ? 'Loading zones...' : 'Select Zone'}</option>
+                          {zones.map((z) => (
+                            <option key={z} value={z}>{z}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pincode *</label>
+                        <input
+                          type="text"
+                          required
+                          pattern="[0-9]{5,6}"
+                          minLength={5}
+                          maxLength={6}
+                          value={newCustomer.pincode}
+                          onChange={(e) => setNewCustomer({...newCustomer, pincode: e.target.value})}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="5-6 digit pincode"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Landmark</label>
+                      <input
+                        type="text"
+                        value={newCustomer.landmark}
+                        onChange={(e) => setNewCustomer({...newCustomer, landmark: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-white/20 rounded-lg bg-white dark:bg-white/10 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Nearby landmark (optional)"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3 pt-4 border-t border-gray-200 dark:border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddCustomer(false)}
+                    className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/10 rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 flex items-center justify-center space-x-2"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Creating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>Create Customer & Auto-Assign Meter</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+
+
+===========================================
+SUMMARY OF CHANGES:
+===========================================
+
+1. Father's Name - NOW OPTIONAL (no asterisk, no required)
+2. ID Type dropdown - REMOVED (only CNIC)
+3. ID Number - NOW labeled as "National ID (CNIC)"
+4. Connection Type - REMOVED (single-phase is default)
+5. Load Required - REMOVED (auto-set to 5kW in API call)
+6. Purpose of Connection - REMOVED (auto-set based on property type)
+7. Added yellow info box: "All connections are Single-Phase"
+8. Property Type remains as dropdown
+9. All other fields identical to online form
+
+This matches the online registration form exactly!

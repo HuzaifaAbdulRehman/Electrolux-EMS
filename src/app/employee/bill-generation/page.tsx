@@ -54,6 +54,9 @@ export default function EmployeeBillGeneration() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState({ billNumber: '', totalAmount: '' });
   const [loadingMeterReading, setLoadingMeterReading] = useState(false);
+  const [viewBillData, setViewBillData] = useState<any>(null);
+  const [showViewBillModal, setShowViewBillModal] = useState(false);
+  const [loadingBill, setLoadingBill] = useState(false);
 
   // Fetch real bill requests from API
   React.useEffect(() => {
@@ -63,6 +66,7 @@ export default function EmployeeBillGeneration() {
   const fetchBillRequests = async () => {
     try {
       setLoading(true);
+      setBillRequests([]); // Clear old data immediately to prevent showing stale data
       const statusFilter = activeTab === 'pending' ? 'assigned,in_progress' : 'completed';
 
       // Fetch work orders for bill generation (meter_reading type)
@@ -70,25 +74,59 @@ export default function EmployeeBillGeneration() {
       const result = await response.json();
 
       if (result.success) {
+        // For completed work orders, fetch bills to get actual billing months
+        let billsMap: Record<number, any> = {};
+        if (activeTab === 'completed') {
+          const customerIds = result.data.map((wo: any) => wo.customerId).filter(Boolean);
+          if (customerIds.length > 0) {
+            const billsResponse = await fetch(`/api/bills?limit=1000`);
+            const billsResult = await billsResponse.json();
+            if (billsResult.success) {
+              // Create a map of customerId -> latest bill
+              billsResult.data.forEach((bill: any) => {
+                if (!billsMap[bill.customerId]) {
+                  billsMap[bill.customerId] = bill;
+                }
+              });
+            }
+          }
+        }
+
         // Transform work orders to bill request format
-        const transformed = result.data.map((wo: any) => ({
-          id: wo.id,
-          requestId: `WO-${wo.id}`,
-          customerId: wo.customerId,
-          customerName: wo.customerName || 'Unknown Customer',
-          accountNumber: wo.customerAccount || 'N/A',
-          meterNumber: wo.meterNumber || 'N/A',
-          billingMonth: formatBillingMonth(new Date().toISOString().split('T')[0]),
-          requestDate: wo.assignedDate,
-          status: wo.status === 'completed' ? 'completed' : 'pending',
-          priority: wo.priority,
-          notes: wo.description,
-          meterReading: undefined // Will check when clicked
-        }));
+        const transformed = result.data.map((wo: any) => {
+          let billingMonth;
+
+          if (wo.status === 'completed' && billsMap[wo.customerId]) {
+            // Use the actual billing month from the bill
+            billingMonth = formatBillingMonth(billsMap[wo.customerId].billingMonth);
+          } else if (wo.completionDate) {
+            // Use completion date as billing month
+            billingMonth = formatBillingMonth(wo.completionDate);
+          } else {
+            // Fallback to current month for pending work orders
+            billingMonth = formatBillingMonth(new Date().toISOString().split('T')[0]);
+          }
+
+          return {
+            id: wo.id,
+            requestId: `WO-${wo.id}`,
+            customerId: wo.customerId,
+            customerName: wo.customerName || 'Unknown Customer',
+            accountNumber: wo.customerAccount || 'N/A',
+            meterNumber: wo.meterNumber || 'N/A',
+            billingMonth: billingMonth,
+            requestDate: wo.assignedDate,
+            status: wo.status === 'completed' ? 'completed' : 'pending',
+            priority: wo.priority,
+            notes: wo.description,
+            meterReading: undefined // Will check when clicked
+          };
+        });
         setBillRequests(transformed);
       }
     } catch (error) {
       console.error('Error fetching bill requests:', error);
+      setBillRequests([]); // Clear on error too
     } finally {
       setLoading(false);
     }
@@ -115,11 +153,16 @@ export default function EmployeeBillGeneration() {
 
       if (result.success && result.data && result.data.length > 0) {
         const reading = result.data[0];
+        // Parse decimal strings from database to numbers
+        const parsedPrevious = parseFloat(reading.previousReading || '0');
+        const parsedCurrent = parseFloat(reading.currentReading || '0');
+        const parsedConsumption = parseFloat(reading.unitsConsumed || '0');
+
         return {
           id: reading.id,
-          previous: reading.previousReading,
-          current: reading.currentReading,
-          consumption: reading.unitsConsumed,
+          previous: isNaN(parsedPrevious) ? 0 : parsedPrevious,
+          current: isNaN(parsedCurrent) ? 0 : parsedCurrent,
+          consumption: isNaN(parsedConsumption) ? 0 : parsedConsumption,
           readingDate: reading.readingDate
         };
       }
@@ -130,6 +173,34 @@ export default function EmployeeBillGeneration() {
       return null;
     } finally {
       setLoadingMeterReading(false);
+    }
+  };
+
+  // Fetch bill details for completed bills
+  const fetchCompletedBill = async (customerId: number, billingMonth: string) => {
+    try {
+      setLoadingBill(true);
+
+      // Convert billing month to YYYY-MM-01 format
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const [monthName, year] = billingMonth.split(' ');
+      const monthIndex = monthNames.indexOf(monthName);
+      const billingMonthDate = `${year}-${String(monthIndex + 1).padStart(2, '0')}-01`;
+
+      const response = await fetch(`/api/bills?customerId=${customerId}&month=${billingMonthDate}`);
+      const result = await response.json();
+
+      if (result.success && result.data && result.data.length > 0) {
+        setViewBillData(result.data[0]);
+        setShowViewBillModal(true);
+      } else {
+        alert('Bill not found for this customer and billing month');
+      }
+    } catch (error) {
+      console.error('Error fetching bill:', error);
+      alert('Failed to fetch bill details');
+    } finally {
+      setLoadingBill(false);
     }
   };
 
@@ -288,15 +359,15 @@ export default function EmployeeBillGeneration() {
             },
             body: JSON.stringify({
               status: 'completed',
-              completionNotes: `Bill generated successfully. Bill Number: ${data.bill.bill_number}`
+              completionNotes: `Bill generated successfully. Bill Number: ${data.bill.billNumber}`
             }),
           });
         }
 
         // Show professional success modal instead of alert
         setSuccessMessage({
-          billNumber: data.bill.bill_number,
-          totalAmount: data.bill.total_amount
+          billNumber: data.bill.billNumber,
+          totalAmount: data.bill.totalAmount
         });
         setShowSuccessModal(true);
         setSelectedRequest(null);
@@ -489,7 +560,9 @@ export default function EmployeeBillGeneration() {
                         )}
                         {request.status === 'completed' && (
                           <button
-                            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                            onClick={() => fetchCompletedBill(request.customerId, request.billingMonth)}
+                            disabled={loadingBill}
+                            className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/10 rounded-lg transition-all disabled:opacity-50"
                             title="View Bill"
                           >
                             <Eye className="w-4 h-4" />
@@ -747,6 +820,142 @@ export default function EmployeeBillGeneration() {
                   className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/50 transition-all"
                 >
                   Continue Working
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* View Bill Modal */}
+        {showViewBillModal && viewBillData && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-white/10 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 backdrop-blur-xl border-b border-gray-200 dark:border-white/10 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Bill Details</h2>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{viewBillData.billNumber}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowViewBillModal(false);
+                      setViewBillData(null);
+                    }}
+                    className="p-2 hover:bg-white/10 rounded-lg transition-all"
+                  >
+                    <X className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 space-y-6">
+                {/* Customer Info */}
+                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Customer Information</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Customer Name</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{viewBillData.customerName}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Account Number</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{viewBillData.accountNumber}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bill Summary */}
+                <div className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-xl p-4 border border-blue-500/30">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Bill Summary</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Billing Period</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{new Date(viewBillData.billingMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Issue Date</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{viewBillData.issueDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Due Date</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{viewBillData.dueDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Status</p>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold border ${
+                        viewBillData.status === 'paid' ? 'bg-green-500/20 text-green-400 border-green-500/50' :
+                        viewBillData.status === 'overdue' ? 'bg-red-500/20 text-red-400 border-red-500/50' :
+                        'bg-yellow-500/20 text-yellow-400 border-yellow-500/50'
+                      }`}>
+                        {viewBillData.status?.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Consumption Details */}
+                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Consumption Details</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Previous Reading</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{parseFloat(viewBillData.previousReading || '0').toLocaleString()} kWh</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Current Reading</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">{parseFloat(viewBillData.currentReading || '0').toLocaleString()} kWh</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Units Consumed</p>
+                      <p className="text-lg font-bold text-blue-500">{parseFloat(viewBillData.unitsConsumed || '0').toLocaleString()} kWh</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Financial Details */}
+                <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-xl p-4 border border-green-500/30">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Financial Details</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Electricity Charges</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">Rs {parseFloat(viewBillData.electricityCharges || '0').toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Fixed Charges</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">Rs {parseFloat(viewBillData.fixedCharges || '0').toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Tax Amount</span>
+                      <span className="text-sm font-semibold text-gray-900 dark:text-white">Rs {parseFloat(viewBillData.taxAmount || '0').toFixed(2)}</span>
+                    </div>
+                    {viewBillData.latePaymentCharges && parseFloat(viewBillData.latePaymentCharges) > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Late Payment Charges</span>
+                        <span className="text-sm font-semibold text-red-400">Rs {parseFloat(viewBillData.latePaymentCharges).toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="border-t border-gray-200 dark:border-white/10 pt-2 mt-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-semibold text-gray-900 dark:text-white">Total Amount</span>
+                        <span className="text-2xl font-bold text-green-500">Rs {parseFloat(viewBillData.totalAmount || '0').toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-white/10 p-6 flex justify-end">
+                <button
+                  onClick={() => {
+                    setShowViewBillModal(false);
+                    setViewBillData(null);
+                  }}
+                  className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                >
+                  Close
                 </button>
               </div>
             </div>

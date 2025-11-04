@@ -3,7 +3,9 @@
     "allow": [
       "Bash(cp:*)",
       "Bash(do echo \"=== $table ===\")",
-      "Bash(del \"d:\\Programming\\Projects\\electrolux_ems\\src\\app\\admin\\data-import\\page.tsx\")"
+      "Bash(del \"d:\\Programming\\Projects\\electrolux_ems\\src\\app\\admin\\data-import\\page.tsx\")",
+      "Bash(npm run build:*)",
+      "Bash(del \"d:\\Programming\\Projects\\electrolux_ems\\src\\app\\api\\admin\\settings\\route.ts\")"
     ],
     "deny": [],
     "ask": []

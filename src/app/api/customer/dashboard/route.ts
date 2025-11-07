@@ -203,7 +203,7 @@ export async function GET(request: NextRequest) {
       ? Math.round(consumptionHistory.reduce((sum, item) => sum + item.unitsConsumed, 0) / consumptionHistory.length)
       : 0;
 
-    // Calculate average monthly cost
+    // Calculate average monthly cost (rounded to whole number - real-world payment standard)
     const avgMonthlyCost = consumptionHistory.length > 0
       ? Math.round(consumptionHistory.reduce((sum, item) => sum + item.totalAmount, 0) / consumptionHistory.length)
       : 0;
@@ -241,10 +241,30 @@ export async function GET(request: NextRequest) {
       .innerJoin(bills, eq(payments.billId, bills.id))
       .where(eq(bills.customerId, customer.id));
 
+    // Round bill amounts to whole numbers (real-world payment standard)
+    const roundedCurrentBill = currentBill ? {
+      ...currentBill,
+      totalAmount: Math.round(parseFloat(currentBill.totalAmount?.toString() || '0')),
+      baseAmount: Math.round(parseFloat(currentBill.baseAmount?.toString() || '0')),
+      fixedCharges: Math.round(parseFloat(currentBill.fixedCharges?.toString() || '0')),
+      electricityDuty: Math.round(parseFloat(currentBill.electricityDuty?.toString() || '0')),
+      gstAmount: Math.round(parseFloat(currentBill.gstAmount?.toString() || '0'))
+    } : null;
+
+    const roundedRecentBills = recentBills.map(bill => ({
+      ...bill,
+      totalAmount: Math.round(parseFloat(bill.totalAmount?.toString() || '0')),
+      baseAmount: Math.round(parseFloat(bill.baseAmount?.toString() || '0')),
+      fixedCharges: Math.round(parseFloat(bill.fixedCharges?.toString() || '0')),
+      electricityDuty: Math.round(parseFloat(bill.electricityDuty?.toString() || '0')),
+      gstAmount: Math.round(parseFloat(bill.gstAmount?.toString() || '0'))
+    }));
+
     const dashboardData = {
       accountNumber: customer.accountNumber,
-      currentBill: currentBill || null,
-      recentBills: recentBills || [],
+      customer: customer, // Add customer data for dashboard
+      currentBill: roundedCurrentBill,
+      recentBills: roundedRecentBills,
       recentPayments: recentPayments || [],
       monthlyPayments: monthlyPayments || [], // For payment history chart
       consumptionHistory: consumptionHistory || [], // Last 6 months for dashboard
@@ -254,8 +274,8 @@ export async function GET(request: NextRequest) {
       avgMonthlyCost: avgMonthlyCost,
       consumptionTrend: consumptionTrend,
       trendPercentage: trendPercentage,
-      outstandingBalance: outstandingResult?.total?.toString() || '0',
-      totalPaid: totalPaidResult?.total?.toString() || '0'
+      outstandingBalance: Math.round(parseFloat(outstandingResult?.total?.toString() || '0')).toString(), // Round to whole number
+      totalPaid: Math.round(parseFloat(totalPaidResult?.total?.toString() || '0')).toString() // Round to whole number
     };
 
     console.log('[Customer Dashboard API] Dashboard data fetched successfully');

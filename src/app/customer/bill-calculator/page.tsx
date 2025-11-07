@@ -101,11 +101,18 @@ export default function BillCalculator() {
       }
     }
 
-    const fixedCharge = tariff.fixedCharge || 0;
-    const subtotal = energyCharge + fixedCharge;
-    const electricityDuty = subtotal * (tariff.electricityDutyPercent / 100);
-    const gst = subtotal * (tariff.gstPercent / 100);
-    const totalAmount = subtotal + electricityDuty + gst;
+    // Round all monetary values to whole numbers (no decimal paisa)
+    energyCharge = Math.round(energyCharge);
+    const fixedCharge = Math.round(tariff.fixedCharge || 0);
+
+    // Apply electricity duty on baseAmount only (not on fixed charges)
+    const electricityDuty = Math.round(energyCharge * (tariff.electricityDutyPercent / 100));
+
+    // Apply GST on (baseAmount + fixedCharges + electricityDuty)
+    const gst = Math.round((energyCharge + fixedCharge + electricityDuty) * (tariff.gstPercent / 100));
+
+    const subtotal = Math.round(energyCharge + fixedCharge);
+    const totalAmount = Math.round(energyCharge + fixedCharge + electricityDuty + gst);
 
     return { energyCharge, fixedCharge, subtotal, electricityDuty, gst, totalAmount };
   };
@@ -301,27 +308,27 @@ export default function BillCalculator() {
                       <Zap className="w-4 h-4 text-yellow-500" />
                       <span className="text-gray-600 dark:text-gray-400">Energy Charges</span>
                     </div>
-                    <span className="text-gray-900 dark:text-white font-semibold">Rs. {energyCharge.toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">Rs. {energyCharge}</span>
                   </div>
 
                   <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-white/10">
                     <span className="text-gray-600 dark:text-gray-400">Fixed Charges</span>
-                    <span className="text-gray-900 dark:text-white font-semibold">Rs. {fixedCharge.toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">Rs. {fixedCharge}</span>
                   </div>
 
                   <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-white/10">
                     <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
-                    <span className="text-gray-900 dark:text-white font-semibold">Rs. {subtotal.toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">Rs. {subtotal}</span>
                   </div>
 
                   <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-white/10">
                     <span className="text-gray-600 dark:text-gray-400">Electricity Duty ({selectedTariff.electricityDutyPercent}%)</span>
-                    <span className="text-gray-900 dark:text-white font-semibold">Rs. {electricityDuty.toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">Rs. {electricityDuty}</span>
                   </div>
 
                   <div className="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-white/10">
                     <span className="text-gray-600 dark:text-gray-400">GST ({selectedTariff.gstPercent}%)</span>
-                    <span className="text-gray-900 dark:text-white font-semibold">Rs. {gst.toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white font-semibold">Rs. {gst}</span>
                   </div>
 
                   {/* Total */}
@@ -330,7 +337,7 @@ export default function BillCalculator() {
                       <BadgeDollarSign className="w-5 h-5 text-green-500" />
                       <span className="text-lg font-bold text-gray-900 dark:text-white">Total Amount</span>
                     </div>
-                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">Rs. {totalAmount.toFixed(2)}</span>
+                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">Rs. {totalAmount}</span>
                   </div>
                 </div>
 
@@ -345,7 +352,7 @@ export default function BillCalculator() {
                   <div className="p-3 bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl border border-green-500/20">
                     <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Average Rate</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">
-                      Rs. {(totalAmount / unitsConsumed).toFixed(2)}
+                      Rs. {Math.round(totalAmount / unitsConsumed)}
                     </p>
                     <p className="text-xs text-green-400">per kWh</p>
                   </div>

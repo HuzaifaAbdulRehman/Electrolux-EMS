@@ -175,7 +175,7 @@ export default function AdminCustomers() {
       const submitData = {
         ...newCustomer,
         purposeOfConnection: purposeMap[newCustomer.propertyType],
-        loadRequired: '5' // Default 5kW for single phase
+        loadRequired: null // Load will be determined during inspection
       };
 
       const response = await fetch('/api/customers', {

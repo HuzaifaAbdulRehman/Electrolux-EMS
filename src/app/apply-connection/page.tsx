@@ -78,6 +78,13 @@ export default function ApplyConnection() {
     setError(null);
 
     try {
+      // Validate zone is selected
+      if (!formData.zone) {
+        setError('Please select a zone before submitting');
+        setLoading(false);
+        return;
+      }
+
       // Auto-set purpose based on property type
       const purposeMap: Record<string, string> = {
         'Residential': 'domestic',
@@ -89,10 +96,16 @@ export default function ApplyConnection() {
       const submitData = {
         ...formData,
         purposeOfConnection: purposeMap[formData.propertyType],
-        loadRequired: '5', // Default 5kW for single phase
+        loadRequired: null, // Load will be determined during inspection
         existingConnection: false,
         existingAccountNumber: ''
       };
+
+      console.log('[Apply Connection] Submitting data:', {
+        applicantName: submitData.applicantName,
+        zone: submitData.zone,
+        email: submitData.email
+      });
 
       const response = await fetch('/api/connection-requests', {
         method: 'POST',

@@ -205,10 +205,13 @@ export async function POST(request: NextRequest) {
       remaining -= usedInSlab;
     }
 
-    const fixedCharges = Number(activeTariff.fixedCharge);
-    const electricityDuty = baseAmount * (Number(activeTariff.electricityDutyPercent ?? 0) / 100);
-    const gstAmount = (baseAmount + fixedCharges + electricityDuty) * (Number(activeTariff.gstPercent ?? 0) / 100);
-    const totalAmount = baseAmount + fixedCharges + electricityDuty + gstAmount;
+    // Round baseAmount to whole number (no decimal paisa)
+    baseAmount = Math.round(baseAmount);
+
+    const fixedCharges = Math.round(Number(activeTariff.fixedCharge));
+    const electricityDuty = Math.round(baseAmount * (Number(activeTariff.electricityDutyPercent ?? 0) / 100));
+    const gstAmount = Math.round((baseAmount + fixedCharges + electricityDuty) * (Number(activeTariff.gstPercent ?? 0) / 100));
+    const totalAmount = Math.round(baseAmount + fixedCharges + electricityDuty + gstAmount);
 
     console.log('[Bill Generation] Calculation:', {
       unitsConsumed,

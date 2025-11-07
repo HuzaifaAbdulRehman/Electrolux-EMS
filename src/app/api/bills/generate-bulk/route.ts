@@ -522,10 +522,13 @@ function calculateBillCharges(unitsConsumed: number, tariff: any, slabs: Array<{
     remaining -= used;
   }
 
-  const fixedCharges = parseFloat(tariff.fixedCharge);
-  const electricityDuty = baseAmount * (parseFloat(tariff.electricityDutyPercent) / 100);
-  const gstAmount = (baseAmount + fixedCharges + electricityDuty) * (parseFloat(tariff.gstPercent) / 100);
-  const totalAmount = baseAmount + fixedCharges + electricityDuty + gstAmount;
+  // Round baseAmount to whole number (no decimal paisa)
+  baseAmount = Math.round(baseAmount);
+
+  const fixedCharges = Math.round(parseFloat(tariff.fixedCharge));
+  const electricityDuty = Math.round(baseAmount * (parseFloat(tariff.electricityDutyPercent) / 100));
+  const gstAmount = Math.round((baseAmount + fixedCharges + electricityDuty) * (parseFloat(tariff.gstPercent) / 100));
+  const totalAmount = Math.round(baseAmount + fixedCharges + electricityDuty + gstAmount);
 
   return {
     baseAmount,

@@ -126,7 +126,9 @@ export default function CustomerDashboard() {
     avgMonthlyCost = 0,
     consumptionTrend = 'stable',
     trendPercentage = 0,
-    totalPaid = '0'
+    totalPaid = '0',
+    latestMeterReading = null,
+    customer = {}
   } = dashboardData;
 
   const handlePayNow = () => {
@@ -144,10 +146,11 @@ export default function CustomerDashboard() {
     {
       title: 'Outstanding Balance',
       value: formatCurrency(outstandingBalance, 'Rs.'),
-      change: safeNumber(outstandingBalance) > 0 ? 'Payment Due' : 'Paid',
+      change: safeNumber(outstandingBalance) > 0 ? 'Unpaid Bills' : 'All Paid',
       trend: safeNumber(outstandingBalance) > 0 ? 'up' : 'neutral',
       icon: DollarSign,
-      color: safeNumber(outstandingBalance) > 0 ? 'from-red-500 to-rose-500' : 'from-green-500 to-emerald-500'
+      color: safeNumber(outstandingBalance) > 0 ? 'from-red-500 to-rose-500' : 'from-green-500 to-emerald-500',
+      description: safeNumber(outstandingBalance) > 0 ? 'Amount due for payment' : 'No pending payments'
     },
     {
       title: 'Current Bill',
@@ -155,7 +158,17 @@ export default function CustomerDashboard() {
       change: currentBillWithConsumption?.dueDate ? `Due: ${safeDate(currentBillWithConsumption.dueDate)}` : 'No bill',
       trend: 'neutral',
       icon: FileText,
-      color: 'from-yellow-400 to-orange-500'
+      color: 'from-yellow-400 to-orange-500',
+      description: currentBillWithConsumption ? 'Latest billing cycle' : 'Awaiting bill generation'
+    },
+    {
+      title: 'Total Paid',
+      value: formatCurrency(totalPaid, 'Rs.'),
+      change: recentPayments.length > 0 ? `${recentPayments.length} payments` : 'No payments',
+      trend: 'neutral',
+      icon: CheckCircle,
+      color: 'from-green-500 to-emerald-500',
+      description: 'Lifetime payments made'
     },
     {
       title: 'Avg Monthly Usage',
@@ -167,15 +180,8 @@ export default function CustomerDashboard() {
         : 'Stable',
       trend: consumptionTrend === 'increasing' ? 'up' : consumptionTrend === 'decreasing' ? 'down' : 'neutral',
       icon: Activity,
-      color: 'from-purple-500 to-pink-500'
-    },
-    {
-      title: 'Last Payment',
-      value: lastPayment ? formatCurrency(lastPayment.paymentAmount, 'Rs.') : 'N/A',
-      change: lastPayment ? safeDate(lastPayment.paymentDate) : 'No payments',
-      trend: 'neutral',
-      icon: CreditCard,
-      color: 'from-blue-500 to-cyan-500'
+      color: 'from-purple-500 to-pink-500',
+      description: 'Based on last 6 months'
     }
   ];
 
@@ -428,7 +434,7 @@ export default function CustomerDashboard() {
 
   return (
     <DashboardLayout userType="customer" userName={session?.user?.name || 'Customer'}>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Status-based Welcome Header */}
         {dashboardData?.customer?.status === 'pending_installation' ? (
           <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 backdrop-blur-xl rounded-2xl p-6 border border-yellow-500/20">
@@ -513,20 +519,20 @@ export default function CustomerDashboard() {
             </div>
           </div>
         ) : (
-          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 backdrop-blur-xl rounded-2xl p-6 border border-white/10">
+          <div className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   Welcome back, {session?.user?.name || 'Customer'}!
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Account Number: {accountNumber} • Connection Type: Residential
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {accountNumber} • {customer?.connectionType || 'Residential'}
                 </p>
               </div>
-              <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+              <div className="mt-3 sm:mt-0 flex items-center space-x-2">
                 <button
                   onClick={fetchDashboardData}
-                  className="px-4 py-2 bg-white/10 border border-white/20 text-white rounded-lg hover:bg-white/20 transition-all flex items-center space-x-2"
+                  className="px-3 py-2 bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-white/20 transition-all flex items-center space-x-2 text-sm"
                 >
                   <RefreshCw className="w-4 h-4" />
                   <span>Refresh</span>
@@ -534,7 +540,7 @@ export default function CustomerDashboard() {
                 {parseFloat(outstandingBalance) > 0 && (
                   <button
                     onClick={handlePayNow}
-                    className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all font-semibold"
+                    className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all font-semibold text-sm"
                   >
                     Pay Now
                   </button>
@@ -544,29 +550,55 @@ export default function CustomerDashboard() {
           </div>
         )}
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Summary Cards - Simplified */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {summaryCards.map((card, index) => (
-            <div key={index} className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-white/10 rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity"></div>
-              <div className="relative bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10 hover:border-white/20 transition-all">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`w-12 h-12 bg-gradient-to-r ${card.color} rounded-xl flex items-center justify-center`}>
-                    <card.icon className="w-6 h-6 text-white" />
-                  </div>
-                  {card.trend === 'up' && <ArrowUp className="w-5 h-5 text-red-400" />}
-                  {card.trend === 'down' && <ArrowDown className="w-5 h-5 text-green-400" />}
+            <div key={index} className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 transition-all">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`w-10 h-10 bg-gradient-to-r ${card.color} rounded-lg flex items-center justify-center`}>
+                  <card.icon className="w-5 h-5 text-white" />
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">{card.title}</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{card.change}</p>
+                {card.trend === 'up' && <ArrowUp className="w-4 h-4 text-red-400" />}
+                {card.trend === 'down' && <ArrowDown className="w-4 h-4 text-green-400" />}
               </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{card.title}</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white mb-1">{card.value}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{card.change}</p>
             </div>
           ))}
         </div>
 
+        {/* Meter Reading Info - Compact */}
+        {latestMeterReading && dashboardData?.customer?.status === 'active' && (
+          <div className="bg-white dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-white/10">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center">
+                <Activity className="w-4 h-4 mr-2 text-cyan-500" />
+                Meter Reading Summary
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Last: {safeDate(latestMeterReading.readingDate)}
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-3">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Meter Reading</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {formatUnits(latestMeterReading.currentReading)}
+                </p>
+              </div>
+              <div className="bg-gray-50 dark:bg-white/5 rounded-lg p-3">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">This Month's Usage</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {currentBillWithConsumption ? formatUnits(currentBillWithConsumption.unitsConsumed) : '0 kWh'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Charts Grid - Row 1 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Consumption Trend Chart */}
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-6">

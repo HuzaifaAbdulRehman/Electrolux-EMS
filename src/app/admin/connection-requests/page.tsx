@@ -50,13 +50,11 @@ export default function AdminConnectionRequests() {
     fetchRequests();
   }, [filterStatus]);
 
-  // Periodic refresh and on-focus refresh to reflect employee progress quickly
+  // Refresh on window focus (when user returns to tab) - better UX than auto-refresh
   useEffect(() => {
-    const i = setInterval(() => fetchRequests(), 10000);
     const onFocus = () => fetchRequests();
     window.addEventListener('focus', onFocus);
     return () => {
-      clearInterval(i);
       window.removeEventListener('focus', onFocus);
     };
   }, []);
@@ -71,7 +69,9 @@ export default function AdminConnectionRequests() {
           if (resp.ok && json?.success && Array.isArray(json.data) && json.data.length > 0) {
             setEmployees(json.data);
           }
-        } catch {}
+        } catch (error) {
+          console.error('[Connection Requests] Fallback employee fetch failed:', error);
+        }
       }
     };
     ensureEmployees();
@@ -207,37 +207,34 @@ export default function AdminConnectionRequests() {
     }
   };
 
-  const [zones, setZones] = React.useState<string[]>([]);
-  const [zonesLoading, setZonesLoading] = React.useState(false);
-  const [selectedZones, setSelectedZones] = React.useState<Record<number, string>>({});
-
-  React.useEffect(() => {
-    const fetchZones = async () => {
-      setZonesLoading(true);
-      try {
-        const resp = await fetch('/api/zones');
-        const json = await resp.json();
-        if (resp.ok && json?.success && Array.isArray(json.data)) setZones(json.data);
-        else setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D', 'Zone E']);
-      } catch {
-        setZones(['Zone A', 'Zone B', 'Zone C', 'Zone D', 'Zone E']);
-      } finally {
-        setZonesLoading(false);
-      }
-    };
-    fetchZones();
-  }, []);
-
   const handleCreateAccount = async (requestId: number) => {
-    // Get the request to use its zone
+    // Get the request to use its zone (customer already filled this)
     const request = requests.find(r => r.id === requestId);
-    const zoneToUse = selectedZones[requestId] || request?.zone;
 
-    if (!zoneToUse) {
-      alert('Please select a zone before creating the account.');
+    console.log('[Create Account] Full request data:', {
+      id: request?.id,
+      applicantName: request?.applicantName,
+      zone: request?.zone,
+      applicationNumber: request?.applicationNumber,
+      status: request?.status
+    });
+
+    const zoneToUse = request?.zone;
+
+    if (!zoneToUse || zoneToUse.trim() === '') {
+      toast.error(`Zone is missing for ${request?.applicantName}'s application (${request?.applicationNumber}). Customer must have skipped the zone field. Please contact customer to resubmit.`);
+      console.error('[Create Account] Missing or empty zone:', {
+        requestId,
+        applicantName: request?.applicantName,
+        zone: request?.zone,
+        zoneType: typeof request?.zone
+      });
       return;
     }
-    if (!confirm('Create customer account for this application? A meter number will be auto-generated and login credentials will be created.')) return;
+
+    console.log('[Create Account] ✅ Creating account with zone:', zoneToUse, 'for', request?.applicantName);
+
+    if (!confirm(`Create customer account for ${request?.applicantName}?\n\nZone: ${zoneToUse}\n\nA meter number will be auto-generated and login credentials will be created.`)) return;
 
     setIsProcessing(true);
     try {
@@ -464,41 +461,24 @@ export default function AdminConnectionRequests() {
                     )}
 
                     {request.status === 'approved' && (
-                      request.startedCount && request.startedCount > 0 ? (
-                        <>
-                          <div className="flex flex-col">
-                            <label className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                              Zone {request.zone && `(from application: ${request.zone})`}
-                            </label>
-                            <select
-                              value={selectedZones[request.id] || request.zone || ''}
-                              onChange={(e) => setSelectedZones({...selectedZones, [request.id]: e.target.value})}
-                              className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                            >
-                              <option value="">{zonesLoading ? 'Loading zones...' : 'Select Zone'}</option>
-                              {zones.map((z) => (
-                                <option key={z} value={z}>{z}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <button
-                            onClick={() => handleCreateAccount(request.id)}
-                            disabled={isProcessing}
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50 flex items-center space-x-2"
-                          >
-                            <User className="w-4 h-4" />
-                            <span>Create Customer Account</span>
-                          </button>
-                        </>
+                      request.completedCount && request.completedCount > 0 ? (
+                        <button
+                          onClick={() => handleCreateAccount(request.id)}
+                          disabled={isProcessing}
+                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all disabled:opacity-50 flex items-center space-x-2"
+                        >
+                          <User className="w-4 h-4" />
+                          <span>Create Customer Account</span>
+                        </button>
                       ) : (
                         <button
                           type="button"
                           disabled
-                          title="Waiting for employee to start installation"
+                          title="Waiting for employee to complete installation"
                           className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg cursor-not-allowed flex items-center space-x-2"
                         >
                           <Clock className="w-4 h-4" />
-                          <span>Waiting for employee</span>
+                          <span>Waiting for work completion</span>
                         </button>
                       )
                     )}
@@ -637,28 +617,14 @@ export default function AdminConnectionRequests() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Zone <span className="text-red-500">*</span>
-                    {selectedRequest.zone && (
-                      <span className="ml-2 text-xs font-normal text-green-600 dark:text-green-400">
-                        (from application: {selectedRequest.zone})
-                      </span>
-                    )}
+                    Zone <span className="text-green-600 dark:text-green-400">✓</span>
                   </label>
-                  <select
-                    value={approvalData.zone}
-                    onChange={(e) => setApprovalData({ ...approvalData, zone: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="">{zonesLoading ? 'Loading zones...' : 'Select Zone'}</option>
-                    {zones.map((z) => (
-                      <option key={z} value={z}>{z}</option>
-                    ))}
-                  </select>
-                  {!selectedRequest.zone && (
-                    <p className="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
-                      ⚠️ Customer didn't select a zone - please assign one
-                    </p>
-                  )}
+                  <div className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white">
+                    {approvalData.zone || 'Zone not specified by customer'}
+                  </div>
+                  <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                    ✓ Auto-detected from customer's application
+                  </p>
                 </div>
 
                 <div>

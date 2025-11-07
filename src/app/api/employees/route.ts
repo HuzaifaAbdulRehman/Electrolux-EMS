@@ -33,8 +33,8 @@ export async function GET(request: NextRequest) {
         assignedZone: employees.assignedZone,
         status: employees.status,
         hireDate: employees.hireDate,
-        workOrdersCount: sql<number>`(SELECT COUNT(*) FROM ${workOrders} WHERE ${workOrders.employeeId} = ${employees.id})`,
-        readingsCount: sql<number>`(SELECT COUNT(*) FROM ${meterReadings} WHERE ${meterReadings.employeeId} = ${employees.id})`,
+        workOrdersCount: sql<number>`(SELECT COUNT(*) FROM work_orders WHERE employee_id = employees.id)`,
+        readingsCount: sql<number>`(SELECT COUNT(*) FROM meter_readings WHERE employee_id = employees.id)`,
       })
       .from(employees)
       .$dynamic();

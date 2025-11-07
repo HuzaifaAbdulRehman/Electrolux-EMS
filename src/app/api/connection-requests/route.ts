@@ -26,16 +26,17 @@ export async function POST(request: NextRequest) {
       preferredDate,
       purposeOfConnection,
       existingConnection,
-      existingAccountNumber
+      existingAccountNumber,
+      zone
     } = body;
 
-    console.log('[Connection Request] New application received from:', applicantName, email);
+    console.log('[Connection Request] New application received from:', applicantName, email, 'Zone:', zone);
 
     // Validation
-    if (!applicantName || !email || !phone || !idType || !idNumber || !propertyType || !connectionType || !propertyAddress || !city || !purposeOfConnection) {
+    if (!applicantName || !email || !phone || !idType || !idNumber || !propertyType || !connectionType || !propertyAddress || !city || !purposeOfConnection || !zone) {
       return NextResponse.json({
         error: 'Missing required fields',
-        details: 'Please fill all required fields'
+        details: 'Please fill all required fields including zone'
       }, { status: 400 });
     }
 
@@ -136,11 +137,12 @@ export async function POST(request: NextRequest) {
       purposeOfConnection,
       existingConnection: existingConnection || false,
       existingAccountNumber: existingAccountNumber || null,
+      zone: zone || null,
       status: 'pending',
       applicationDate: new Date().toISOString().split('T')[0],
     } as any);
 
-    console.log('[Connection Request] Application created successfully:', applicationNumber);
+    console.log('[Connection Request] Application created successfully:', applicationNumber, 'with Zone:', zone);
 
     // Notify admins about new connection request
     try {

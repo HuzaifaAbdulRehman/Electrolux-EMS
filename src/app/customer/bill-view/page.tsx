@@ -122,20 +122,25 @@ function BillViewInner() {
 
     const history = historyResult.data.slice(0, 6).reverse().map((b: any) => ({
       month: new Date(b.billingMonth).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-      units: safeNumber(b.unitsConsumed),
-      amount: safeNumber(b.totalAmount)
+      units: parseFloat(safeNumber(b.unitsConsumed).toFixed(2)),
+      amount: parseFloat(safeNumber(b.totalAmount).toFixed(2))
     }));
 
     // Calculate slab breakdown using shared utility function with real tariff slabs from DB
-    const units = safeNumber(bill.unitsConsumed);
-    const slabs = calculateTariffSlabs(units, bill.tariffSlabs);
+    const units = parseFloat(safeNumber(bill.unitsConsumed).toFixed(2));
+    const slabs = calculateTariffSlabs(units, bill.tariffSlabs).map(slab => ({
+      ...slab,
+      units: parseFloat(slab.units.toFixed(2)),
+      rate: parseFloat(slab.rate.toFixed(2)),
+      amount: parseFloat(slab.amount.toFixed(2))
+    }));
 
-    const energyCharge = safeNumber(bill.baseAmount);
-    const fixedCharge = safeNumber(bill.fixedCharges);
-    const subtotal = energyCharge + fixedCharge;
-    const electricityDuty = safeNumber(bill.electricityDuty);
-    const gst = safeNumber(bill.gstAmount);
-    const total = safeNumber(bill.totalAmount);
+    const energyCharge = parseFloat(safeNumber(bill.baseAmount).toFixed(2));
+    const fixedCharge = parseFloat(safeNumber(bill.fixedCharges).toFixed(2));
+    const subtotal = parseFloat((energyCharge + fixedCharge).toFixed(2));
+    const electricityDuty = parseFloat(safeNumber(bill.electricityDuty).toFixed(2));
+    const gst = parseFloat(safeNumber(bill.gstAmount).toFixed(2));
+    const total = parseFloat(safeNumber(bill.totalAmount).toFixed(2));
 
     setBillData({
       billNumber: safeString(bill.billNumber, 'N/A'),
@@ -151,8 +156,8 @@ function BillViewInner() {
         billingMonth: new Date(bill.billingMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
       },
       reading: {
-        previous: safeNumber(bill.previousReading, 0),
-        current: safeNumber(bill.currentReading, 0),
+        previous: parseFloat(safeNumber(bill.previousReading, 0).toFixed(2)),
+        current: parseFloat(safeNumber(bill.currentReading, 0).toFixed(2)),
         previousDate: bill.readingDate ? new Date(new Date(bill.readingDate).setMonth(new Date(bill.readingDate).getMonth() - 1)).toLocaleDateString() : new Date(bill.billingMonth).toLocaleDateString(),
         currentDate: bill.readingDate ? new Date(bill.readingDate).toLocaleDateString() : new Date(bill.issueDate).toLocaleDateString(),
         unitsConsumed: units
@@ -222,6 +227,14 @@ function BillViewInner() {
             color: #fff !important;
             font-weight: bold !important;
           }
+          /* PAID watermark - ensure it prints */
+          .text-9xl {
+            font-size: 12rem !important;
+            color: #16a34a !important;
+            opacity: 0.1 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           .no-print, nav, .sidebar, button {
             display: none !important;
           }
@@ -251,7 +264,17 @@ function BillViewInner() {
           </div>
 
           {/* Bill Container - Page 1 */}
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden relative">
+            {/* PAID Watermark - Only shows when bill is paid */}
+            {billData.status === 'PAID' && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <div className="transform -rotate-45 opacity-10">
+                  <p className="text-9xl font-black text-green-600" style={{ fontSize: '12rem', letterSpacing: '0.5rem' }}>
+                    PAID
+                  </p>
+                </div>
+              </div>
+            )}
             {/* Header */}
             <div className="bg-gradient-to-r from-yellow-400 to-orange-500 px-6 py-3">
               <div className="flex items-center justify-between">
@@ -328,7 +351,14 @@ function BillViewInner() {
                     </div>
                     <div className="flex justify-between pt-2">
                       <span className="text-gray-600 font-medium">Payment Status:</span>
-                      <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        billData.status === 'PAID'
+                          ? 'bg-green-100 text-green-800 border border-green-300'
+                          : billData.status === 'OVERDUE'
+                          ? 'bg-red-100 text-red-800 border border-red-300'
+                          : 'bg-yellow-100 text-yellow-800 border border-yellow-300'
+                      }`}>
+                        {billData.status === 'PAID' && '✓ '}
                         {billData.status}
                       </span>
                     </div>
@@ -354,7 +384,7 @@ function BillViewInner() {
                   </div>
                   <div className="bg-yellow-50 p-2 rounded">
                     <p className="text-xs text-gray-600">Consumed</p>
-                    <p className="text-lg font-bold text-orange-600">{billData.reading.unitsConsumed}</p>
+                    <p className="text-lg font-bold text-orange-600">{billData.reading.unitsConsumed.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</p>
                     <p className="text-xs text-gray-500">kWh</p>
                   </div>
                 </div>
@@ -381,7 +411,7 @@ function BillViewInner() {
                       {billData.charges.slabs.map((slab, index) => (
                         <tr key={index}>
                           <td className="px-2 py-1 text-gray-600">{slab.range}</td>
-                          <td className="px-2 py-1 text-right text-gray-900">{slab.units}</td>
+                          <td className="px-2 py-1 text-right text-gray-900">{slab.units.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
                           <td className="px-2 py-1 text-right text-gray-900">{formatCurrency(slab.rate, 'Rs.')}</td>
                           <td className="px-2 py-1 text-right text-gray-900 font-semibold">{formatCurrency(slab.amount, 'Rs.')}</td>
                         </tr>
@@ -425,7 +455,17 @@ function BillViewInner() {
           <div className="page-break"></div>
 
           {/* Page 2: Usage History & Payment Info */}
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden mt-6 print:mt-0">
+          <div className="bg-white shadow-lg rounded-lg overflow-hidden mt-6 print:mt-0 relative">
+            {/* PAID Watermark - Page 2 */}
+            {billData.status === 'PAID' && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <div className="transform -rotate-45 opacity-10">
+                  <p className="text-9xl font-black text-green-600" style={{ fontSize: '12rem', letterSpacing: '0.5rem' }}>
+                    PAID
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="bg-gradient-to-r from-yellow-400 to-orange-500 px-6 py-2">
               <div className="flex items-center justify-between">
                 <div>
@@ -459,7 +499,7 @@ function BillViewInner() {
 
                   <div className="bg-blue-50 border border-blue-200 p-2 rounded text-xs">
                     <p className="text-blue-800">
-                      <span className="font-bold">Avg. Daily:</span> {billData.reading.unitsConsumed ? (billData.reading.unitsConsumed / 30).toFixed(1) : '0'} kWh
+                      <span className="font-bold">Avg. Daily:</span> {billData.reading.unitsConsumed ? (billData.reading.unitsConsumed / 30).toFixed(2) : '0.00'} kWh
                       <span className="mx-2">•</span>
                       <span className="font-bold">Tariff:</span> {billData.customer.connectionType} Slab
                     </p>
@@ -488,7 +528,7 @@ function BillViewInner() {
                             ></div>
                           </div>
                           <p className={`text-xs font-semibold ${isCurrentMonth ? 'text-yellow-600' : 'text-gray-700'}`}>
-                            {record.units}
+                            {record.units.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })}
                           </p>
                           <p className="text-xs text-gray-500">{record.month.split(' ')[0]}</p>
                           <p className={`text-xs ${isCurrentMonth ? 'text-yellow-600 font-semibold' : 'text-gray-500'}`}>

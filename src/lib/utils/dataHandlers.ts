@@ -50,15 +50,15 @@ export const formatNumber = (
  * Format currency with symbol
  * @param value - Amount to format
  * @param symbol - Currency symbol (default: 'Rs.')
- * @param decimals - Decimal places (default: 2)
+ * @param decimals - Decimal places (default: 0 - whole numbers only)
  * @returns Formatted currency string
  */
 export const formatCurrency = (
   value: unknown,
   symbol: string = 'Rs.',
-  decimals: number = 2
+  decimals: number = 0
 ): string => {
-  const num = safeNumber(value);
+  const num = Math.round(safeNumber(value));
   return `${symbol} ${num.toLocaleString('en-PK', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals

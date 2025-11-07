@@ -211,6 +211,30 @@ export default function TrackApplication() {
                   </div>
                 )}
 
+                {application.status === 'approved' && (
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center animate-pulse">
+                      <Clock className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Installation in Progress</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Our team is working on your connection. You'll receive your account credentials once installation is complete.</p>
+                    </div>
+                  </div>
+                )}
+
+                {application.status === 'connected' && application.installationDate && (
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                      <Zap className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Installation Completed</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{new Date(application.installationDate).toLocaleString()}</p>
+                    </div>
+                  </div>
+                )}
+
                 {application.status === 'rejected' && (
                   <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
@@ -225,8 +249,8 @@ export default function TrackApplication() {
               </div>
             </div>
 
-            {/* Account Credentials - Only show if approved */}
-            {(application.status === 'approved' || application.status === 'connected') && application.accountNumber && (
+            {/* Account Credentials - Only show if connected (account created) */}
+            {application.status === 'connected' && application.accountNumber && (
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl p-6 mb-8 border-2 border-green-500 dark:border-green-400">
                 <div className="flex items-center space-x-3 mb-4">
                   <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />

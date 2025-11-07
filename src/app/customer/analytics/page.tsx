@@ -101,6 +101,7 @@ export default function UsageAnalytics() {
   const consumptionHistory = analyticsData?.data?.consumptionHistory || [];
   const extendedConsumptionHistory = analyticsData?.data?.extendedConsumptionHistory || [];
   const recentBills = analyticsData?.data?.recentBills || [];
+  const latestMeterReading = analyticsData?.data?.latestMeterReading || null;
   // Exclude installation/connection fee (zero-unit) entries from analytics visuals
   const consumptionHistoryFiltered = (consumptionHistory || []).filter((item: any) => safeNumber(item?.unitsConsumed, 0) > 0);
   const extendedConsumptionHistoryFiltered = (extendedConsumptionHistory || []).filter((item: any) => safeNumber(item?.unitsConsumed, 0) > 0);
@@ -550,13 +551,20 @@ export default function UsageAnalytics() {
                 )}
               </div>
               {consumptionHistoryFiltered.length > 0 && (
-                <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="mt-4 grid grid-cols-3 gap-3">
                   <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3 text-center">
                     <p className="text-xs text-gray-600 dark:text-gray-400">Total Billed Consumption</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">
                       {formatUnits(consumptionHistoryFiltered.reduce((sum: number, item: any) => sum + safeNumber(item.unitsConsumed, 0), 0))}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500">Since connection</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500">From bills</p>
+                  </div>
+                  <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Current Meter Reading</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                      {latestMeterReading ? formatUnits(latestMeterReading.currentReading) : '0 kWh'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-500">Cumulative meter value</p>
                   </div>
                   <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
                     <p className="text-xs text-gray-600 dark:text-gray-400">Billing Months</p>

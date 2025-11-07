@@ -53,7 +53,9 @@ export async function GET(request: NextRequest) {
       .select({ count: sql<number>`COUNT(*)` })
       .from(connectionRequests)
       .where(whereClause);
-    } catch {}
+    } catch (error) {
+      console.error('[Admin Connection Requests] Error fetching count:', error);
+    }
 
     // Get connection requests with pagination (DBMS: Complex JOIN) - safe fallback
     let requestsData: any[] = [];
@@ -91,13 +93,23 @@ export async function GET(request: NextRequest) {
           ,
           // Work order started (employee responded) count
           startedCount: sql<number>`(
-            SELECT COUNT(*) FROM ${workOrders}
-            WHERE ${workOrders.workType} = 'new_connection'
+            SELECT COUNT(*) FROM work_orders wo
+            WHERE wo.work_type = 'new_connection'
               AND (
-                ${workOrders.description} LIKE CONCAT('%', ${connectionRequests.applicationNumber}, '%')
-                OR ${workOrders.title} LIKE CONCAT('%', ${connectionRequests.applicationNumber}, '%')
+                wo.description LIKE CONCAT('%', connection_requests.application_number, '%')
+                OR wo.title LIKE CONCAT('%', connection_requests.application_number, '%')
               )
-              AND (${workOrders.status} = 'in_progress' OR ${workOrders.status} = 'completed')
+              AND (wo.status = 'in_progress' OR wo.status = 'completed')
+          )`,
+          // Work order completed count (employee finished the work)
+          completedCount: sql<number>`(
+            SELECT COUNT(*) FROM work_orders wo
+            WHERE wo.work_type = 'new_connection'
+              AND (
+                wo.description LIKE CONCAT('%', connection_requests.application_number, '%')
+                OR wo.title LIKE CONCAT('%', connection_requests.application_number, '%')
+              )
+              AND wo.status = 'completed'
           )`
       })
       .from(connectionRequests)
@@ -105,7 +117,9 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(connectionRequests.applicationDate))
       .limit(limit)
       .offset(offset);
-    } catch {}
+    } catch (error) {
+      console.error('[Admin Connection Requests] Error fetching requests:', error);
+    }
 
     // Get status counts (DBMS: GROUP BY with COUNT) - safe fallback
     let statusCounts: Array<{ status: string | null; count: number }> = [];
@@ -117,7 +131,9 @@ export async function GET(request: NextRequest) {
       })
       .from(connectionRequests)
       .groupBy(connectionRequests.status);
-    } catch {}
+    } catch (error) {
+      console.error('[Admin Connection Requests] Error fetching status counts:', error);
+    }
 
     // Get available employees for assignment - safe fallback
     let availableEmployees: any[] = [];
@@ -139,7 +155,9 @@ export async function GET(request: NextRequest) {
       .where(eq(employees.status, 'active'))
       .groupBy(employees.id, employees.employeeName, employees.email, employees.phone, employees.department)
       .orderBy(sql`workLoad ASC`);
-    } catch {}
+    } catch (error) {
+      console.error('[Admin Connection Requests] Error fetching employees:', error);
+    }
 
     const total = totalResult.count;
     const totalPages = Math.ceil(total / limit);
@@ -232,25 +250,12 @@ export async function PATCH(request: NextRequest) {
     // Handle different actions (DBMS: Conditional Updates)
     switch (action) {
       case 'approve': {
-        // Generate account credentials when approving
-        const crypto = await import('crypto');
-        const generatedPassword = crypto.randomBytes(8).toString('base64').replace(/[/+=]/g, '') +
-                              crypto.randomBytes(4).toString('hex').toUpperCase() + '!@#';
-
-        // Generate account number
-        const randomSuffix = crypto.randomBytes(2).toString('hex').toUpperCase();
-        const generatedAccountNumber = `ELX-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}-${randomSuffix}`;
-
-        console.log('[Connection Request Approval] Generated credentials for:', connectionRequest.applicantName);
-        console.log('[Connection Request Approval] Account Number:', generatedAccountNumber);
-
+        // Note: Credentials will be generated when customer account is created (after work completion)
         updateData = {
           status: 'approved',
           approvalDate: new Date().toISOString().split('T')[0],
           estimatedCharges: estimatedCharges || connectionRequest.estimatedCharges,
-          inspectionDate: inspectionDate || connectionRequest.inspectionDate,
-          accountNumber: generatedAccountNumber,
-          temporaryPassword: generatedPassword
+          inspectionDate: inspectionDate || connectionRequest.inspectionDate
         };
 
         // Create work order only if employeeId provided
@@ -336,19 +341,22 @@ export async function PATCH(request: NextRequest) {
         const cryptoLib = await import('crypto');
         const bcrypt = await import('bcryptjs');
 
-        // Require an assigned work order before activating the account
+        // Require a completed work order before activating the account
         try {
           const [woCount] = await db
             .select({ count: sql<number>`COUNT(*)` })
             .from(workOrders)
             .where(and(
               eq(workOrders.workType, 'new_connection'),
-              (sql`(${workOrders.description} LIKE ${`%${connectionRequest.applicationNumber}%`} OR ${workOrders.title} LIKE ${`%${connectionRequest.applicationNumber}%`})` as any),
-              (sql`(${workOrders.status} = 'in_progress' OR ${workOrders.status} = 'completed')` as any)
+              or(
+                like(workOrders.description, `%${connectionRequest.applicationNumber}%`),
+                like(workOrders.title, `%${connectionRequest.applicationNumber}%`)
+              ),
+              eq(workOrders.status, 'completed')
             ));
           if (!woCount || woCount.count === 0) {
             return NextResponse.json({
-              error: 'Employee must start (or complete) the installation work order before account creation'
+              error: 'Employee must complete the installation work order before account creation'
             }, { status: 400 });
           }
         } catch (e) {
@@ -361,23 +369,23 @@ export async function PATCH(request: NextRequest) {
         let storedAccountNumber = connectionRequest.accountNumber;
 
         if (!storedPassword) {
-          // Fallback: generate if not stored (shouldn't happen if approved first)
+          // Generate new password for customer account
           storedPassword = cryptoLib.randomBytes(8).toString('base64').replace(/[/+=]/g, '') +
                           cryptoLib.randomBytes(4).toString('hex').toUpperCase() + '!@#';
-          console.log('[Connection Request] Warning: Password not found, generating new one');
+          console.log('[Connection Request] Generated new password for customer');
         }
 
         if (!storedAccountNumber) {
-          // Fallback: generate if not stored
+          // Generate new account number
           const randomSuffix = cryptoLib.randomBytes(2).toString('hex').toUpperCase();
           storedAccountNumber = `ELX-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}-${randomSuffix}`;
-          console.log('[Connection Request] Warning: Account number not found, generating new one');
+          console.log('[Connection Request] Generated new account number:', storedAccountNumber);
         }
 
         const hashedPassword = await bcrypt.hash(storedPassword, 12);
 
         console.log('[Connection Request] Creating user account for:', connectionRequest.applicantName);
-        console.log('[Connection Request] Using stored credentials from approval');
+        console.log('[Connection Request] Account Number:', storedAccountNumber);
 
         // Create user account
         const [newUser] = await db.insert(users).values({
@@ -450,11 +458,13 @@ export async function PATCH(request: NextRequest) {
             .where(eq(customers.id, customerId));
         }
 
-        // Update connection request status
+        // Update connection request status and save credentials
         updateData = {
           status: 'connected', // Changed to connected since account is active
           approvalDate: new Date().toISOString().split('T')[0],
           installationDate: new Date().toISOString().split('T')[0],
+          accountNumber: storedAccountNumber,
+          temporaryPassword: storedPassword
         };
 
         // Find and update work order with customer ID and mark as completed
@@ -466,7 +476,10 @@ export async function PATCH(request: NextRequest) {
           } as any)
           .where(and(
             eq(workOrders.workType, 'new_connection'),
-            sql`${workOrders.description} LIKE ${`%${connectionRequest.applicationNumber}%`}`
+            or(
+              like(workOrders.description, `%${connectionRequest.applicationNumber}%`),
+              like(workOrders.title, `%${connectionRequest.applicationNumber}%`)
+            )
           ));
 
         console.log('[Connection Request] Work order completed');

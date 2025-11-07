@@ -79,24 +79,27 @@ export default function BillCalculator() {
     }
   };
 
-  // Single calculation function - fixes the slab calculation bug
+  // Single calculation function - matches API bill generation logic exactly
   const calculateCharges = (units: number, tariff: any) => {
     let energyCharge = 0;
-    let consumedUnits = 0;
+    let remaining = units;
 
     if (tariff.slabs) {
       for (const slab of tariff.slabs) {
-        if (consumedUnits >= units) break;
+        if (remaining <= 0) break;
 
-        const slabStart = slab.min;
-        const slabEnd = slab.max === Infinity ? units : slab.max;
+        const start = slab.min;
+        const end = slab.max;
+        const rate = slab.rate;
 
-        // FIXED: Calculate actual units in this slab, accounting for gaps in slab boundaries
-        const unitsInSlab = Math.max(0, Math.min(units - consumedUnits, slabEnd - Math.max(slabStart, consumedUnits)));
+        // Calculate slab span (inclusive): if end is null/Infinity, use all remaining
+        // Match API logic: span = end - start + 1 (both boundaries inclusive)
+        const slabSpan = end === Infinity ? remaining : (end - start + 1);
+        const unitsInSlab = Math.min(remaining, slabSpan);
 
         if (unitsInSlab > 0) {
-          energyCharge += unitsInSlab * slab.rate;
-          consumedUnits += unitsInSlab;
+          energyCharge += unitsInSlab * rate;
+          remaining -= unitsInSlab;
         }
       }
     }

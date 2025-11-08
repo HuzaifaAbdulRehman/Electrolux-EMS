@@ -504,11 +504,20 @@ async function seed() {
           remainingUnits -= slabUnits;
         }
 
-        const fixedCharges = parseFloat(tariff.fixedCharge);
-        const electricityDuty = baseAmount * (parseFloat(tariff.electricityDutyPercent) / 100);
-        const subtotal = baseAmount + fixedCharges + electricityDuty;
-        const gstAmount = subtotal * (parseFloat(tariff.gstPercent) / 100);
-        const totalAmount = subtotal + gstAmount;
+        // Round baseAmount to whole number (no decimal paisa) - matches API logic
+        baseAmount = Math.round(baseAmount);
+
+        // Calculate all charges with whole-number rounding at each step
+        const fixedCharges = Math.round(parseFloat(tariff.fixedCharge));
+
+        // Apply electricity duty on baseAmount only (NOT on fixed charges)
+        const electricityDuty = Math.round(baseAmount * (parseFloat(tariff.electricityDutyPercent) / 100));
+
+        // Apply GST on (baseAmount + fixedCharges + electricityDuty)
+        const gstAmount = Math.round((baseAmount + fixedCharges + electricityDuty) * (parseFloat(tariff.gstPercent) / 100));
+
+        // Calculate total with whole-number rounding
+        const totalAmount = Math.round(baseAmount + fixedCharges + electricityDuty + gstAmount);
 
         // Always create bills for all months we have readings
         // (We only create readings for 5 previous months, so all will get bills)

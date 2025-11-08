@@ -330,9 +330,9 @@ export default function DashboardLayout({ children, userType, userName }: Dashbo
 
   const getUserTypeColor = () => {
     switch (userType) {
-      case 'admin': return 'from-red-500 to-pink-500';
-      case 'employee': return 'from-green-500 to-emerald-500';
-      default: return 'from-yellow-400 to-orange-500';
+      case 'admin': return 'from-blue-500 to-blue-600';
+      case 'employee': return 'from-green-500 to-green-600';
+      default: return 'from-orange-500 to-orange-600';
     }
   };
 

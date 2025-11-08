@@ -7,7 +7,9 @@
       "Bash(npm run build:*)",
       "Bash(del \"d:\\Programming\\Projects\\electrolux_ems\\src\\app\\api\\admin\\settings\\route.ts\")",
       "Bash(mysql:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

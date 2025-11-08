@@ -31,7 +31,7 @@ This guide walks you through the **safe cleanup and final preparation** steps be
 
 ```bash
 # Create a backup before making any changes
-mysqldump -u root -p"tomcruise@12345" electricity_ems > backup_before_cleanup.sql
+mysqldump -u root -p"${MYSQL_PASSWORD}" electricity_ems > backup_before_cleanup.sql
 ```
 
 **Why?** Always have a rollback option in case something goes wrong.
@@ -45,7 +45,7 @@ mysqldump -u root -p"tomcruise@12345" electricity_ems > backup_before_cleanup.sq
 cd d:\Programming\Projects\electrolux_ems
 
 # Run the cleanup SQL script
-mysql -u root -p"tomcruise@12345" electricity_ems < PRE_SUBMISSION_CLEANUP.sql > cleanup_results.txt 2>&1
+mysql -u root -p"${MYSQL_PASSWORD}" electricity_ems < PRE_SUBMISSION_CLEANUP.sql > cleanup_results.txt 2>&1
 ```
 
 **What it does:**
@@ -67,7 +67,7 @@ mysql -u root -p"tomcruise@12345" electricity_ems < PRE_SUBMISSION_CLEANUP.sql >
 cat cleanup_results.txt
 
 # Or manually verify
-mysql -u root -p"tomcruise@12345" -D electricity_ems -e "SHOW TABLES;"
+mysql -u root -p"${MYSQL_PASSWORD}" -D electricity_ems -e "SHOW TABLES;"
 ```
 
 **Expected Output:** 16 tables
@@ -97,7 +97,7 @@ work_orders
 
 ```sql
 -- Check that all foreign keys are intact
-mysql -u root -p"tomcruise@12345" -D electricity_ems -e "
+mysql -u root -p"${MYSQL_PASSWORD}" -D electricity_ems -e "
 SELECT COUNT(*) as total_foreign_keys
 FROM information_schema.KEY_COLUMN_USAGE
 WHERE CONSTRAINT_SCHEMA='electricity_ems'
@@ -119,7 +119,7 @@ AND REFERENCED_TABLE_NAME IS NOT NULL;
    - Host: localhost
    - Port: 3306
    - Username: root
-   - Password: tomcruise@12345
+   - Password: [From .env.local]
    - Database: electricity_ems
 4. Click **Next** → Select all 16 tables → **Execute**
 5. Arrange tables by domain:
@@ -232,7 +232,7 @@ npm run dev
 **Solution:**
 ```bash
 # Check which tables exist
-mysql -u root -p"tomcruise@12345" -D electricity_ems -e "SHOW TABLES;"
+mysql -u root -p"${MYSQL_PASSWORD}" -D electricity_ems -e "SHOW TABLES;"
 ```
 
 ### Issue 2: Foreign key constraint fails
@@ -248,7 +248,7 @@ AND REFERENCED_TABLE_NAME='table_name';
 **Solution:**
 ```bash
 # Restore from backup
-mysql -u root -p"tomcruise@12345" electricity_ems < backup_before_cleanup.sql
+mysql -u root -p"${MYSQL_PASSWORD}" electricity_ems < backup_before_cleanup.sql
 
 # Try cleanup again with verification steps
 ```
@@ -333,10 +333,10 @@ If anything goes wrong:
 
 ```bash
 # Restore from backup
-mysql -u root -p"tomcruise@12345" electricity_ems < backup_before_cleanup.sql
+mysql -u root -p"${MYSQL_PASSWORD}" electricity_ems < backup_before_cleanup.sql
 
 # Verify restoration
-mysql -u root -p"tomcruise@12345" -D electricity_ems -e "SHOW TABLES;"
+mysql -u root -p"${MYSQL_PASSWORD}" -D electricity_ems -e "SHOW TABLES;"
 ```
 
 ---

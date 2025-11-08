@@ -48,17 +48,17 @@ http://localhost:3000
 ### Create Backup
 ```bash
 # PowerShell or CMD
-mysqldump -u root -p${MYSQL_PASSWORD} electricity_ems > backup_$(Get-Date -Format 'yyyyMMdd_HHmmss').sql
+mysqldump -u root -pREDACTED electricity_ems > backup_$(Get-Date -Format 'yyyyMMdd_HHmmss').sql
 ```
 
 ### Create Backup (Simple Name)
 ```bash
-mysqldump -u root -p${MYSQL_PASSWORD} electricity_ems > backup.sql
+mysqldump -u root -pREDACTED electricity_ems > backup.sql
 ```
 
 ### Restore from Backup
 ```bash
-mysql -u root -p${MYSQL_PASSWORD} electricity_ems < backup.sql
+mysql -u root -pREDACTED electricity_ems < backup.sql
 ```
 
 ### Check Backup File Size
@@ -101,7 +101,7 @@ npm run db:seed
 ### Opening MySQL Workbench
 1. **Open MySQL Workbench** application
 2. **Click** on your connection: `root@localhost`
-3. **Enter password**: `[Your MySQL root password from .env.local]`
+3. **Enter password**: `REDACTED` (check .env.local)
 4. **Press** "OK"
 
 ### Running Queries in Workbench
@@ -165,39 +165,39 @@ LIMIT 10;
 
 ### Basic Query Syntax
 ```powershell
-mysql -u root -p${MYSQL_PASSWORD} electricity_ems -e "YOUR_QUERY_HERE"
+mysql -u root -pREDACTED electricity_ems -e "YOUR_QUERY_HERE"
 ```
 
 ### Suppress Warning Messages
 ```powershell
-mysql -u root -p${MYSQL_PASSWORD} electricity_ems -e "YOUR_QUERY_HERE" 2>&1 | Select-String -Pattern "^(?!mysql:)"
+mysql -u root -pREDACTED electricity_ems -e "YOUR_QUERY_HERE" 2>&1 | Select-String -Pattern "^(?!mysql:)"
 ```
 
 ### Common PowerShell Queries
 
 #### 1. Count Records in Each Table
 ```powershell
-mysql -u root -p${MYSQL_PASSWORD} electricity_ems -e "SELECT 'users' as table_name, COUNT(*) as count FROM users UNION ALL SELECT 'customers', COUNT(*) FROM customers UNION ALL SELECT 'bills', COUNT(*) FROM bills UNION ALL SELECT 'payments', COUNT(*) FROM payments;"
+mysql -u root -pREDACTED electricity_ems -e "SELECT 'users' as table_name, COUNT(*) as count FROM users UNION ALL SELECT 'customers', COUNT(*) FROM customers UNION ALL SELECT 'bills', COUNT(*) FROM bills UNION ALL SELECT 'payments', COUNT(*) FROM payments;"
 ```
 
 #### 2. Show User Distribution
 ```powershell
-mysql -u root -p${MYSQL_PASSWORD} electricity_ems -e "SELECT user_type, COUNT(*) as count FROM users GROUP BY user_type;"
+mysql -u root -pREDACTED electricity_ems -e "SELECT user_type, COUNT(*) as count FROM users GROUP BY user_type;"
 ```
 
 #### 3. View Recent Bills
 ```powershell
-mysql -u root -p${MYSQL_PASSWORD} electricity_ems -e "SELECT bill_number, billing_month, total_amount, status FROM bills ORDER BY issue_date DESC LIMIT 10;"
+mysql -u root -pREDACTED electricity_ems -e "SELECT bill_number, billing_month, total_amount, status FROM bills ORDER BY issue_date DESC LIMIT 10;"
 ```
 
 #### 4. Check Outstanding Balances
 ```powershell
-mysql -u root -p${MYSQL_PASSWORD} electricity_ems -e "SELECT COUNT(*) as customers_with_balance, SUM(CAST(outstanding_balance AS DECIMAL(10,2))) as total_outstanding FROM customers WHERE CAST(outstanding_balance AS DECIMAL(10,2)) > 0;"
+mysql -u root -pREDACTED electricity_ems -e "SELECT COUNT(*) as customers_with_balance, SUM(CAST(outstanding_balance AS DECIMAL(10,2))) as total_outstanding FROM customers WHERE CAST(outstanding_balance AS DECIMAL(10,2)) > 0;"
 ```
 
 #### 5. Verify Whole-Number Billing
 ```powershell
-mysql -u root -p${MYSQL_PASSWORD} electricity_ems -e "SELECT bill_number, base_amount, fixed_charges, electricity_duty, gst_amount, total_amount FROM bills WHERE customer_id = 1 LIMIT 1;"
+mysql -u root -pREDACTED electricity_ems -e "SELECT bill_number, base_amount, fixed_charges, electricity_duty, gst_amount, total_amount FROM bills WHERE customer_id = 1 LIMIT 1;"
 ```
 
 ---
@@ -479,7 +479,7 @@ Get-Service MySQL84
 ### Cannot Connect to Database
 ```powershell
 # Test connection
-mysql -u root -p${MYSQL_PASSWORD} -e "SELECT 1;"
+mysql -u root -pREDACTED -e "SELECT 1;"
 
 # If fails, check credentials in .env.local
 ```
@@ -499,7 +499,7 @@ $env:PORT=3001; npm run dev
 ls backup*.sql
 
 # Create new backup
-mysqldump -u root -p${MYSQL_PASSWORD} electricity_ems > backup_new.sql
+mysqldump -u root -pREDACTED electricity_ems > backup_new.sql
 ```
 
 ### Drizzle Studio Won't Start
@@ -519,11 +519,11 @@ npx drizzle-kit studio
 |------|---------|
 | **Start MySQL** | `net start MySQL84` |
 | **Start Dev Server** | `npm run dev` |
-| **Create Backup** | `mysqldump -u root -p${MYSQL_PASSWORD} electricity_ems > backup.sql` |
-| **Restore Backup** | `mysql -u root -p${MYSQL_PASSWORD} electricity_ems < backup.sql` |
+| **Create Backup** | `mysqldump -u root -pREDACTED electricity_ems > backup.sql` |
+| **Restore Backup** | `mysql -u root -pREDACTED electricity_ems < backup.sql` |
 | **Reseed Database** | `npm run db:seed` |
 | **Open Drizzle Studio** | `npx drizzle-kit studio` |
-| **Run Query** | `mysql -u root -p${MYSQL_PASSWORD} electricity_ems -e "QUERY"` |
+| **Run Query** | `mysql -u root -pREDACTED electricity_ems -e "QUERY"` |
 | **Check TypeScript** | `npx tsc --noEmit` |
 | **Build Project** | `npm run build` |
 

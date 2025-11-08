@@ -43,8 +43,8 @@ yarn-error.log*
 next-env.d.ts
 ".env.local"
 
-# claude local settings
-.claude/settings.local.json
+# claude local settings (ignore entire .claude folder)
+.claude/
 
 # project docs not for commit
 COMPLETE_CURRENCY_CONVERSION.md

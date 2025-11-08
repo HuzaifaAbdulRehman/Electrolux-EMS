@@ -91,7 +91,7 @@
    - Port: 3306
    - Database: electricity_ems
    - User: root
-   - Password: tomcruise@12345
+   - Password: [From .env.local]
 4. Select all 16 tables
 5. Click Execute
 6. Arrange tables by domain:
@@ -334,10 +334,10 @@ npm run dev
 npm run build
 
 # View database tables
-mysql -u root -p"tomcruise@12345" -D electricity_ems -e "SHOW TABLES;"
+mysql -u root -p"${MYSQL_PASSWORD}" -D electricity_ems -e "SHOW TABLES;"
 
 # Check table count (should be 16)
-mysql -u root -p"tomcruise@12345" -D electricity_ems -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='electricity_ems' AND TABLE_TYPE='BASE TABLE';"
+mysql -u root -p"${MYSQL_PASSWORD}" -D electricity_ems -e "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='electricity_ems' AND TABLE_TYPE='BASE TABLE';"
 ```
 
 ---

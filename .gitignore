@@ -91,3 +91,4 @@ test-notifications-api.js
 verify-login.js
 .claude/settings.local.json
 
+AZURE_MYSQL_SETUP_COMPLETE.md

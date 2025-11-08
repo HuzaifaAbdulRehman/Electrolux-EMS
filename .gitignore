@@ -35,6 +35,14 @@ yarn-error.log*
 .env.local
 !.env.example
 
+# Database config with credentials (DO NOT COMMIT)
+drizzle.config.ts
+drizzle.config.azure.ts
+
+# Safe example files (these CAN be committed)
+!drizzle.config.example.ts
+!drizzle.config.azure.example.ts
+
 # vercel
 .vercel
 

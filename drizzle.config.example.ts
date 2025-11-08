@@ -15,4 +15,3 @@ export default {
     database: process.env.DB_NAME || 'electricity_ems',
   },
 } satisfies Config;
-

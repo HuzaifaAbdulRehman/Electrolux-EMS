@@ -629,10 +629,13 @@ function MeterReadingFormInner() {
                       <span className="ml-2 text-gray-600 dark:text-gray-400">Loading work orders...</span>
                     </div>
                   ) : workOrders.length === 0 ? (
-                    <div className="text-center py-8">
-                      <ClipboardList className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600 dark:text-gray-400 font-medium">No pending work orders</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Switch to "All Customers" tab for proactive readings</p>
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle className="w-8 h-8 text-green-500" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Pending Work Orders</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">All assigned tasks are completed.</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Switch to "All Customers" tab to find customers needing readings</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -799,9 +802,19 @@ function MeterReadingFormInner() {
                     </div>
                   ) : allCustomers.length === 0 ? (
                     <div className="text-center py-12">
-                      <Users className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600 dark:text-gray-400 font-medium">No customers found without meter readings</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">All customers may have readings for this month</p>
+                      <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle className="w-10 h-10 text-green-500" />
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">All Meter Readings Complete!</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        All {customerStats?.totalCustomers || 0} active customers have meter readings for {customerStats?.currentMonth ? new Date(customerStats.currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'this month'}.
+                      </p>
+                      <div className="inline-flex items-center px-4 py-2 bg-green-500/10 border border-green-500/30 rounded-lg">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                        <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                          This list will repopulate next month when new readings are needed
+                        </p>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-3">

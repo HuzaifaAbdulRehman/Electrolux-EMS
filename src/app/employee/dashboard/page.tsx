@@ -83,7 +83,7 @@ export default function EmployeeDashboard() {
               <p className="text-gray-600 dark:text-gray-400 mb-4">{error || 'No data available'}</p>
               <button
                 onClick={fetchDashboardData}
-                className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:shadow-lg transition-all flex items-center space-x-2"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all flex items-center space-x-2"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>Retry</span>
@@ -109,36 +109,36 @@ export default function EmployeeDashboard() {
       value: readingsToday.toString(),
       target: '30',
       icon: Gauge,
-      color: 'from-blue-500 to-cyan-500',
+      color: 'from-blue-700 to-blue-600',
       progress: Math.min((readingsToday / 30) * 100, 100),
-      bgGlow: 'bg-blue-500/20'
+      bgGlow: 'bg-blue-600/20'
     },
     {
       title: 'Assigned Work Orders',
       value: assignedOrders.toString(),
       status: `${pendingOrders} Pending`,
       icon: ClipboardCheck,
-      color: 'from-green-500 to-emerald-500',
+      color: 'from-green-700 to-green-600',
       progress: assignedOrders > 0 ? (completedOrders / assignedOrders) * 100 : 0,
-      bgGlow: 'bg-green-500/20'
+      bgGlow: 'bg-green-600/20'
     },
     {
       title: 'Completed Today',
       value: completedOrders.toString(),
       change: `${completionRate}% Complete`,
       icon: CheckCircle,
-      color: 'from-purple-500 to-pink-500',
+      color: 'from-indigo-700 to-indigo-600',
       progress: completionRate,
-      bgGlow: 'bg-purple-500/20'
+      bgGlow: 'bg-indigo-600/20'
     },
     {
       title: 'Performance Score',
       value: `${performanceScore}%`,
       rating: performanceScore >= 80 ? 'Excellent' : performanceScore >= 60 ? 'Good' : 'Fair',
       icon: Award,
-      color: 'from-yellow-400 to-orange-500',
+      color: 'from-amber-600 to-amber-700',
       progress: performanceScore,
-      bgGlow: 'bg-yellow-500/20'
+      bgGlow: 'bg-amber-600/20'
     }
   ];
 
@@ -178,18 +178,15 @@ export default function EmployeeDashboard() {
         <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center">
-                <ClipboardCheck className="w-8 h-8 mr-3 text-green-500" />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Employee Dashboard
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Welcome back, <span className="font-semibold text-gray-900 dark:text-white">{session?.user?.name || 'Employee'}</span>
-              </p>
+              <p className="text-gray-600 dark:text-gray-400">Manage your daily tasks and track your performance</p>
             </div>
             <div className="mt-4 sm:mt-0 flex items-center space-x-3">
               <button
                 onClick={fetchDashboardData}
-                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all flex items-center space-x-2"
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all flex items-center space-x-2"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>Refresh</span>
@@ -203,44 +200,29 @@ export default function EmployeeDashboard() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, index) => (
-            <div key={index} className="relative group">
-              <div className={`absolute inset-0 ${stat.bgGlow} rounded-2xl blur-xl opacity-30 group-hover:opacity-50 transition-opacity`}></div>
-              <div className="relative bg-white dark:bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 dark:border-white/10 hover:border-white/20 transition-all">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`w-12 h-12 bg-gradient-to-r ${stat.color} rounded-xl flex items-center justify-center shadow-lg`}>
-                    <stat.icon className="w-6 h-6 text-white" />
-                  </div>
-                  {stat.change && (
-                    <span className="text-green-400 text-sm font-semibold flex items-center space-x-1">
-                      <TrendingUp className="w-4 h-4" />
-                      <span>{stat.change}</span>
-                    </span>
-                  )}
+            <div key={index} className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <div className={`w-10 h-10 bg-gradient-to-r ${stat.color} rounded-lg flex items-center justify-center`}>
+                  <stat.icon className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-gray-600 dark:text-gray-400 text-sm mb-1">{stat.title}</h3>
-                <div className="flex items-baseline space-x-2 mb-3">
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
-                  {stat.target && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">/ {stat.target}</p>
-                  )}
-                  {stat.status && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{stat.status}</p>
-                  )}
-                  {stat.rating && (
-                    <p className={`text-sm font-semibold ${
-                      stat.rating === 'Excellent' ? 'text-green-400' :
-                      stat.rating === 'Good' ? 'text-yellow-400' : 'text-gray-400'
-                    }`}>{stat.rating}</p>
-                  )}
-                </div>
-                <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full bg-gradient-to-r ${stat.color} transition-all duration-700 ease-out`}
-                    style={{ width: `${stat.progress}%` }}
-                  />
-                </div>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">{stat.title}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</p>
+              <div className="mt-2">
+                {stat.change && (
+                  <span className="text-green-600 dark:text-green-400 text-xs font-medium">{stat.change}</span>
+                )}
+                {stat.status && (
+                  <span className="text-gray-500 dark:text-gray-400 text-xs">{stat.status}</span>
+                )}
+                {stat.rating && (
+                  <span className="text-amber-600 dark:text-amber-400 text-xs font-medium">{stat.rating}</span>
+                )}
+                {stat.target && (
+                  <span className="text-gray-500 dark:text-gray-400 text-xs"> / {stat.target}</span>
+                )}
               </div>
             </div>
           ))}
@@ -256,7 +238,7 @@ export default function EmployeeDashboard() {
               </div>
               <button
                 onClick={() => router.push('/employee/work-orders')}
-                className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg hover:shadow-green-500/50 transition-all text-sm flex items-center space-x-2"
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all text-sm flex items-center space-x-2"
               >
                 <span>View All</span>
                 <ArrowRight className="w-4 h-4" />
@@ -345,10 +327,10 @@ export default function EmployeeDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
             onClick={() => router.push('/employee/meter-reading')}
-            className="group relative p-6 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-xl hover:border-blue-500/40 hover:shadow-lg hover:shadow-blue-500/20 transition-all"
+            className="group relative p-6 bg-blue-500/10 border border-blue-500/20 rounded-xl hover:border-blue-500/40 transition-all"
           >
             <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Gauge className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1 text-left">
@@ -360,10 +342,10 @@ export default function EmployeeDashboard() {
 
           <button
             onClick={() => router.push('/employee/work-orders')}
-            className="group relative p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl hover:border-green-500/40 hover:shadow-lg hover:shadow-green-500/20 transition-all"
+            className="group relative p-6 bg-green-500/10 border border-green-500/20 rounded-xl hover:border-green-500/40 transition-all"
           >
             <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                 <ClipboardCheck className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1 text-left">
@@ -375,10 +357,10 @@ export default function EmployeeDashboard() {
 
           <button
             onClick={() => router.push('/employee/customers')}
-            className="group relative p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-xl hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-500/20 transition-all"
+            className="group relative p-6 bg-indigo-500/10 border border-indigo-500/20 rounded-xl hover:border-indigo-500/40 transition-all"
           >
             <div className="flex items-start space-x-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div className="flex-1 text-left">

@@ -297,7 +297,7 @@ export default function EmployeeCustomers() {
                             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center flex-shrink-0">
                               <span className="text-white font-semibold text-sm">
                                 {customer.fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                              </span>
+                             </span>
                             </div>
                             <div>
                               <p className="text-white font-medium">{customer.fullName}</p>

@@ -192,16 +192,16 @@ export default function AdminDashboard() {
         label: 'Revenue (Rs)',
         data: categoryValues,
         backgroundColor: [
-          'rgba(239, 68, 68, 0.85)',     // Industrial - Red
-          'rgba(59, 130, 246, 0.85)',    // Commercial - Blue
-          'rgba(34, 197, 94, 0.85)',     // Agricultural - Green
-          'rgba(250, 204, 21, 0.85)'     // Residential - Yellow
+          'rgba(100, 116, 139, 0.85)',   // Industrial - Slate
+          'rgba(30, 64, 175, 0.85)',     // Commercial - Navy Blue
+          'rgba(21, 128, 61, 0.85)',     // Agricultural - Forest Green
+          'rgba(217, 119, 6, 0.85)'      // Residential - Amber
         ],
         borderColor: [
-          'rgba(239, 68, 68, 1)',
-          'rgba(59, 130, 246, 1)',
-          'rgba(34, 197, 94, 1)',
-          'rgba(250, 204, 21, 1)'
+          'rgba(100, 116, 139, 1)',
+          'rgba(30, 64, 175, 1)',
+          'rgba(21, 128, 61, 1)',
+          'rgba(217, 119, 6, 1)'
         ],
         borderWidth: 2
       } as any
@@ -220,13 +220,13 @@ export default function AdminDashboard() {
       {
         label: 'Monthly Revenue (Rs)',
         data: monthlyRevenue.map((item: any) => item.revenue / 1000), // Convert to thousands
-        borderColor: 'rgba(34, 197, 94, 1)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        borderColor: 'rgba(37, 99, 235, 1)',
+        backgroundColor: 'rgba(37, 99, 235, 0.1)',
         tension: 0.4,
         fill: true,
         pointRadius: 4,
         pointHoverRadius: 6,
-        pointBackgroundColor: 'rgba(34, 197, 94, 1)',
+        pointBackgroundColor: 'rgba(37, 99, 235, 1)',
         pointBorderColor: '#fff',
         pointBorderWidth: 2
       }
@@ -252,22 +252,22 @@ export default function AdminDashboard() {
         label: 'Transactions',
         data: paymentMethodCounts,
         backgroundColor: [
-          'rgba(239, 68, 68, 0.8)',     // Red
-          'rgba(236, 72, 153, 0.8)',    // Pink
-          'rgba(168, 85, 247, 0.8)',    // Purple
-          'rgba(59, 130, 246, 0.8)',    // Blue
-          'rgba(16, 185, 129, 0.8)',    // Green
-          'rgba(245, 158, 11, 0.8)',    // Yellow
-          'rgba(20, 184, 166, 0.8)'     // Teal
+          'rgba(30, 64, 175, 0.8)',     // Navy Blue
+          'rgba(67, 56, 202, 0.8)',     // Indigo
+          'rgba(21, 128, 61, 0.8)',     // Forest Green
+          'rgba(13, 148, 136, 0.8)',    // Teal
+          'rgba(217, 119, 6, 0.8)',     // Amber
+          'rgba(100, 116, 139, 0.8)',   // Slate
+          'rgba(107, 114, 128, 0.8)'    // Gray
         ],
         borderColor: [
-          'rgba(239, 68, 68, 1)',
-          'rgba(236, 72, 153, 1)',
-          'rgba(168, 85, 247, 1)',
-          'rgba(59, 130, 246, 1)',
-          'rgba(16, 185, 129, 1)',
-          'rgba(245, 158, 11, 1)',
-          'rgba(20, 184, 166, 1)'
+          'rgba(30, 64, 175, 1)',
+          'rgba(67, 56, 202, 1)',
+          'rgba(21, 128, 61, 1)',
+          'rgba(13, 148, 136, 1)',
+          'rgba(217, 119, 6, 1)',
+          'rgba(100, 116, 139, 1)',
+          'rgba(107, 114, 128, 1)'
         ],
         borderWidth: 2
       }
@@ -288,16 +288,16 @@ export default function AdminDashboard() {
         label: 'Bills Count',
         data: billsStatusCounts,
         backgroundColor: [
-          'rgba(34, 197, 94, 0.85)',    // Paid - Green
-          'rgba(250, 204, 21, 0.85)',   // Issued/Pending - Yellow
-          'rgba(239, 68, 68, 0.85)',    // Overdue - Red
-          'rgba(148, 163, 184, 0.85)'   // Other - Gray
+          'rgba(21, 128, 61, 0.85)',    // Paid - Forest Green
+          'rgba(217, 119, 6, 0.85)',    // Issued/Pending - Amber
+          'rgba(185, 28, 28, 0.85)',    // Overdue - Dark Red
+          'rgba(107, 114, 128, 0.85)'   // Other - Gray
         ],
         borderColor: [
-          'rgba(34, 197, 94, 1)',
-          'rgba(250, 204, 21, 1)',
-          'rgba(239, 68, 68, 1)',
-          'rgba(148, 163, 184, 1)'
+          'rgba(21, 128, 61, 1)',
+          'rgba(217, 119, 6, 1)',
+          'rgba(185, 28, 28, 1)',
+          'rgba(107, 114, 128, 1)'
         ],
         borderWidth: 2
       }
@@ -318,16 +318,16 @@ export default function AdminDashboard() {
         label: 'Customer Count',
         data: connectionTypeCounts,
         backgroundColor: [
-          'rgba(239, 68, 68, 0.85)',     // Industrial - Red
-          'rgba(59, 130, 246, 0.85)',    // Commercial - Blue
-          'rgba(34, 197, 94, 0.85)',     // Agricultural - Green
-          'rgba(250, 204, 21, 0.85)'     // Residential - Yellow
+          'rgba(100, 116, 139, 0.85)',   // Industrial - Slate
+          'rgba(30, 64, 175, 0.85)',     // Commercial - Navy Blue
+          'rgba(21, 128, 61, 0.85)',     // Agricultural - Forest Green
+          'rgba(217, 119, 6, 0.85)'      // Residential - Amber
         ],
         borderColor: [
-          'rgba(239, 68, 68, 1)',
-          'rgba(59, 130, 246, 1)',
-          'rgba(34, 197, 94, 1)',
-          'rgba(250, 204, 21, 1)'
+          'rgba(100, 116, 139, 1)',
+          'rgba(30, 64, 175, 1)',
+          'rgba(21, 128, 61, 1)',
+          'rgba(217, 119, 6, 1)'
         ],
         borderWidth: 2
       }
@@ -445,7 +445,7 @@ export default function AdminDashboard() {
               <button
                 onClick={fetchDashboardData}
                 disabled={loading}
-                className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:shadow-lg hover:shadow-red-500/50 transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
@@ -458,8 +458,8 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-blue-500/20 dark:bg-blue-500/30 border border-blue-500/30 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Total Customers</p>
@@ -483,8 +483,8 @@ export default function AdminDashboard() {
 
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-slate-500/20 dark:bg-slate-500/30 border border-slate-500/30 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Total Employees</p>
@@ -493,8 +493,8 @@ export default function AdminDashboard() {
 
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-green-500/20 dark:bg-green-500/30 border border-green-500/30 rounded-lg flex items-center justify-center">
+                <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Avg Monthly Revenue</p>
@@ -506,8 +506,8 @@ export default function AdminDashboard() {
 
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-rose-500 rounded-lg flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-red-500/20 dark:bg-red-500/30 border border-red-500/30 rounded-lg flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Outstanding</p>
@@ -518,8 +518,8 @@ export default function AdminDashboard() {
 
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-indigo-500/20 dark:bg-indigo-500/30 border border-indigo-500/30 rounded-lg flex items-center justify-center">
+                <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Active Bills</p>
@@ -528,8 +528,8 @@ export default function AdminDashboard() {
 
           <div className="bg-white dark:bg-white/5 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Activity className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-teal-500/20 dark:bg-teal-500/30 border border-teal-500/30 rounded-lg flex items-center justify-center">
+                <Activity className="w-5 h-5 text-teal-600 dark:text-teal-400" />
               </div>
             </div>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Collection Rate</p>
@@ -803,18 +803,18 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <button
             onClick={() => router.push('/admin/customers')}
-            className="p-4 bg-gradient-to-r from-red-500/10 to-pink-500/10 border border-red-500/20 rounded-xl hover:border-red-500/40 transition-all"
+            className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl hover:border-red-500/40 transition-all"
           >
-            <Users className="w-6 h-6 text-red-400 mb-2" />
+            <Users className="w-6 h-6 text-red-500 dark:text-red-400 mb-2" />
             <p className="text-gray-900 dark:text-white font-semibold">Manage Customers</p>
             <p className="text-gray-600 dark:text-gray-400 text-sm">View and manage customer accounts</p>
           </button>
 
           <button
             onClick={() => router.push('/admin/bills')}
-            className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl hover:border-green-500/40 transition-all"
+            className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl hover:border-green-500/40 transition-all"
           >
-            <FileText className="w-6 h-6 text-green-400 mb-2" />
+            <FileText className="w-6 h-6 text-green-600 dark:text-green-400 mb-2" />
             <p className="text-gray-900 dark:text-white font-semibold">Generate Bills</p>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Create new billing cycles</p>
           </button>
@@ -822,18 +822,18 @@ export default function AdminDashboard() {
 
           <button
             onClick={() => router.push('/admin/outages')}
-            className="p-4 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl hover:border-orange-500/40 transition-all"
+            className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl hover:border-yellow-500/40 transition-all"
           >
-            <Zap className="w-6 h-6 text-orange-400 mb-2" />
+            <Zap className="w-6 h-6 text-yellow-600 dark:text-yellow-400 mb-2" />
             <p className="text-gray-900 dark:text-white font-semibold">Outage Management</p>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Schedule and manage outages</p>
           </button>
 
           <button
             onClick={() => router.push('/admin/complaints')}
-            className="p-4 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/20 rounded-xl hover:border-blue-500/40 transition-all"
+            className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl hover:border-blue-500/40 transition-all"
           >
-            <AlertTriangle className="w-6 h-6 text-blue-400 mb-2" />
+            <AlertTriangle className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
             <p className="text-gray-900 dark:text-white font-semibold">Complaint Management</p>
             <p className="text-gray-600 dark:text-gray-400 text-sm">Manage customer complaints</p>
           </button>

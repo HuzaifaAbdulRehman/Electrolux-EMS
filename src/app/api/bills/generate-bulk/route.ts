@@ -103,13 +103,14 @@ export async function POST(request: NextRequest) {
             }
 
             // Check if bill already exists for this month
+            // Use YEAR/MONTH comparison to handle date format inconsistencies
             const [existingBill] = await db
               .select()
               .from(bills)
               .where(
                 and(
                   eq(bills.customerId, customer.id),
-                  eq(bills.billingMonth, billingMonth) // Direct DATE comparison (billingMonth is DATE type)
+                  sql`YEAR(${bills.billingMonth}) = YEAR(${billingMonth}) AND MONTH(${bills.billingMonth}) = MONTH(${billingMonth})`
                 )
               )
               .limit(1);

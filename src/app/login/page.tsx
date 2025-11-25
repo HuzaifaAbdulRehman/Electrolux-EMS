@@ -30,26 +30,22 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        const errorMessage = result.error; // Show actual error from NextAuth
+        const errorMessage = result.error;
         setError(errorMessage);
         toast.error(errorMessage);
 
-        // Check if error is about email verification
         if (result.error.toLowerCase().includes('verify your email')) {
           setShowResendLink(true);
         }
 
         setIsLoading(false);
       } else if (result?.ok) {
-        // Fetch session to get user type
         const response = await fetch('/api/auth/session');
         const session = await response.json();
 
         if (session?.user?.userType) {
-          // Show success toast
           toast.success('Login successful!');
-          
-          // Redirect based on user type
+
           switch (session.user.userType) {
             case 'admin':
               router.push('/admin/dashboard');
@@ -76,7 +72,6 @@ export default function LoginPage() {
     }
   };
 
-  // Fill demo credentials (doesn't auto-login)
   const fillDemoCredentials = (demoEmail: string, demoPassword: string) => {
     setEmail(demoEmail);
     setPassword(demoPassword);
@@ -84,63 +79,115 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -inset-10 opacity-10">
-          <div className="absolute top-0 -left-4 w-72 h-72 bg-yellow-400 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
-          <div className="absolute top-0 -right-4 w-72 h-72 bg-orange-400 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-red-400 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+    <div className="min-h-screen bg-slate-900 flex">
+      {/* Left Panel - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-800 to-slate-900 p-12 flex-col justify-between">
+        {/* Logo */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
+            <Zap className="h-6 w-6 text-white" />
+          </div>
+          <span className="text-xl font-bold text-white">ElectroLux</span>
+        </div>
+
+        {/* Main Content */}
+        <div>
+          <h1 className="text-4xl font-bold text-white mb-4">
+            Powering Smart{' '}
+            <span className="text-orange-400">Energy Solutions</span>
+          </h1>
+          <p className="text-slate-400 text-lg max-w-md">
+            Streamline your electricity management with real-time monitoring, automated billing, and comprehensive analytics.
+          </p>
+
+          {/* Features List */}
+          <div className="mt-8 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 bg-orange-400 rounded-full" />
+              <span className="text-slate-300">Customer Management</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 bg-orange-400 rounded-full" />
+              <span className="text-slate-300">Usage Analytics</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 bg-orange-400 rounded-full" />
+              <span className="text-slate-300">Secure Billing</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 bg-orange-400 rounded-full" />
+              <span className="text-slate-300">Real-time Updates</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Stats */}
+        <div className="flex gap-8">
+          <div>
+            <p className="text-2xl font-bold text-white">500+</p>
+            <p className="text-slate-500 text-sm">Customers</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white">99.9%</p>
+            <p className="text-slate-500 text-sm">Uptime</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white">24/7</p>
+            <p className="text-slate-500 text-sm">Support</p>
+          </div>
         </div>
       </div>
 
-      <div className="relative max-w-md w-full">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-yellow-400 to-orange-500 p-8 text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-xl rounded-full mb-4">
-              <Zap className="h-10 w-10 text-white" />
+      {/* Right Panel - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
+            <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
+              <Zap className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white">ElectroLux EMS</h1>
-            <p className="text-white/90 mt-2">Electricity Management System</p>
+            <span className="text-xl font-bold text-white">ElectroLux EMS</span>
           </div>
 
-          {/* Login Form */}
-          <div className="p-8">
+          {/* Form Card */}
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-white">Welcome back</h2>
+              <p className="text-slate-400 mt-2">Sign in to your account</p>
+            </div>
+
             {error && (
-              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
-                  <span className="text-sm text-red-600 dark:text-red-400">{error}</span>
-                </div>
-                {showResendLink && (
-                  <div className="mt-2 pl-6">
-                    <Link
-                      href={`/verify-email?email=${email}`}
-                      className="text-sm text-orange-500 hover:text-orange-600 font-medium"
-                    >
-                      Resend verification code →
-                    </Link>
+              <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-sm text-red-400">{error}</span>
+                    {showResendLink && (
+                      <Link
+                        href={`/verify-email?email=${email}`}
+                        className="block mt-2 text-sm text-orange-400 hover:text-orange-300"
+                      >
+                        Resend verification code →
+                      </Link>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Email Address
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-gray-400" />
-                  </div>
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="customer@example.com"
+                    className="w-full pl-12 pr-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    placeholder="you@example.com"
                     required
                     disabled={isLoading}
                   />
@@ -148,18 +195,16 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full pl-12 pr-12 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="Enter your password"
                     required
                     disabled={isLoading}
@@ -167,7 +212,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
                     disabled={isLoading}
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -175,8 +220,8 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end">
-                <Link href="/forgot-password" className="text-sm text-orange-500 hover:text-orange-600">
+              <div className="flex justify-end">
+                <Link href="/forgot-password" className="text-sm text-orange-400 hover:text-orange-300">
                   Forgot password?
                 </Link>
               </div>
@@ -184,7 +229,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-white font-semibold py-3 rounded-lg hover:from-yellow-500 hover:to-orange-600 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-semibold py-3 rounded-lg hover:from-yellow-400 hover:to-orange-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <>
@@ -192,62 +237,53 @@ export default function LoginPage() {
                     Signing in...
                   </>
                 ) : (
-                  <>
-                    <Zap className="h-5 w-5" />
-                    Sign In
-                  </>
+                  'Sign In'
                 )}
               </button>
             </form>
 
             {/* Demo Accounts */}
-            <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">
-                Demo Accounts (Click to fill credentials)
-              </p>
-              <div className="space-y-2">
+            <div className="mt-8 pt-6 border-t border-slate-700">
+              <p className="text-xs text-slate-500 text-center mb-4">Quick Demo Access</p>
+              <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => fillDemoCredentials('admin@electrolux.com', 'password123')}
                   disabled={isLoading}
-                  className="w-full py-2 px-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-2.5 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors text-sm font-medium disabled:opacity-50"
                 >
-                  Admin Account
+                  Admin
                 </button>
                 <button
                   type="button"
                   onClick={() => fillDemoCredentials('employee@electrolux.com', 'password123')}
                   disabled={isLoading}
-                  className="w-full py-2 px-3 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-2.5 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors text-sm font-medium disabled:opacity-50"
                 >
-                  Employee Account
+                  Employee
                 </button>
                 <button
                   type="button"
                   onClick={() => fillDemoCredentials('customer@example.com', 'password123')}
                   disabled={isLoading}
-                  className="w-full py-2 px-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 py-2.5 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors text-sm font-medium disabled:opacity-50"
                 >
-                  Customer Account
+                  Customer
                 </button>
               </div>
             </div>
 
             {/* Register Link */}
-            <div className="mt-6 text-center">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Don't have an account?{' '}
-                <Link href="/register" className="text-orange-500 hover:text-orange-600 font-medium">
-                  Sign up
-                </Link>
-              </span>
-            </div>
+            <p className="mt-6 text-center text-sm text-slate-400">
+              Don&apos;t have an account?{' '}
+              <Link href="/register" className="text-orange-400 hover:text-orange-300 font-medium">
+                Sign up
+              </Link>
+            </p>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          {/* Footer */}
+          <p className="mt-8 text-center text-xs text-slate-600">
             © 2025 ElectroLux EMS. All rights reserved.
           </p>
         </div>
@@ -255,4 +291,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

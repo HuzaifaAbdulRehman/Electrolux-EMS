@@ -93,3 +93,4 @@ verify-login.js
 
 AZURE_MYSQL_SETUP_COMPLETE.md
 CLAUDE.md
+backup_$(Get-Date

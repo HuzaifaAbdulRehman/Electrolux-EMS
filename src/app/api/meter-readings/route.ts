@@ -95,8 +95,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/meter-readings - Record new meter reading
 export async function POST(request: NextRequest) {
+  console.log('=== [Meter Readings POST] Route hit ===');
   try {
     const session = await getServerSession(authOptions);
+    console.log('[Meter Readings POST] Session:', session ? 'exists' : 'null');
     if (!session) {
       console.error('[Meter Readings POST] No session found');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -110,10 +112,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    // Ensure employeeId exists in session (might be missing if logged in before reseed)
+    if (!session.user.employeeId) {
+      console.error('[Meter Readings POST] Employee ID not found in session. Please log out and log back in.');
+      return NextResponse.json({
+        error: 'Session expired. Please log out and log back in.',
+        details: 'Employee ID not found in session'
+      }, { status: 401 });
+    }
+
     const body = await request.json();
     const { customerId, currentReading, meterCondition, accessibility, notes } = body;
 
     console.log('[Meter Readings POST] Request data:', { customerId, currentReading, meterCondition, accessibility });
+
+    // Map accessibility values to valid enum values
+    const validAccessibility = ['accessible', 'partially_accessible', 'inaccessible'];
+    let mappedAccessibility = accessibility;
+    if (!validAccessibility.includes(accessibility)) {
+      // Map common values
+      if (accessibility === 'easy' || accessibility === 'good') {
+        mappedAccessibility = 'accessible';
+      } else if (accessibility === 'moderate' || accessibility === 'partial') {
+        mappedAccessibility = 'partially_accessible';
+      } else if (accessibility === 'difficult' || accessibility === 'hard' || accessibility === 'none') {
+        mappedAccessibility = 'inaccessible';
+      } else {
+        mappedAccessibility = 'accessible'; // default
+      }
+      console.log(`[Meter Readings POST] Mapped accessibility '${accessibility}' to '${mappedAccessibility}'`);
+    }
 
     if (!customerId || !currentReading) {
       console.error('[Meter Readings POST] Missing required fields');
@@ -170,11 +198,9 @@ export async function POST(request: NextRequest) {
       previousReading: previousReadingValue.toString(),
       unitsConsumed: unitsConsumed.toString(),
     });
-    // 🔒 TRANSACTION FIX: Wrap reading insert and average update in a transaction
-    let readingId: number;
-    await db.transaction(async (tx) => {
 
-    const readingInsert = await tx.insert(meterReadings).values({
+    // Insert meter reading
+    const readingInsert = await db.insert(meterReadings).values({
       customerId,
       meterNumber: customer.meterNumber,
       currentReading: currentReadingValue.toString(),
@@ -183,49 +209,58 @@ export async function POST(request: NextRequest) {
       readingDate: new Date().toISOString().split('T')[0],
       readingTime: new Date(),
       meterCondition: meterCondition || 'good',
-      accessibility: accessibility || 'accessible',
+      accessibility: mappedAccessibility || 'accessible',
       employeeId: session.user.employeeId,
       notes,
     } as any);
 
-    readingId = (readingInsert as any).insertId;
+    const readingId = (readingInsert as any).insertId;
+    console.log('[Meter Readings POST] Reading inserted with ID:', readingId);
 
     // Update customer's average monthly usage
-    const avgUsage = await tx
-      .select({ avg: sql<number>`AVG(${meterReadings.unitsConsumed})` })
-      .from(meterReadings)
-      .where(eq(meterReadings.customerId, customerId));
+    try {
+      const avgUsage = await db
+        .select({ avg: sql<number>`AVG(CAST(${meterReadings.unitsConsumed} AS DECIMAL(10,2)))` })
+        .from(meterReadings)
+        .where(eq(meterReadings.customerId, customerId));
 
-    if (avgUsage[0]?.avg != null) {
-      await tx
-        .update(customers)
-        .set({
-          averageMonthlyUsage: Number(avgUsage[0].avg).toFixed(2),
-        })
-        .where(eq(customers.id, customerId));
+      if (avgUsage[0]?.avg != null) {
+        await db
+          .update(customers)
+          .set({
+            averageMonthlyUsage: Number(avgUsage[0].avg).toFixed(2),
+          })
+          .where(eq(customers.id, customerId));
+      }
+    } catch (avgError) {
+      console.error('[Meter Readings POST] Error updating average usage:', avgError);
+      // Don't fail the whole request for this
     }
-
-    });  // End transaction
 
     // Create notification for customer about completed meter reading
     if (customer.userId) {
-      await db.insert(notifications).values({
-        userId: customer.userId,
-        notificationType: 'work_order',
-        title: 'Meter Reading Completed',
-        message: `Your meter reading has been completed successfully. Units consumed: ${unitsConsumed} kWh. Your bill will be generated shortly.`,
-        priority: 'normal',
-        actionUrl: '/customer/view-bills',
-        actionText: 'View Bills',
-        isRead: 0,
-      } as any);
+      try {
+        await db.insert(notifications).values({
+          userId: customer.userId,
+          notificationType: 'work_order',
+          title: 'Meter Reading Completed',
+          message: `Your meter reading has been completed successfully. Units consumed: ${unitsConsumed} kWh. Your bill will be generated shortly.`,
+          priority: 'normal',
+          actionUrl: '/customer/view-bills',
+          actionText: 'View Bills',
+          isRead: 0,
+        } as any);
+      } catch (notifError) {
+        console.error('[Meter Readings POST] Error creating notification:', notifError);
+        // Don't fail the whole request for notification error
+      }
     }
 
     return NextResponse.json({
       success: true,
       message: 'Meter reading recorded successfully',
       data: {
-        readingId: readingId!,
+        readingId,
         unitsConsumed,
       },
     }, { status: 201 });

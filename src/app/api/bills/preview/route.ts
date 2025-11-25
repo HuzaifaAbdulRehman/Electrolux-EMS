@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
 
     // 2. Get customers who already have bills for this month (with detailed info)
     // IMPORTANT: Only count bills for ACTIVE customers to match totalActiveCustomers count
+    // Use YEAR/MONTH comparison to handle date format inconsistencies
     const existingBills = await db
       .select({
         customerId: bills.customerId,
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
       .innerJoin(customers, eq(bills.customerId, customers.id))
       .where(
         and(
-          sql`DATE(${bills.billingMonth}) = ${billingMonth}`,
+          sql`YEAR(${bills.billingMonth}) = YEAR(${billingMonth}) AND MONTH(${bills.billingMonth}) = MONTH(${billingMonth})`,
           eq(customers.status, 'active')
         )
       );

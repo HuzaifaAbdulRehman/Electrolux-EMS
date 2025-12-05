@@ -96,4 +96,4 @@ CLAUDE.md
 backup_$(Get-Date
 
 # Exclude electrolux_mds_and_exp folder
-electrolux_mds_and_exp/
+docs/

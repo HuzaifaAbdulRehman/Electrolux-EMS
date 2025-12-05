@@ -94,3 +94,6 @@ verify-login.js
 AZURE_MYSQL_SETUP_COMPLETE.md
 CLAUDE.md
 backup_$(Get-Date
+
+# Exclude electrolux_mds_and_exp folder
+electrolux_mds_and_exp/
